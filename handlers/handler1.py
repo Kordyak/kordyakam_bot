@@ -4,14 +4,29 @@ import config
 from aiogram import Bot
 from aiogram.enums import ParseMode
 import asyncio
+from telethon import events
 
 bot = Bot(token=config.bot_token)
 date_check = datetime.today().date()
+
+async def client_overhear(client):
+    channel_source = [
+        'https://t.me/channelOut2',
+        'https://t.me/meduzalive',
+        'https://t.me/LipsitsIgor',
+        'https://t.me/bdtprb',
+    ]
+    @client.on(events.NewMessage(chats=channel_source))  # Слушает каналы на сообщение
+    async def handler(event):
+        await send_message_IA(event.message)  # Отправляет сообщение через бота в группу ИА
+        await parsing_old_message(client)
+
+
 async def send_message_IA(message):  # Отправляет сообщение через бота
     arr_words = [
         "главные новости",
-        "национализ",
-        "мобилизаци",
+        "национализация",
+        "мобилизация",
         "путин",
         "бпла",
     ]

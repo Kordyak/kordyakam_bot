@@ -9,6 +9,7 @@ from telethon import events
 bot = Bot(token=config.bot_token)
 date_check = datetime.today().date()
 
+
 async def client_overhear(client):
     channel_source = [
         'https://t.me/channelOut2',
@@ -16,6 +17,7 @@ async def client_overhear(client):
         'https://t.me/LipsitsIgor',
         'https://t.me/bdtprb',
     ]
+
     @client.on(events.NewMessage(chats=channel_source))  # Слушает каналы на сообщение
     async def handler(event):
         await send_message_IA(event.message)  # Отправляет сообщение через бота в группу ИА
@@ -44,23 +46,21 @@ async def send_message_IA(message):  # Отправляет сообщение �
 
 async def parsing_old_message(client):  # Парсер старых сообщений в МЕДУЗЕ, последние 20 сообщений
     # while True:
-        print('parsing_old_message 1')
-        global date_check
-        offset_date = datetime.today().date() + timedelta(days=1)
-        iter_messages = client.iter_messages(config.channel_meduza_id, offset_date=offset_date)  # все сообщения до даты
-        i = 0
-        if offset_date != date_check:
-            print('parsing_old_message 2')
-            async for message in iter_messages:
-                if 'Главные новости' in message.text:
-                    print('parsing_old_message 3')
-                    date_check = offset_date
-                    await send_message_IA(message)
-                    break
-                elif i == 20:  # проверяем 20 сообщений
-                    break
-                else:
-                    i += 1
-        # await asyncio.sleep(3600)
-
-
+    print('parsing_old_message 1')
+    global date_check
+    offset_date = datetime.today().date() + timedelta(days=1)
+    iter_messages = client.iter_messages(config.channel_meduza_id, offset_date=offset_date)  # все сообщения до даты
+    i = 0
+    if offset_date != date_check:
+        print('parsing_old_message 2')
+        async for message in iter_messages:
+            if 'Главные новости' in message.text:
+                print('parsing_old_message 3')
+                date_check = offset_date
+                await send_message_IA(message)
+                break
+            elif i == 20:  # проверяем 20 сообщений
+                break
+            else:
+                i += 1
+    # await asyncio.sleep(3600)

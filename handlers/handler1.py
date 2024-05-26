@@ -16,6 +16,7 @@ async def client_overhear(client):
         'https://t.me/meduzalive',
         'https://t.me/LipsitsIgor',
         'https://t.me/bdtprb',
+        'https://t.me/tvrain',
     ]
 
     @client.on(events.NewMessage(chats=channel_source))  # Слушает каналы на сообщение
@@ -27,10 +28,12 @@ async def client_overhear(client):
 async def send_message_IA(message):  # Отправляет сообщение через бота
     arr_words = [
         "главные новости",
-        "национализация",
-        "мобилизация",
+        "национализаци",
+        "мобилизаци",
         "путин",
-        "бпла",
+        "бпл",
+        "главное",
+        "итоги дня",
     ]
     print('send_message_IA 1')
     for i in range(len(arr_words)):

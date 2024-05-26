@@ -21,11 +21,11 @@ client.start()
 @client.on(events.NewMessage(chats=channel_source))  # Слушает каналы на сообщение
 async def handler(event):
     await send_message_IA(event.message)  # Отправляет сообщение через бота в группу ИА
-
+    await parsing_old_message(client)
 
 
 if __name__ == '__main__':
-    loop.create_task(parsing_old_message(client)) # добавляет задание в ЦИКЛ
+    # loop.create_task(parsing_old_message(client))  # добавляет задание в ЦИКЛ
     client.run_until_disconnected()
 
 

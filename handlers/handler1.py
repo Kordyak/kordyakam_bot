@@ -29,10 +29,9 @@ def check_word(news: str): # проверка сообщение на слово
         pattern = config.arr_patterns[i]
         if re.search(pattern, news):
             print('True')
-
             return True
 
-async def parsing_old_message(client):  # Парсер старых сообщений в МЕДУЗЕ, последние 20 сообщений
+async def parsing_old_message(client):  # Парсер старых сообщений
     offset_date = datetime.today().date() + timedelta(days=1)
     i = 0
     async for channel_id in config.channel_id:

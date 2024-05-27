@@ -1,1 +1,0 @@
-python parser_channel.py

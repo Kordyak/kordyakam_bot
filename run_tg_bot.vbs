@@ -1,2 +1,2 @@
 set sh=CreateObject("Wscript.Shell")
-sh.Run "runParcer.cmd", 0
+sh.Run "run.cmd", 0

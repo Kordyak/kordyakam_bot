@@ -1,38 +1,50 @@
-import re
 from datetime import datetime, timedelta
-from pprint import pprint
-
-from aiogram import Bot, types
-from aiogram.enums import ParseMode
 
 import config
+from aiogram import Bot
+from aiogram.enums import ParseMode
+import asyncio
+from telethon import events
 
 bot = Bot(token=config.bot_token)
 date_check = datetime.today().date()
 
 
-async def send_message_IA(message: types.Message):  # Отправляет сообщение через бота
-    if check_word(message.text):
-        print('send_message_IA')
-        link = f"https://t.me/{message.sender.username}/{message.id}"
-        await bot.send_message(chat_id=config.group_IA_id,  # Чат ИА id
-                               text=f'{link}\n{message.text}',
-                               parse_mode=ParseMode.MARKDOWN)
+async def client_overhear(client):
+    channel_source = [
+        'https://t.me/channelOut2',
+        'https://t.me/meduzalive',
+        'https://t.me/LipsitsIgor',
+        'https://t.me/bdtprb',
+        'https://t.me/tvrain',
+    ]
 
-def check_word(news: str): # проверка сообщение на слово
-    print('check_word')
-    print(news[:50])
-    print('\n')
-    for i in range(len(config.arr_patterns)):
-        pattern = config.arr_patterns[i]
-        if re.match(pattern, news):
-            print('True')
-            print('='*100)
-            pprint(re.match(pattern, news))
-            return True
+    @client.on(events.NewMessage(chats=channel_source))  # Слушает каналы на сообщение
+    async def handler(event):
+        await send_message_IA(event.message)  # Отправляет сообщение через бота в группу ИА
+        await parsing_old_message(client)
 
 
-
+async def send_message_IA(message):  # Отправляет сообщение через бота
+    arr_words = [
+        "главные новости",
+        "национализаци",
+        "мобилизаци",
+        "путин",
+        "бпл",
+        "главное",
+        "итоги дня",
+    ]
+    print('send_message_IA 1')
+    for i in range(len(arr_words)):
+        if arr_words[i] in message.text.lower():
+            link = f"https://t.me/{message.sender.username}/{message.id}"
+            print('send_message_IA 2')
+            print(link)
+            await bot.send_message(chat_id=config.group_IA_id,  # Чат ИА id
+                                   text=f'{link}\n{message.text}',
+                                   parse_mode=ParseMode.MARKDOWN)
+            break
 
 
 async def parsing_old_message(client):  # Парсер старых сообщений в МЕДУЗЕ, последние 20 сообщений

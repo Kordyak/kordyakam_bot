@@ -5,7 +5,7 @@ from telethon import events
 
 import datetime
 
-from handlers.handler1 import send_message_IA
+from handlers.handler1 import send_message_IA, parsing_old_message
 
 
 def main():
@@ -18,6 +18,7 @@ def main():
     async def handler(event):
         await send_message_IA(event.message)
 
+    # loop.create_task(parsing_old_message(client))
     return client
 
 

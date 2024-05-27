@@ -11,10 +11,10 @@ from handlers.handler1 import send_message_IA
 def main():
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    client = TelegramClient('kord2', config.api_id, config.api_hash, loop=loop)
+    client = TelegramClient('kord', config.api_id, config.api_hash, loop=loop)
     client.start()
 
-    @client.on(events.NewMessage(chats=config.channel_source))  # Слушает каналы на сообщение
+    @client.on(events.NewMessage(chats=config.channel_url))  # Слушает каналы на сообщение
     async def handler(event):
         await send_message_IA(event.message)
 

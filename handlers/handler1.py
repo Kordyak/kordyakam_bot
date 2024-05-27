@@ -14,6 +14,8 @@ date_check = datetime.today().date()
 async def send_message_IA(message: types.Message):  # Отправляет сообщение через бота
     if check_word(message.text):
         print('send_message_IA')
+        print(message.sender.username)
+        print('=' * 100)
         link = f"https://t.me/{message.sender.username}/{message.id}"
         await bot.send_message(chat_id=config.group_IA_id,  # Чат ИА id
                                text=f'{link}\n{message.text}',
@@ -25,31 +27,21 @@ def check_word(news: str): # проверка сообщение на слово
     print('\n')
     for i in range(len(config.arr_patterns)):
         pattern = config.arr_patterns[i]
-        if re.match(pattern, news):
+        if re.search(pattern, news):
             print('True')
-            print('='*100)
-            pprint(re.match(pattern, news))
+
             return True
 
-
-
 async def parsing_old_message(client):  # Парсер старых сообщений в МЕДУЗЕ, последние 20 сообщений
-    # while True:
-    print('parsing_old_message 1')
-    global date_check
     offset_date = datetime.today().date() + timedelta(days=1)
-    iter_messages = client.iter_messages(config.channel_meduza_id, offset_date=offset_date)  # все сообщения до даты
     i = 0
-    if offset_date != date_check:
-        print('parsing_old_message 2')
+    async for channel_id in config.channel_id:
+        iter_messages = client.iter_messages(channel_id, offset_date=offset_date)  # все сообщения до даты
         async for message in iter_messages:
-            if 'Главные новости' in message.text:
-                print('parsing_old_message 3')
-                date_check = offset_date
+            if check_word(message.text):
                 await send_message_IA(message)
                 break
-            elif i == 20:  # проверяем 20 сообщений
+            elif i == 50:
                 break
             else:
                 i += 1
-    # await asyncio.sleep(3600)

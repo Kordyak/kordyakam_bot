@@ -24,17 +24,24 @@ async def handler(event):
     await send_message_IA(event.message)
 
 
-# bot = Bot(token=config.bot_token)
-# dp = Dispatcher()
-# @dp.message()
-# async def send_echo(message):
-#     await message.reply(text=message.text)
-#     await asyncio.sleep(5)
+bot = Bot(token=config.bot_token)
+dp = Dispatcher()
+@dp.message()
+async def send_echo(message):
+    await message.reply(text=message.text)
+    await asyncio.sleep(5)
+
+
 
 
 if __name__ == '__main__':
     print(datetime.now().time())
     print('Hearing news!')
+    # client.run_until_disconnected()
     # loop.create_task(parsing_old_message(client))
+
+    loop2 = asyncio.get_event_loop()
+    loop2.create_task(dp.start_polling(bot))
+
     client.run_until_disconnected()
 

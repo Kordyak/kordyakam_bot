@@ -18,7 +18,7 @@ def main():
     async def handler(event):
         await send_message_IA(event.message)
 
-    # loop.create_task(parsing_old_message(client))
+    loop.create_task(parsing_old_message(client))
     return client
 
 

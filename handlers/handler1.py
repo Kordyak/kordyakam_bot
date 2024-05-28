@@ -17,10 +17,10 @@ async def send_message_IA(message: types.Message):  # Отправляет со�
         print(message.sender.username)
         print(message.text[:100])
         print('=' * 100)
-        link = f"https://t.me/{message.sender.username}/{message.id}"
-        await bot.send_message(chat_id=config.group_IA_id,  # Чат ИА id
-                               text=f'{link}\n{message.text}',
-                               parse_mode=ParseMode.MARKDOWN)
+        # link = f"https://t.me/{message.sender.username}/{message.id}"
+        # await bot.send_message(chat_id=config.group_IA_id,  # Чат ИА id
+        #                        text=f'{link}\n{message.text}',
+        #                        parse_mode=ParseMode.MARKDOWN)
 
 
 def check_word(news: str):  # проверка сообщение на слово
@@ -34,7 +34,7 @@ async def parsing_old_message(client):  # Парсер старых сообще
     offset_date = datetime.today().date() - timedelta(days=1)
     for channel_id in config.channel_id:
 
-        iter_messages = client.iter_messages(entity=channel_id, limit=100, offset_date=offset_date, reverse=True)
+        iter_messages = client.iter_messages(entity=channel_id, offset_date=offset_date, reverse=True)
 
         async for message in iter_messages:
             if message.date.date() == offset_date:

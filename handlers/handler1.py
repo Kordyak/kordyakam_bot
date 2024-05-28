@@ -2,8 +2,7 @@ import re
 from datetime import datetime, timedelta
 from pprint import pprint
 
-from aiogram import Bot, types
-from aiogram.enums import ParseMode
+from aiogram import Bot, types, enums
 
 import config
 
@@ -13,12 +12,12 @@ date_check = datetime.today().date()
 
 async def send_message_IA(message: types.Message):  # Отправляет сообщение через бота
     if check_word(message.text):
-        print('send_message_IA'*5)
+        print(' =send_message_IA= '*3)
         print('\n')
         link = f"https://t.me/{message.sender.username}/{message.id}"
         await bot.send_message(chat_id=config.group_IA_id,  # Чат ИА id
                                text=f'{link}\n{message.text}',
-                               parse_mode=ParseMode.MARKDOWN)
+                               parse_mode=enums.ParseMode.MARKDOWN)
 
 
 def check_word(news: str):  # парсинг нововстей на слово

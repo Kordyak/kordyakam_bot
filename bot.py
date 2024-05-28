@@ -34,6 +34,7 @@ async def handler(event):
 
 if __name__ == '__main__':
     print(datetime.now().time())
+    print('Hearing news!')
     # loop.create_task(parsing_old_message(client))
     client.run_until_disconnected()
 

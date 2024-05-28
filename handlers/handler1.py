@@ -2,12 +2,11 @@ import re
 from datetime import datetime, timedelta
 from pprint import pprint
 
-from aiogram import Bot, types, enums
+from aiogram import Bot, types, enums, Dispatcher
 
 import config
 
-bot = Bot(token=config.bot_token)
-date_check = datetime.today().date()
+
 
 
 async def send_message_IA(message: types.Message):  # Отправляет сообщение через бота
@@ -15,13 +14,14 @@ async def send_message_IA(message: types.Message):  # Отправляет со�
         print(' =send_message_IA= '*3)
         print('\n')
         link = f"https://t.me/{message.sender.username}/{message.id}"
+        bot = Bot(token=config.bot_token)
         await bot.send_message(chat_id=config.group_IA_id,  # Чат ИА id
                                text=f'{link}\n{message.text}',
                                parse_mode=enums.ParseMode.MARKDOWN)
 
 
 def check_word(news: str):  # парсинг нововстей на слово
-    for pattern in config.arr_patterns:
+    for pattern in config.key_words:
         if re.search(pattern, news.lower()):
             return True
 

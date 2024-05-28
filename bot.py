@@ -1,18 +1,19 @@
-from telethon import TelegramClient
+from telethon import TelegramClient, events
 import config
 import asyncio
-from telethon import events
 
 from datetime import datetime
 
-from handlers.handler1 import send_message_IA
-
+from handlers.handler1 import send_message_IA, parsing_old_message
+from aiogram import Bot, Dispatcher
 
 
 loop = asyncio.new_event_loop()
 asyncio.set_event_loop(loop)
 client = TelegramClient('kord', config.api_id, config.api_hash, loop=loop)
 client.start()
+
+
 
 @client.on(events.NewMessage(chats=config.channel_url))  # Слушает каналы на сообщение
 async def handler(event):
@@ -22,9 +23,17 @@ async def handler(event):
     print('=' * 100)
     await send_message_IA(event.message)
 
-# loop.create_task(parsing_old_message(client))
+
+# bot = Bot(token=config.bot_token)
+# dp = Dispatcher()
+# @dp.message()
+# async def send_echo(message):
+#     await message.reply(text=message.text)
+#     await asyncio.sleep(5)
 
 
 if __name__ == '__main__':
     print(datetime.now().time())
+    # loop.create_task(parsing_old_message(client))
     client.run_until_disconnected()
+

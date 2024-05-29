@@ -15,8 +15,8 @@ async def send_message(message: types.Message, key_words: list):  # Отправ
     text = f'{link}\n{message.text}'
     print('')
     print(message.date)
-    print(f'{link}\n{message.text[:100]}')
-    print('=' * 200)
+    print(f'{link}\n{message.text[:200]}')
+    print('=' * 50)
     if check_word(message.text, key_words):
         print('Word checked!')
         await bot.send_message(chat_id=config.group_IA_id,  # Чат ИА id

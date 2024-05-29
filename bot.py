@@ -37,11 +37,11 @@ async def send_echo(message):
 if __name__ == '__main__':
     print(datetime.now().time())
     print('Hearing news!')
-    # client.run_until_disconnected()
-    # loop.create_task(parsing_old_message(client))
 
-    loop2 = asyncio.get_event_loop()
-    loop2.create_task(dp.start_polling(bot))
+    loop.create_task(parsing_old_message(client, bot))
+    loop.create_task(dp.start_polling(bot))
+
+    # loop2 = asyncio.get_event_loop()
 
     client.run_until_disconnected()
 

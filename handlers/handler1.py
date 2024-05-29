@@ -9,12 +9,11 @@ import config
 
 
 
-async def send_message_IA(message: types.Message):  # Отправляет сообщение через бота
+async def send_message_IA(message: types.Message, bot: Bot):  # Отправляет сообщение через бота
     if check_word(message.text):
         print(' =send_message_IA= '*3)
         print('\n')
         link = f"https://t.me/{message.sender.username}/{message.id}"
-        bot = Bot(token=config.bot_token)
         await bot.send_message(chat_id=config.group_IA_id,  # Чат ИА id
                                text=f'{link}\n{message.text}',
                                parse_mode=enums.ParseMode.MARKDOWN)
@@ -26,7 +25,7 @@ def check_word(news: str):  # парсинг нововстей на слово
             return True
 
 
-async def parsing_old_message(client):  # Парсер вчерашних сообщений
+async def parsing_old_message(client, bot: Bot):  # Парсер вчерашних сообщений
     offset_date = datetime.today().date() - timedelta(days=1)
 
     for channel_id in config.channel_id:
@@ -35,5 +34,5 @@ async def parsing_old_message(client):  # Парсер вчерашних соо
         async for message in iter_messages:
             if message.date.date() == offset_date:
                 if check_word(str(message.text)):
-                    await send_message_IA(message)
+                    await send_message_IA(message, bot)
 

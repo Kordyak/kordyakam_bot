@@ -9,7 +9,7 @@ from aiogram import Bot, Dispatcher, F, types
 
 loop = asyncio.new_event_loop()
 asyncio.set_event_loop(loop)
-client = TelegramClient('kord', config.api_id, config.api_hash, loop=loop)
+client = TelegramClient('kord2', config.api_id, config.api_hash, loop=loop)
 client.start()
 
 
@@ -21,4 +21,8 @@ async def handler(event):
 if __name__ == '__main__':
     print(datetime.now().time().strftime('%H:%M'))
     print('Starts listening news:')
-    client.run_until_disconnected()
+    try:
+        client.run_until_disconnected()
+    except Exception as ex:
+        print(ex)
+        input('прога здесь тормознула')

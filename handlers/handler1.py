@@ -7,22 +7,21 @@ from aiogram import Bot, types, enums, Dispatcher, F
 from telethon import TelegramClient
 import config
 
-
 bot = Bot(token=config.BOT_TOKEN)
+
 
 async def send_message(message: types.Message, key_words: list):  # Отправляет сообщение через бота
     link = f"https://t.me/{message.sender.username}/{message.id}"
     text = f'{link}\n{message.text}'
-    # print('')
-    # print(message.date)
-    # print(f'{link}\n{message.text[:100]}')
-    # print('=' * 100)
+    print('')
+    print(message.date)
+    print(f'{link}\n{message.text[:100]}')
+    print('=' * 100)
     if check_word(message.text, key_words):
         print('Word checked!')
         await bot.send_message(chat_id=config.group_IA_id,  # Чат ИА id
                                text=text,
                                parse_mode=enums.ParseMode.MARKDOWN)
-
 
 
 async def parsing_old_message(client: TelegramClient, key_words: list):  # парсинг вчерашних новостей
@@ -35,10 +34,7 @@ async def parsing_old_message(client: TelegramClient, key_words: list):  # па�
             if message.date.date() == offset_date:
                 await send_message(message, config.key_words2)
 
-    bot
     client.disconnect()
-
-
 
 
 def check_word(news: str, key_words: list):  # парсинг новостей на слово

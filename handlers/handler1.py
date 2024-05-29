@@ -3,29 +3,20 @@ from datetime import datetime, timedelta
 from pprint import pprint
 
 from aiogram import Bot, types, enums, Dispatcher
-
+from telethon import TelegramClient
 import config
 
 
 
-
-async def send_message_IA(message: types.Message, bot: Bot):  # Отправляет сообщение через бота
-    if check_word(message.text):
-        print(' ***\ send_message_IA /*** ')
-        print('\n')
-        link = f"https://t.me/{message.sender.username}/{message.id}"
-        await bot.send_message(chat_id=config.group_IA_id,  # Чат ИА id
-                               text=f'{link}\n{message.text}',
-                               parse_mode=enums.ParseMode.MARKDOWN)
+async def send_in_console(message: types.Message, bot: Bot):  # Отправляет сообщение через бота
+    link = f"https://t.me/{message.sender.username}/{message.id}"
+    print(message.date)
+    print(f'{link}\n{message.text[:100]}')
+    print('=' * 100)
 
 
-def check_word(news: str):  # парсинг нововстей на слово
-    for pattern in config.key_words:
-        if re.search(pattern, news.lower()):
-            return True
 
-
-async def parsing_old_message(client, bot: Bot):  # Парсер вчерашних сообщений
+async def parsing_old_message(client: TelegramClient, bot: Bot):  # парсинг вчерашних новостей
     offset_date = datetime.today().date() - timedelta(days=1)
 
     for channel_id in config.channel_id:
@@ -34,5 +25,16 @@ async def parsing_old_message(client, bot: Bot):  # Парсер вчерашн�
         async for message in iter_messages:
             if message.date.date() == offset_date:
                 if check_word(str(message.text)):
-                    await send_message_IA(message, bot)
+                    link = f"https://t.me/{message.sender.username}/{message.id}"
+                    text = f'{link}\n{message.text}'
+                    if check_word(message.text):
+                        await bot.send_message(chat_id=config.group_IA_id,  # Чат ИА id
+                                               text=text,
+                                               parse_mode=enums.ParseMode.MARKDOWN)
+    client.disconnect()
 
+
+def check_word(news: str):  # парсинг новостей на слово
+    for pattern in config.key_words:
+        if re.search(pattern, news.lower()):
+            return True

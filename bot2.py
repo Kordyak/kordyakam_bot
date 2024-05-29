@@ -9,27 +9,18 @@ from aiogram import Bot, Dispatcher
 
 loop = asyncio.new_event_loop()
 asyncio.set_event_loop(loop)
-client = TelegramClient('kord', config.api_id, config.api_hash, loop=loop)
+client = TelegramClient('kord', config.api_id, config.api_hash)
 client.start()
-
-
-@client.on(events.NewMessage(chats=config.channel_url))  # Слушает каналы
-async def handler(event):
-    await send_in_console(event.message, bot)
 
 
 bot = Bot(token=config.bot_token)
 dp = Dispatcher()
 
 
-@dp.message()
-async def send_echo(message):
-    await message.reply(text=message.text)
-    await asyncio.sleep(5)
-
-
 if __name__ == '__main__':
     print(datetime.now().time().strftime('%H:%M'))
-    print('Listening news:')
+    print('Parsing yesterday news:')
     loop.create_task(dp.start_polling(bot))
+    loop.create_task(parsing_old_message(client, bot))
     client.run_until_disconnected()
+

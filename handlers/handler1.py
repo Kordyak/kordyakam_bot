@@ -30,8 +30,7 @@ async def parsing_old_message(client: TelegramClient, bot: Bot):  # парсин
 
         async for message in iter_messages:
             if message.date.date() == offset_date:
-                if check_word(str(message.text)):
-                    await send_message(message.text, bot)
+                await send_message(message.text, bot)
     client.disconnect()
 
 

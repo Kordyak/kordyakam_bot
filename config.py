@@ -5,7 +5,6 @@ bot_token = '6719630568:AAFwrjxHqsiw6GygMtdE3SVIm2F_AqIQwSQ'
 
 group_IA_id = -4246635872
 channel_out_id = -1002066112684
-channel_in_id = -1002107002771
 
 channel_url = [
     'https://t.me/channelOut2',

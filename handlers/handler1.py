@@ -11,7 +11,7 @@ import config
 
 async def send_message_IA(message: types.Message, bot: Bot):  # Отправляет сообщение через бота
     if check_word(message.text):
-        print(' =send_message_IA= '*3)
+        print(' ***\ send_message_IA /*** ')
         print('\n')
         link = f"https://t.me/{message.sender.username}/{message.id}"
         await bot.send_message(chat_id=config.group_IA_id,  # Чат ИА id

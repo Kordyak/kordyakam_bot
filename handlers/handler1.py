@@ -7,6 +7,7 @@ from telethon import TelegramClient
 import config
 
 
+bot = Bot(token=config.BOT_TOKEN)
 
 async def send_message(message: types.Message):  # Отправляет сообщение через бота
     link = f"https://t.me/{message.sender.username}/{message.id}"
@@ -17,7 +18,6 @@ async def send_message(message: types.Message):  # Отправляет сооб
     print('=' * 100)
     if check_word(message.text):
         print('Word checked!')
-        bot = Bot(token=config.bot_token)
         await bot.send_message(chat_id=config.group_IA_id,  # Чат ИА id
                                text=text,
                                parse_mode=enums.ParseMode.MARKDOWN)

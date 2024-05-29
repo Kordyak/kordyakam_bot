@@ -13,14 +13,9 @@ client = TelegramClient('kord', config.api_id, config.api_hash)
 client.start()
 
 
-bot = Bot(token=config.bot_token)
-dp = Dispatcher()
-
-
 if __name__ == '__main__':
     print(datetime.now().time().strftime('%H:%M'))
     print('Parsing yesterday news:')
-    loop.create_task(dp.start_polling(bot))
-    loop.create_task(parsing_old_message(client, bot))
+    loop.create_task(parsing_old_message(client, config.key_words2))
     client.run_until_disconnected()
 

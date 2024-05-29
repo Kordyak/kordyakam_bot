@@ -5,7 +5,7 @@ import asyncio
 from datetime import datetime
 
 from handlers.handler1 import send_message, parsing_old_message
-from aiogram import Bot, Dispatcher
+from aiogram import Bot, Dispatcher, F, types
 
 loop = asyncio.new_event_loop()
 asyncio.set_event_loop(loop)
@@ -15,21 +15,21 @@ client.start()
 
 @client.on(events.NewMessage(chats=config.channel_url))  # Слушает каналы
 async def handler(event):
-    await send_message(event.message, bot)
+    await send_message(event.message)
 
 
-bot = Bot(token=config.bot_token)
-dp = Dispatcher()
+# bot = Bot(token=config.bot_token)
+# dp = Dispatcher()
 
 
-@dp.message()
-async def send_echo(message):
-    await message.reply(text=message.text)
-    await asyncio.sleep(5)
+# @dp.message(F.in_(config.key_words))
+# async def send_echo(message: types.Message):
+#     await message.reply(text=message.text)
+#     await asyncio.sleep(5)
 
 
 if __name__ == '__main__':
     print(datetime.now().time().strftime('%H:%M'))
     print('Starts listening news:')
-    loop.create_task(dp.start_polling(bot))
+    # loop.create_task(dp.start_polling(bot))
     client.run_until_disconnected()

@@ -23,6 +23,7 @@ if __name__ == '__main__':
     print('Starts listening news:')
     try:
         client.run_until_disconnected()
-    except Exception as ex:
-        print(ex)
-        input('прога здесь тормознула')
+    except Exception as e:
+        print(e)
+        loop.close()
+

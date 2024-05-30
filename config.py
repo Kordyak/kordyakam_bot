@@ -11,7 +11,6 @@ channel_url = [
     'https://t.me/meduzalive',
     'https://t.me/LipsitsIgor',
     'https://t.me/bdtprb',
-    'https://t.me/tvrain',
 ]
 
 channel_id = [

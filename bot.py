@@ -1,3 +1,4 @@
+import telethon.events.common
 from telethon import TelegramClient, events
 import config
 import asyncio

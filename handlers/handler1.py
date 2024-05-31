@@ -7,11 +7,16 @@ from aiogram import Bot, types, enums, Dispatcher, F
 from telethon import TelegramClient
 import config
 
+from telethon import TelegramClient, events
+
 bot = Bot(token=config.BOT_TOKEN)
 
 
-async def send_message(message: types.Message, key_words: list):  # Отправляет сообщение через бота
+async def send_message(message, key_words: list):  # Отправляет сообщение через бота
     link = f"https://t.me/{message.sender.username}/{message.id}"
+    if not message.text:
+        print(' не текст!'*3)
+        return
     text = f'{link}\n{message.text}'
     print('')
     print(message.date)

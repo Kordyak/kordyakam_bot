@@ -26,5 +26,7 @@ if __name__ == '__main__':
         client.run_until_disconnected()
     except Exception as e:
         print(e)
+        input('Пауза чтоб не закрылась прога')
+        client.disconnect()
         loop.close()
 

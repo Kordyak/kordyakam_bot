@@ -1,2 +1,2 @@
 set sh=CreateObject("Wscript.Shell")
-sh.Run "run.cmd", 0
+sh.Run "run_tg_bot.cmd", 0

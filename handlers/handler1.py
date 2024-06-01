@@ -24,9 +24,9 @@ async def send_message(message, key_words: list):  # Отправляет соо
     text = f'{link}\n{message.text}'
     if check_word(message.text, key_words):
         print('Send message to chat!')
-        # await bot.send_message(chat_id=config.group_IA_id,  # Чат ИА id
-        #                        text=text,
-        #                        parse_mode=enums.ParseMode.MARKDOWN)
+        await bot.send_message(chat_id=config.group_IA_id,  # Чат ИА id
+                               text=text,
+                               parse_mode=enums.ParseMode.MARKDOWN)
 
 
 async def parsing_old_message(client: TelegramClient, key_words: list, days: int):  # парсинг вчерашних новостей

@@ -13,6 +13,7 @@ asyncio.set_event_loop(loop)
 client = TelegramClient('kord2', config.api_id, config.api_hash, loop=loop)
 client.start()
 
+# Слушает новости и кидает в чат по ключевым словам
 
 @client.on(events.NewMessage(chats=config.channel_url))  # Слушает каналы
 async def handler(event):

@@ -9,13 +9,19 @@ from aiogram import Bot, Dispatcher
 
 loop = asyncio.new_event_loop()
 asyncio.set_event_loop(loop)
-client = TelegramClient('kord', config.api_id, config.api_hash)
+client = TelegramClient('kord2', config.api_id, config.api_hash)
 client.start()
 
 
 if __name__ == '__main__':
     print(datetime.now().time().strftime('%H:%M'))
     print('Parsing yesterday news:')
-    loop.create_task(parsing_old_message(client, config.key_words2))
+    days_ago = input('Сколько дней назад пропарсить ТГ каналы: ') or '1'
+    loop.create_task(
+        parsing_old_message(
+            client,
+            config.key_words2,
+            int(days_ago)
+        ))
     client.run_until_disconnected()
 

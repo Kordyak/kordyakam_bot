@@ -17,27 +17,27 @@ async def send_message(message, key_words: list):  # Отправляет соо
     if not message.text:
         print(' не текст!'*3)
         return
-    text = f'{link}\n{message.text}'
     print('')
     print(message.date)
     print(f'{link}\n{message.text[:150]}')
     print('*' * 50)
+    text = f'{link}\n{message.text}'
     if check_word(message.text, key_words):
-        print('Word checked!')
-        await bot.send_message(chat_id=config.group_IA_id,  # Чат ИА id
-                               text=text,
-                               parse_mode=enums.ParseMode.MARKDOWN)
+        print('Send message to chat!')
+        # await bot.send_message(chat_id=config.group_IA_id,  # Чат ИА id
+        #                        text=text,
+        #                        parse_mode=enums.ParseMode.MARKDOWN)
 
 
-async def parsing_old_message(client: TelegramClient, key_words: list):  # парсинг вчерашних новостей
-    offset_date = datetime.today().date() - timedelta(days=1)
+async def parsing_old_message(client: TelegramClient, key_words: list, days: int):  # парсинг вчерашних новостей
+    offset_date = datetime.today().date() - timedelta(days=days)
 
     for channel_id in config.channel_id:
         iter_messages = client.iter_messages(entity=channel_id, offset_date=offset_date, reverse=True)
 
         async for message in iter_messages:
-            if message.date.date() == offset_date:
-                await send_message(message, config.key_words2)
+            if message.date.date() != datetime.today().date():
+                await send_message(message, key_words)
 
     client.disconnect()
 

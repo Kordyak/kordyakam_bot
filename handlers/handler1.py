@@ -14,9 +14,9 @@ bot = Bot(token=config.BOT_TOKEN)
 
 async def send_message(message, key_words: list):  # Отправляет сообщение через бота
     link = f"https://t.me/{message.sender.username}/{message.id}"
-    if not message.text:
-        print(' не текст!'*3)
-        return
+    # if not message.text:
+    #     print(' не текст!'*3)
+    #     return
     print('')
     print(message.date)
     print(f'{link}\n{message.text[:150]}')

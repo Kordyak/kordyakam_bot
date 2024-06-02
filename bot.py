@@ -15,7 +15,7 @@ client.start()
 
 # Слушает новости и кидает в чат по ключевым словам
 
-@client.on(events.NewMessage(chats=config.channel_url))  # Слушает каналы
+@client.on(events.NewMessage(chats=config.channel_url, func=lambda e: e.message.message))  # Слушает каналы
 async def handler(event):
     await send_message(event.message, config.key_words)
 

@@ -4,7 +4,7 @@ import asyncio
 
 from datetime import datetime
 
-from handlers.handler1 import send_message, parsing_old_message
+from handlers.handler1 import send_message_IA, parsing_old_message
 from aiogram import Bot, Dispatcher
 
 # Парсинг старых новостей вчерашних дней по ключевым фразам

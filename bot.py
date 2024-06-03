@@ -24,13 +24,13 @@ async def handler(event):
     print(message.date)
     print(f'{link}\n{message.text[:150]}')
     print('*' * 50)
-    if check_word(message.text, config.key_words):
+    if check_word(message.text, config.key_words) and not check_word(message.text, config.key_words_not) :
         await send_message_IA(message)
 
 
 if __name__ == '__main__':
-    print(datetime.now().time().strftime('%H:%M'))
-    print('Starts listening news:')
+    date = datetime.now().time().strftime('%H:%M')
+    print(f'Started listening to the news at {date}:')
     try:
         client.run_until_disconnected()
     except Exception as e:

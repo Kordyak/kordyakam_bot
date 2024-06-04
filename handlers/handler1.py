@@ -29,9 +29,9 @@ async def parsing_old_message(client: TelegramClient, key_words: list, days: int
 
         async for message in iter_messages:
             if message.date.date() != datetime.today().date():
-                if (check_word(message.text, config.key_words2) and
-                        not check_word(message.text, config.key_words_not)):
-                    await send_message_IA(message)
+                if check_word(message.text, config.key_words2):
+                    if not check_word(message.text, config.key_words_not):
+                        await send_message_IA(message)
 
     client.disconnect()
 
@@ -39,4 +39,5 @@ async def parsing_old_message(client: TelegramClient, key_words: list, days: int
 def check_word(news: str, key_words: list):  # парсинг новостей на слово
     for pattern in key_words:
         if isinstance(news, str):
-            return re.search(pattern, news.lower())
+            if re.search(pattern, news.lower()):
+                return True

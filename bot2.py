@@ -18,7 +18,7 @@ client.start()
 if __name__ == '__main__':
     print(datetime.now().time().strftime('%H:%M'))
     print('Parsing yesterday news:')
-    days_ago = input('Сколько дней назад пропарсить ТГ каналы: ') or '1'
+    days_ago = input('Сколько дней назад пропарсить ТГ каналы (по умолчанию 1 день): ') or '1'
     loop.create_task(
         parsing_old_message(
             client,

@@ -1,12 +1,7 @@
-import asyncio
 import re
 from datetime import datetime, timedelta
-from pprint import pprint
-
 from aiogram import Bot, types, enums, Dispatcher, F
-from telethon import TelegramClient
 from config import *
-
 from telethon import TelegramClient, events
 
 
@@ -14,9 +9,9 @@ async def send_message_IA(message, bot: Bot):  # Отправляет сообщ
     print('Send message to chat!')
     link = f"https://t.me/{message.sender.username}/{message.id}"
     text = f'{link}\n{message.text}'
-    # await bot.send_message(chat_id=group_IA_id,  # Чат ИА id
-    #                        text=text,
-    #                        parse_mode=enums.ParseMode.MARKDOWN)
+    await bot.send_message(chat_id=group_IA_id,  # Чат ИА id
+                           text=text,
+                           parse_mode=enums.ParseMode.MARKDOWN)
 
 
 async def parsing_old_message(client: TelegramClient, bot: Bot, days: int):  # парсинг вчерашних новостей

@@ -1,6 +1,6 @@
 import telethon.events.common
 from telethon import TelegramClient, events
-import config
+from config import *
 import asyncio
 
 from datetime import datetime
@@ -8,14 +8,21 @@ from datetime import datetime
 from handlers.handler1 import send_message_IA, check_word
 from aiogram import Bot, Dispatcher, F, types
 
+import environs
+
+env = environs.Env
+env.read_env()
+API_ID: int = env.int('API_ID')
+API_HASH: str = env.str('API_HASH')
+
 loop = asyncio.new_event_loop()
 asyncio.set_event_loop(loop)
-client = TelegramClient('kord2', config.api_id, config.api_hash, loop=loop)
+client = TelegramClient('kord2', API_ID, API_HASH, loop=loop)
 client.start()
 
 # Слушает новости и кидает в чат по ключевым словам
 
-@client.on(events.NewMessage(chats=config.channel_id, func=lambda e: e.message.message))  # Слушает каналы
+@client.on(events.NewMessage(chats=channel_id, func=lambda e: e.message.message))  # Слушает каналы
 async def handler(event):
     message = event.message
     link = f"https://t.me/{message.sender.username}/{message.id}"
@@ -24,7 +31,7 @@ async def handler(event):
     print(message.date)
     print(f'{link}\n{message.text[:150]}')
     print('*' * 50)
-    if check_word(message.text, config.key_words) and not check_word(message.text, config.key_words_not) :
+    if check_word(message.text, key_words) and not check_word(message.text, key_words_not) :
         await send_message_IA(message)
 
 

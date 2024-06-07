@@ -1,5 +1,5 @@
 from telethon import TelegramClient, events
-import config
+from config import *
 import asyncio
 
 from datetime import datetime
@@ -9,9 +9,16 @@ from aiogram import Bot, Dispatcher
 
 # Парсинг старых новостей вчерашних дней по ключевым фразам
 
+import environs
+
+env = environs.Env
+env.read_env()
+API_ID: int = env.int('API_ID')
+API_HASH: str = env.str('API_HASH')
+
 loop = asyncio.new_event_loop()
 asyncio.set_event_loop(loop)
-client = TelegramClient('kord2', config.api_id, config.api_hash)
+client = TelegramClient('kord2', API_ID, API_HASH)
 client.start()
 
 
@@ -22,7 +29,7 @@ if __name__ == '__main__':
     loop.create_task(
         parsing_old_message(
             client,
-            config.key_words2,
+            key_words2,
             int(days_ago)
         ))
     client.run_until_disconnected()

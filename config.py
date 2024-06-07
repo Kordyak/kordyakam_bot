@@ -12,7 +12,7 @@ channel_out_id = -1002066112684
 
 
 # Для парсинга вчерашних старых сообщений
-channel_id = [
+channels_id = [
     -1002066112684,  # channel_out_id
     -1001036240821,  # meduzalive
     -1001521490869,  # LipsitsIgor

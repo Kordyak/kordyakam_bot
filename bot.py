@@ -32,7 +32,7 @@ async def old_news(message: types.Message):
 
 
 #Слушает новости и кидает в чат по ключевым словам
-@client.on(events.NewMessage(chats=channel_id, func=lambda e: e.message.message))
+@client.on(events.NewMessage(chats=channels_id, func=lambda e: e.message.message))
 async def handler(event):
     message = event.message
     link = f"https://t.me/{message.sender.username}/{message.id}"

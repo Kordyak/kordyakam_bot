@@ -17,7 +17,7 @@ async def send_message_IA(message, bot: Bot):  # Отправляет сообщ
 async def parsing_old_message(client: TelegramClient, bot: Bot, days: int):  # парсинг вчерашних новостей
     offset_date = datetime.today().date() - timedelta(days=days)
 
-    for id in channel_id:
+    for id in channels_id:
         iter_messages = client.iter_messages(entity=id, offset_date=offset_date, reverse=True)
 
         async for message in iter_messages:

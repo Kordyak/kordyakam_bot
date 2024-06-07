@@ -8,7 +8,11 @@ from telethon import TelegramClient
 from config import *
 
 from telethon import TelegramClient, events
+import environs
 
+env = environs.Env
+env.read_env()
+BOT_TOKEN: str = env.str('BOT_TOKEN')
 bot = Bot(token=BOT_TOKEN)
 
 

@@ -28,7 +28,12 @@ dp = Dispatcher()
 @dp.message(filters.Command(commands=['parsing_channel']))
 async def old_news(message: types.Message):
     print(message.text)
-    await parsing_old_message(client, bot, 1)
+    days: int = 1
+    arr_text = message.text.split(" ")
+    if len(arr_text) > 1:
+        if arr_text[1].isdigit():
+            days = int(arr_text[1])
+    await parsing_old_message(client, bot, days)
 
 
 #Слушает новости и кидает в чат по ключевым словам

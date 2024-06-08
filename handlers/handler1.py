@@ -10,8 +10,7 @@ async def send_message_IA(message, bot: Bot):  # Отправляет сообщ
     link = f"https://t.me/{message.sender.username}/{message.id}"
     text = f'{link}\n{message.text}'
     await bot.send_message(chat_id=group_IA_id,  # Чат ИА id
-                           text=text,
-                           parse_mode=enums.ParseMode.MARKDOWN)
+                           text=text)
 
 
 async def parsing_old_message(client: TelegramClient, bot: Bot, days: int):  # парсинг вчерашних новостей

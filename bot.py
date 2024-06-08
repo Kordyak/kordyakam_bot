@@ -1,3 +1,4 @@
+import aiogram.client.default
 import telethon.events.common
 from telethon import TelegramClient, events
 from config import *
@@ -6,7 +7,7 @@ import asyncio
 from datetime import datetime
 
 from handlers.handler1 import send_message_IA, check_word, parsing_old_message
-from aiogram import Bot, Dispatcher, F, types, filters
+from aiogram import Bot, Dispatcher, F, types, filters, client as aio_cli, enums
 
 import environs
 
@@ -21,7 +22,8 @@ asyncio.set_event_loop(loop)
 client = TelegramClient('kord2', API_ID, API_HASH, loop=loop)
 client.start()
 
-bot = Bot(BOT_TOKEN)
+bot = Bot(token=BOT_TOKEN,
+          default=aio_cli.default.DefaultBotProperties(enums.ParseMode.MARKDOWN))
 dp = Dispatcher()
 
 

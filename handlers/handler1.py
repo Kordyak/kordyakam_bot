@@ -15,7 +15,7 @@ async def send_message_IA(message, bot: Bot):  # Отправляет сообщ
                            text=text)
 
 
-async def parsing_old_message(client: TelegramClient, bot: Bot, days: int):  # парсинг вчерашних новостей
+async def Parsing_old_message(client: TelegramClient, bot: Bot, days: int):  # парсинг вчерашних новостей
     offset_date = datetime.today().date() - timedelta(days=days)
 
     for id in channels_id:
@@ -23,13 +23,13 @@ async def parsing_old_message(client: TelegramClient, bot: Bot, days: int):  # �
 
         async for message in iter_messages:
             if message.date.date() != datetime.today().date():
-                if check_word(message.text, key_words2):
-                    if not check_word(message.text, key_words_not):
+                if Check_word(message.text, key_words2):
+                    if not Check_word(message.text, key_words_not):
                         await send_message_IA(message, bot)
     # client.disconnect()
 
 
-def check_word(news: str, words: list):  # парсинг новостей на слово
+def Check_word(news: str, words: list):  # парсинг новостей на слово
     for word in words:
         if isinstance(news, str):
             if re.search(word, news.lower()):

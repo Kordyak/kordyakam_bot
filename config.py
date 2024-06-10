@@ -1,17 +1,41 @@
+from dataclasses import dataclass
+from environs import Env
+
+
+@dataclass
+class Client:
+    api_id: int
+    api_hash: str
+
+
+@dataclass
+class TgBot:
+    token: str
+
+
+@dataclass
+class Config:
+    tg_bot: TgBot
+    client: Client
+
+
+def Load_config():
+    env: Env = Env()
+    env.read_env()
+    return Config(
+        tg_bot=TgBot(
+            token=env('BOT_TOKEN')
+        ),
+        client=Client(
+            api_id=env('API_ID'),
+            api_hash=env('API_HASH')
+        )
+    )
+
+
 group_IA_id = -4246635872
 channel_out_id = -1002066112684
 
-# # 'Для слушания новостей'
-# channel_url = [
-#     'https://t.me/channelOut2',
-#     'https://t.me/meduzalive',
-#     'https://t.me/LipsitsIgor',
-#     'https://t.me/bdtprb',
-#     'https://t.me/tvrain',
-# ]
-
-
-# Для парсинга вчерашних старых сообщений
 channels_id = [
     -1002066112684,  # channel_out_id
     -1001036240821,  # meduzalive

@@ -27,7 +27,7 @@ BOT_TOKEN: str = env.str('BOT_TOKEN')
 loop = asyncio.new_event_loop()
 asyncio.set_event_loop(loop)
 
-client = TelegramClient('kord2', API_ID, API_HASH, loop=loop)
+client = TelegramClient('kord', API_ID, API_HASH, loop=loop)
 client.start()
 
 bot = Bot(token=BOT_TOKEN,
@@ -44,6 +44,8 @@ async def old_news(message: types.Message):
     if len(arr_text) > 1:
         if arr_text[1].isdigit():
             days = int(arr_text[1])
+
+    logger.info(days)
 
     await parsing_old_message(client, bot, days)
 
@@ -66,8 +68,10 @@ if __name__ == '__main__':
     try:
         date = datetime.now().time().strftime('%H:%M')
         logger.info(f'Started listening to the news at {date}')
+
         loop.create_task(dp.start_polling(bot))
         client.run_until_disconnected()
+
     except Exception as e:
         print(e)
         input('Пауза чтоб не закрылась прога!')

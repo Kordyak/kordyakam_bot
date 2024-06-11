@@ -37,12 +37,12 @@ group_IA_id = -4246635872
 channel_out_id = -1002066112684
 
 channels_id = [
-    -1002066112684,  # channel_out_id
-    -1001036240821,  # meduzalive
+    -1001324653248,  # ИнфоПовод
+    -1001095950024,  # bdtprb
     -1001521490869,  # LipsitsIgor
     -1001005031786,  # tvrain
-    -1001095950024,  # bdtprb
-    -1001324653248,  # ИнфоПовод
+    -1001036240821,  # meduzalive
+    -1002066112684,  # channel_out_id
 ]
 
 key_words = [

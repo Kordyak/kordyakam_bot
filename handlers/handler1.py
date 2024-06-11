@@ -11,8 +11,7 @@ async def send_message_IA(message, bot: Bot, word: str = ""):  # Отправл�
     print('Send message to chat!')
     print(message.date)
     link = f"https://t.me/{message.sender.username}/{message.id}"
-    text = f'key_word:{word}\n{link}\n{message.text}'
-
+    text = f'Ключевое слово: {word}\n{link}\n{message.text}'
     await bot.send_message(chat_id=group_IA_id,  # Чат ИА id
                            text=text)
 

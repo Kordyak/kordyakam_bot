@@ -52,8 +52,9 @@ async def handler(event):
     print(message.date)
     print(f'{link}\n{message.text[:150]}')
     print('*' * 50)
-    if Check_word(message.text, key_words) and not Check_word(message.text, key_words_not):
-        await send_message_IA(message, bot)
+    word: str = Check_word(message.text, key_words)
+    if word:
+        await send_message_IA(message, bot, word)
 
 
 if __name__ == '__main__':

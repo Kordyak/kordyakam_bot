@@ -7,11 +7,11 @@ from telethon import TelegramClient
 router = Router()
 
 
-async def send_message_IA(message, bot: Bot):  # Отправляет сообщение через бота
+async def send_message_IA(message, bot: Bot, word: str = ""):  # Отправляет сообщение через бота
     print('Send message to chat!')
     print(message.date)
     link = f"https://t.me/{message.sender.username}/{message.id}"
-    text = f'{link}\n{message.text}'
+    text = f'key_word:{word}\n{link}\n{message.text}'
 
     await bot.send_message(chat_id=group_IA_id,  # Чат ИА id
                            text=text)
@@ -30,8 +30,8 @@ async def Parsing_old_message(client: TelegramClient, bot: Bot, days: int):  # �
                         await send_message_IA(message, bot)
 
 
-def Check_word(news: str, words: list):  # парсинг новостей на слово
+def Check_word(news: str, words: list) -> str:  # парсинг новостей на слово
     for word in words:
         if isinstance(news, str):
             if re.search(word, news.lower()):
-                return True
+                return word

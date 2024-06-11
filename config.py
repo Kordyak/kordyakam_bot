@@ -46,6 +46,7 @@ channels_id = [
 ]
 
 key_words = [
+    "пробк",
     "apple",
     "маск",
     "tesla",

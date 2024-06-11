@@ -1,8 +1,10 @@
 import re
 from datetime import datetime, timedelta
-from aiogram import Bot, types, enums, Dispatcher, F
+from aiogram import Bot, Router
 from config import *
-from telethon import TelegramClient, events
+from telethon import TelegramClient
+
+router = Router()
 
 
 async def send_message_IA(message, bot: Bot):  # Отправляет сообщение через бота
@@ -26,7 +28,6 @@ async def Parsing_old_message(client: TelegramClient, bot: Bot, days: int):  # �
                 if Check_word(message.text, key_words2):
                     if not Check_word(message.text, key_words_not):
                         await send_message_IA(message, bot)
-    # client.disconnect()
 
 
 def Check_word(news: str, words: list):  # парсинг новостей на слово

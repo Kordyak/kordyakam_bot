@@ -28,7 +28,7 @@ client = TelegramClient('kord', config.client.api_id, config.client.api_hash, lo
 client.start()
 
 bot = Bot(token=config.tg_bot.token,
-          default=DefaultBotProperties(parse_mode=enums.ParseMode.MARKDOWN))
+          parse_mode='MARKDOWN')
 dp = Dispatcher()
 
 

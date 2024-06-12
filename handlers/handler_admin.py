@@ -1,16 +1,7 @@
-import re
-from datetime import datetime, timedelta
-from aiogram import Bot, Router, types, filters
-from config import *
-from telethon import TelegramClient
-
+from aiogram import Router, types
 import os
 
 router = Router()
-
-
-
-
 
 
 @router.message(lambda m: m.text.isdigit() and len(m.text) == 6)
@@ -26,5 +17,3 @@ async def run_rdp(message: types.Message):
         os.system(f"shutdown /h")
     elif message.text.split(" ")[1] == 'r':
         os.system(f"shutdown /r")
-
-

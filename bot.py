@@ -18,7 +18,7 @@ logging.basicConfig(level=logging.INFO,
                     style='{',
                     format='#{levelname:8} | {filename} | {name} | {lineno} : "{message}"')
 
-config: Config = Load_config()
+config: Config = load_config()
 
 loop = asyncio.new_event_loop()
 asyncio.set_event_loop(loop)

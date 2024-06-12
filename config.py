@@ -19,7 +19,7 @@ class Config:
     client: Client
 
 
-def Load_config():
+def load_config():
     env: Env = Env()
     env.read_env()
     return Config(
@@ -34,7 +34,6 @@ def Load_config():
 
 
 group_IA_id = -4246635872
-channel_out_id = -1002066112684
 
 channels_id = [
     -1001324653248,  # ИнфоПовод

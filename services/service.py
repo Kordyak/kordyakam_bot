@@ -1,8 +1,6 @@
-from datetime import datetime, timedelta
-from config import group_IA_id, channels_id, key_words2
+from config import group_IA_id
 from aiogram import Bot
 import re
-
 
 
 async def send_message_ia(bot: Bot, message, word: str = ""):

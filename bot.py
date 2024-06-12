@@ -1,17 +1,17 @@
 import asyncio
 import logging
 
-from telethon import TelegramClient, events
-from config import *
+from telethon import events, TelegramClient
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
-from handlers.handler1 import send_message_IA, Check_word, Parsing_old_message
-
-from aiogram import Bot, Dispatcher, F, types, filters, enums
+from aiogram import Dispatcher, Bot
 from aiogram.client.default import DefaultBotProperties
+from aiogram import filters, types
 
-from config import Config, Load_config
+from config import *
+from services.service import check_word, send_message_ia
+from handlers import handler_admin
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO,
@@ -20,50 +20,43 @@ logging.basicConfig(level=logging.INFO,
 
 config: Config = Load_config()
 
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
+client = TelegramClient('kord', config.client.api_id, config.client.api_hash, loop=loop)
+client.start()
 
-def main():
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    client = TelegramClient('kord', config.client.api_id, config.client.api_hash, loop=loop)
-    client.start()
-
-    bot = Bot(token=config.tg_bot.token,
-              default=DefaultBotProperties(parse_mode='MARKDOWN'))
-    dp = Dispatcher()
-
-    @dp.message(filters.Command(commands=['parsing_channel']))
-    async def old_news(message: types.Message):
-        days: int = 1
-        arr_text = message.text.split(" ")
-        if len(arr_text) > 1:
-            if arr_text[1].isdigit():
-                days = int(arr_text[1])
-        await Parsing_old_message(client, bot, days)
-
-    #Слушает новости и кидает в чат по ключевым словам
-    @client.on(events.NewMessage(chats=channels_id, func=lambda e: e.message.message))
-    async def handler(event):
-        message = event.message
-        link = f"https://t.me/{message.sender.username}/{message.id}"
-        text = f'{link}\n{message.text}'
-        print('')
-        print(message.date)
-        print(f'{link}\n{message.text[:150]}')
-        print('*' * 50)
-        word: str = Check_word(message.text, key_words)
-        if word:
-            await send_message_IA(message, bot, word)
-
-    loop.create_task(dp.start_polling(bot))
-    client.run_until_disconnected()
+bot = Bot(token=config.tg_bot.token,
+          default=DefaultBotProperties(parse_mode='MARKDOWN'))
+dp = Dispatcher()
+dp.include_router(handler_admin.router)
+loop.create_task(dp.start_polling(bot))
 
 
-if __name__ == '__main__':
-    while True:
-        try:
-            date = datetime.now().time().strftime('%H:%M')
-            logger.info(f'Started listening to the news at {date}')
-            asyncio.run(main())
+@dp.message(filters.Command(commands=['parsing_channel']))
+async def old_news(message: types.Message):
+    days: int = 1
+    arr_text = message.text.split(" ")
+    if len(arr_text) > 1:
+        if arr_text[1].isdigit():
+            days = int(arr_text[1])
+    offset_date = datetime.today().date() - timedelta(days=days)
+    for id1 in channels_id:
+        iter_messages = client.iter_messages(entity=id1, offset_date=offset_date, reverse=True)
+        async for message in iter_messages:
+            if message.date.date() != datetime.today().date():
+                word: str = check_word(message.text, key_words2)
+                if word:
+                    await send_message_ia(bot, message, word)
 
-        except Exception as e:
-            logger.exception(e)
+
+@client.on(events.NewMessage(chats=channels_id, func=lambda e: e.message.message))
+async def handler(event):
+    word: str = check_word(event.message.text, key_words)
+    if word:
+        await send_message_ia(bot, event.message, word)
+
+
+date = datetime.now().time().strftime('%H:%M')
+logger.info(f'Start bot at {date}')
+
+client.run_until_disconnected()

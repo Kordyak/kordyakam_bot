@@ -31,11 +31,6 @@ dp = Dispatcher()
 dp.include_router(handler_admin.router)
 
 
-@dp.message(filters.Command(commands=['parsing_channel']))
-async def old_news_handler(message: types.Message):
-    await old_news(message, bot, client)
-
-
 @client.on(events.NewMessage(chats=channels_id))
 async def handler(event):
     word: str = check_word(event.message.text, key_words)
@@ -43,10 +38,13 @@ async def handler(event):
         await send_message_ia(bot, event.message, word)
 
 
+@dp.message(filters.Command(commands=['parsing_channel']))
+async def old_news_handler(message: types.Message):
+    await old_news(message, bot, client)
+
+
 date = datetime.now().time().strftime('%H:%M')
 logger.info(f'Start bot at {date}')
 
 loop.create_task(dp.start_polling(bot))
 loop.create_task(client.run_until_disconnected())
-
-

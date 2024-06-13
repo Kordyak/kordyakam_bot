@@ -36,11 +36,11 @@ def load_config():
 group_ia_id = -4246635872
 
 channels_id = [
-    -1001324653248,  # ИнфоПовод
-    -1001521490869,  # LipsitsIgor
-    -1001005031786,  # tvrain
-    -1001036240821,  # meduzalive
-    -1002066112684,  # channel_out_id
+    'https://t.me/LipsitsIgor',
+    'https://t.me/meduzalive',
+    'https://t.me/tvrain',
+    'https://t.me/kaluginprofit',
+    'https://t.me/channelOut2',
 ]
 
 key_words = [

@@ -15,9 +15,8 @@ async def send_message_ia(bot: Bot, message, word: str = ""):
 
 def check_word(news: str, words: list) -> str:  # парсинг новостей на слово
     for word in words:
-        if isinstance(news, str):
-            if re.search(word, news.lower()):
-                return word
+        if re.search(word, news.lower()):
+            return word
 
 
 async def old_news(message: types.Message, bot: Bot, client: TelegramClient):

@@ -16,7 +16,7 @@ from handlers import handler_admin
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO,
                     style='{',
-                    format='#[{asctime}] | {name} | : "{message}"')
+                    format='#[{asctime}] #{levelname} | {name} | : "{message}"')
 
 config: Config = load_config()
 
@@ -36,7 +36,7 @@ async def old_news_handler(message: types.Message):
     await old_news(message, bot, client)
 
 
-@client.on(events.NewMessage(chats=channels_id, func=lambda e: e.message.message))
+@client.on(events.NewMessage(chats=channels_id))
 async def handler(event):
     word: str = check_word(event.message.text, key_words)
     if word:

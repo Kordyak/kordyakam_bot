@@ -22,20 +22,22 @@ config: Config = load_config()
 
 loop = asyncio.new_event_loop()
 asyncio.set_event_loop(loop)
-client = TelegramClient('kord', config.client.api_id, config.client.api_hash)
+client = TelegramClient('kord2', config.client.api_id, config.client.api_hash)
 client.start()
 
 bot = Bot(token=config.tg_bot.token,
           default=DefaultBotProperties(parse_mode='MARKDOWN'))
 dp = Dispatcher()
 dp.include_router(handler_admin.router)
-loop.create_task(dp.start_polling(bot))
+
+
 
 @client.on(events.NewMessage(chats=channels_id))
 async def handler(event):
-    word: str = check_word(event.message.text, key_words)
-    if word:
-        await send_message_ia(bot, event.message, word)
+    await send_message_ia(bot, event.message)
+    # word: str = check_word(event.message.text, key_words)
+    # if word:
+    #     await send_message_ia(bot, event.message, word)
 
 
 @dp.message(filters.Command(commands=['parsing_channel']))
@@ -46,5 +48,5 @@ async def old_news_handler(message: types.Message):
 date = datetime.now().time().strftime('%H:%M')
 logger.info(f'Start bot at {date}')
 
-
+loop.create_task(dp.start_polling(bot))
 client.run_until_disconnected()

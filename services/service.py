@@ -7,6 +7,7 @@ from config import key_words2, channels_id
 
 
 async def send_message_ia(bot: Bot, message, word: str = ""):
+    print('send_message_ia')
     link = f"https://t.me/{message.sender.username}/{message.id}"
     text = f'key: "{word}"\n{message.text}\n{link}'
     await bot.send_message(chat_id=group_ia_id,  # Чат ИА id

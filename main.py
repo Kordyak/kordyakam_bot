@@ -10,7 +10,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram import filters, types
 
 from config import *
-from services.service import check_word, send_message_ia
+from services.service import check_word, send_message_ia, old_news
 from handlers import handler_admin
 
 logger = logging.getLogger(__name__)
@@ -33,20 +33,8 @@ loop.create_task(dp.start_polling(bot))
 
 
 @dp.message(filters.Command(commands=['parsing_channel']))
-async def old_news(message: types.Message):
-    days: int = 1
-    arr_text = message.text.split(" ")
-    if len(arr_text) > 1:
-        if arr_text[1].isdigit():
-            days = int(arr_text[1])
-    offset_date = datetime.today().date() - timedelta(days=days)
-    for id1 in channels_id:
-        iter_messages = client.iter_messages(entity=id1, offset_date=offset_date, reverse=True)
-        async for message in iter_messages:
-            if message.date.date() != datetime.today().date():
-                word: str = check_word(message.text, key_words2)
-                if word:
-                    await send_message_ia(bot, message, word)
+async def old_news_handler(message: types.Message):
+    await old_news(message, bot, client)
 
 
 @client.on(events.NewMessage(chats=channels_id, func=lambda e: e.message.message))

@@ -29,7 +29,7 @@ bot = Bot(token=config.tg_bot.token,
           default=DefaultBotProperties(parse_mode='MARKDOWN'))
 dp = Dispatcher()
 dp.include_router(handler_admin.router)
-
+loop.create_task(dp.start_polling(bot))
 
 @client.on(events.NewMessage(chats=channels_id))
 async def handler(event):
@@ -46,5 +46,5 @@ async def old_news_handler(message: types.Message):
 date = datetime.now().time().strftime('%H:%M')
 logger.info(f'Start bot at {date}')
 
-loop.create_task(dp.start_polling(bot))
-loop.create_task(client.run_until_disconnected())
+
+client.run_until_disconnected()

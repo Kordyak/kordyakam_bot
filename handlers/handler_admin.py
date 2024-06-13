@@ -1,9 +1,7 @@
 from aiogram import Router, types, filters
 import os
 
-
 router = Router()
-
 
 
 @router.message(lambda m: m.text.isdigit() and len(m.text) == 6)

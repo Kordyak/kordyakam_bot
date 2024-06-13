@@ -16,20 +16,19 @@ from handlers import handler_admin
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO,
                     style='{',
-                    format='#{levelname:8} | {filename} | {name} | {lineno} : "{message}"')
+                    format='#[{asctime}] | {name} | : "{message}"')
 
 config: Config = load_config()
 
 loop = asyncio.new_event_loop()
 asyncio.set_event_loop(loop)
-client = TelegramClient('kord', config.client.api_id, config.client.api_hash, loop=loop)
+client = TelegramClient('kord', config.client.api_id, config.client.api_hash)
 client.start()
 
 bot = Bot(token=config.tg_bot.token,
           default=DefaultBotProperties(parse_mode='MARKDOWN'))
 dp = Dispatcher()
 dp.include_router(handler_admin.router)
-loop.create_task(dp.start_polling(bot))
 
 
 @dp.message(filters.Command(commands=['parsing_channel']))
@@ -47,4 +46,7 @@ async def handler(event):
 date = datetime.now().time().strftime('%H:%M')
 logger.info(f'Start bot at {date}')
 
-client.run_until_disconnected()
+loop.create_task(dp.start_polling(bot))
+loop.create_task(client.run_until_disconnected())
+
+

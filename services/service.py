@@ -6,18 +6,18 @@ from telethon import TelegramClient
 from config import key_words2, channels_id
 
 
-async def send_message_ia(bot: Bot, message, word: str = ""):
+async def send_message_ia(bot: Bot, message, key: str = ""):
     print('send_message_ia')
     link = f"https://t.me/{message.sender.username}/{message.id}"
-    text = f'key: "{word}"\n{message.text}\n{link}'
+    text = f'key: "{key}"\n{message.text}\n{link}'
     await bot.send_message(chat_id=group_ia_id,  # Чат ИА id
                            text=text)
 
 
 def check_word(news: str, words: list) -> str:  # парсинг новостей на слово
-    for word in words:
-        if re.search(word, news.lower()):
-            return word
+    for key in words:
+        if re.search(key, news.lower()):
+            return key
 
 
 async def old_news(message: types.Message, bot: Bot, client: TelegramClient):
@@ -31,7 +31,7 @@ async def old_news(message: types.Message, bot: Bot, client: TelegramClient):
         iter_messages = client.iter_messages(entity=id1, offset_date=offset_date, reverse=True)
         async for message in iter_messages:
             if message.date.date() != datetime.today().date():
-                word: str = check_word(message.text, key_words2)
-                if word:
-                    await send_message_ia(bot, message, word)
+                key: str = check_word(message.text, key_words2)
+                if key:
+                    await send_message_ia(bot, message, key)
 

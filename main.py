@@ -34,15 +34,15 @@ dp.include_router(handler_admin.router)
 
 @client.on(events.NewMessage(chats=channels_id))
 async def handler(event):
-    await send_message_ia(bot, event.message)
-    # word: str = check_word(event.message.text, key_words)
-    # if word:
-    #     await send_message_ia(bot, event.message, word)
+    key: str = check_word(event.message.text, key_words)
+    if key:
+        await send_message_ia(bot, event.message, key)
 
 
 @dp.message(filters.Command(commands=['parsing_channel']))
 async def old_news_handler(message: types.Message):
     await old_news(message, bot, client)
+
 
 
 date = datetime.now().time().strftime('%H:%M')

@@ -10,7 +10,7 @@ async def run_rdp(message: types.Message):
 
 
 @router.message(lambda m: m.text == '/shutdown')
-async def run_rdp(message: types.Message):
+async def shutdown_pc(message: types.Message):
     if message.text.split(" ")[1] == 's':
         os.system(f"shutdown /s")
     elif message.text.split(" ")[1] == 'h':

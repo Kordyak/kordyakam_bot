@@ -11,6 +11,7 @@ class Client:
 @dataclass
 class TgBot:
     token: str
+    admin_ids: []
 
 
 @dataclass
@@ -24,7 +25,8 @@ def load_config():
     env.read_env()
     return Config(
         tg_bot=TgBot(
-            token=env('BOT_TOKEN')
+            token=env('BOT_TOKEN'),
+            admin_ids=[995657021,]
         ),
         client=Client(
             api_id=env('API_ID'),

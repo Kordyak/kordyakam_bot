@@ -5,6 +5,10 @@ from datetime import datetime, timedelta
 from telethon import TelegramClient
 from config import key_words2, channels_id
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 async def send_message_ia(bot: Bot, message, key: str = ""):
     print('send_message_ia')

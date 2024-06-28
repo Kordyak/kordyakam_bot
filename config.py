@@ -48,7 +48,7 @@ channels_id = [
 key_words = [
     "apple",
     "open ai",
-    "маск",
+    "илон",
     "tesla",
     "интеллект",
     "национализаци",

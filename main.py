@@ -35,8 +35,10 @@ dp.include_router(handler_admin.router)
 @client.on(events.NewMessage(chats=channels_id))
 async def handler(event):
     key: str = check_word(event.message.text, key_words)
+    key2: str = check_word(event.message.text, key_words_not)
     if key:
-        await send_message_ia(bot, event.message, key)
+        if not key2:
+            await send_message_ia(bot, event.message, key)
 
 
 @dp.message(filters.Command(commands=['parsing_channel']))

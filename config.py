@@ -62,7 +62,7 @@ key_words = [
 ]
 
 key_words2 = [
-    "главные новости \d\d ",
+    "главные новости \d\d\d ",
 ]
 
 key_words_not = [

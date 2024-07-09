@@ -3,7 +3,11 @@ from aiogram import Bot, types
 import re
 from datetime import datetime, timedelta
 from telethon import TelegramClient
-from config import key_words2, channels_id
+from config import key_words2, channels_id, key_words_not
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 async def send_message_ia(bot: Bot, message, key: str = ""):
@@ -33,5 +37,6 @@ async def old_news(message: types.Message, bot: Bot, client: TelegramClient):
             if message.date.date() != datetime.today().date():
                 key: str = check_word(message.text, key_words2)
                 if key:
-                    await send_message_ia(bot, message, key)
+                    if not check_word(message.text, key_words_not):
+                        await send_message_ia(bot, message, key)
 

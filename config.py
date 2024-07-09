@@ -11,6 +11,7 @@ class Client:
 @dataclass
 class TgBot:
     token: str
+    admin_ids: []
 
 
 @dataclass
@@ -24,7 +25,8 @@ def load_config():
     env.read_env()
     return Config(
         tg_bot=TgBot(
-            token=env('BOT_TOKEN')
+            token=env('BOT_TOKEN'),
+            admin_ids=[995657021,]
         ),
         client=Client(
             api_id=env('API_ID'),
@@ -46,7 +48,7 @@ channels_id = [
 key_words = [
     "apple",
     "open ai",
-    "маск",
+    "илон",
     "tesla",
     "интеллект",
     "национализаци",
@@ -57,27 +59,16 @@ key_words = [
     "бпла",
     "квадрокоптер",
     "главные новости",
-    "главное за",
-    "итоги дня",
-    "итоги недели",
-    "утро на дожде",
-    "ядер",
 ]
 
 key_words2 = [
     "главные новости",
-    "главное за",
-    "итоги дня",
-    "итоги недели",
-    "утро на дожде",
 ]
 
 key_words_not = [
     "скидки",
-    # "акции",
-    # "подписывайтесь",
     "приглашаем",
     "вакансии",
     "зарплата",
-    "матч",
+    "полномасштабного вторжения",
 ]

@@ -25,12 +25,6 @@ asyncio.set_event_loop(loop)
 client = TelegramClient('kord2', config.client.api_id, config.client.api_hash)
 client.start()
 
-bot = Bot(token=config.tg_bot.token,
-          default=DefaultBotProperties(parse_mode='MARKDOWN'))
-dp = Dispatcher()
-dp.include_router(handler_admin.router)
-
-
 
 @client.on(events.NewMessage(chats=channels_id))
 async def handler(event):
@@ -41,13 +35,15 @@ async def handler(event):
             await send_message_ia(bot, event.message, key)
 
 
-@dp.message(filters.Command(commands=['parsing_channel']))
-async def old_news_handler(message: types.Message):
-    await old_news(message, bot, client)
+bot = Bot(token=config.tg_bot.token,
+          default=DefaultBotProperties(parse_mode='MARKDOWN'))
+dp = Dispatcher()
+dp.include_router(handler_admin.router)
 
+dp['client'] = client
 
-date = datetime.now().time().strftime('%H:%M')
-logger.info(f'Start bot at {date}')
+# date = datetime.now().time().strftime('%H:%M')
+logger.info(f'Start bot!!!')
 
 loop.create_task(dp.start_polling(bot))
 client.run_until_disconnected()

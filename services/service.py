@@ -39,4 +39,5 @@ async def old_news(message: types.Message, bot: Bot, client: TelegramClient):
                 if key:
                     if not check_word(message.text, key_words_not):
                         await send_message_ia(bot, message, key)
+                        # print(message.text[:100])
 

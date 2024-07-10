@@ -17,13 +17,32 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO,
                     style='{',
                     format='#[{asctime}] #{levelname} | {name} | : "{message}"')
+logger.info(f'Start bot!!!')
 
 config: Config = load_config()
 
 loop = asyncio.new_event_loop()
 asyncio.set_event_loop(loop)
+
 client = TelegramClient('kord2', config.client.api_id, config.client.api_hash)
 client.start()
+
+bot = Bot(token=config.tg_bot.token,
+          default=DefaultBotProperties(parse_mode='MARKDOWN'))
+dp = Dispatcher()
+dp.include_router(handler_admin.router)
+
+loop.create_task(dp.start_polling(bot))
+
+async def my_channels():
+    dialogs = await client.get_dialogs()
+    for dialog in dialogs:
+        if dialog.is_channel:
+            print(f"{dialog.id} | {dialog.entity.username} | {dialog.id}")
+
+loop.create_task(my_channels())
+
+dp['client'] = client
 
 
 @client.on(events.NewMessage(chats=channels_id))
@@ -35,15 +54,10 @@ async def handler(event):
             await send_message_ia(bot, event.message, key)
 
 
-bot = Bot(token=config.tg_bot.token,
-          default=DefaultBotProperties(parse_mode='MARKDOWN'))
-dp = Dispatcher()
-dp.include_router(handler_admin.router)
 
-dp['client'] = client
 
-# date = datetime.now().time().strftime('%H:%M')
-logger.info(f'Start bot!!!')
 
-loop.create_task(dp.start_polling(bot))
 client.run_until_disconnected()
+
+# if __name__ == '__main__':
+#     client.run_until_disconnected()

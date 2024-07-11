@@ -38,8 +38,10 @@ async def my_channels():
     dialogs = await client.get_dialogs()
     for dialog in dialogs:
         if dialog.is_channel:
-            print(f"{dialog.id} | {dialog.entity.username} | {dialog.id}")
-
+                channels_id.append(dialog.id)
+#             channels_id.append(f"https://t.me/{dialog.entity.username}")
+#             print(f"{dialog.id} | {dialog.entity.username} | {dialog.id}")
+#
 loop.create_task(my_channels())
 
 dp['client'] = client
@@ -48,10 +50,10 @@ dp['client'] = client
 @client.on(events.NewMessage(chats=channels_id))
 async def handler(event):
     key: str = check_word(event.message.text, key_words)
-    key2: str = check_word(event.message.text, key_words_not)
+    # key2: str = check_word(event.message.text, key_words_not)
     if key:
-        if not key2:
-            await send_message_ia(bot, event.message, key)
+        # if not key2:
+        await send_message_ia(bot, event.message, key)
 
 
 

@@ -34,6 +34,7 @@ dp.include_router(handler_admin.router)
 
 loop.create_task(dp.start_polling(bot))
 
+
 async def my_channels():
     dialogs = await client.get_dialogs()
     for dialog in dialogs:
@@ -42,7 +43,7 @@ async def my_channels():
 #             channels_id.append(f"https://t.me/{dialog.entity.username}")
 #             print(f"{dialog.id} | {dialog.entity.username} | {dialog.id}")
 #
-loop.create_task(my_channels())
+# loop.create_task(my_channels())
 
 dp['client'] = client
 

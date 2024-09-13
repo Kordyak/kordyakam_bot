@@ -40,6 +40,8 @@ group_ia_id = -4246635872
 channels_id = [
     'https://t.me/meduzalive',
     'https://t.me/channelOut2',
+    'https://t.me/erzrf',
+    'https://t.me/biznesufa_investufa',
     # 'https://t.me/LipsitsIgor',
     # 'https://t.me/tvrain',
     # 'https://t.me/kaluginprofit',
@@ -63,7 +65,8 @@ key_words = [
 ]
 
 key_words2 = [
-    "главные новости",
+    "уфа",
+    "башкирия",
 ]
 
 key_words_not = [

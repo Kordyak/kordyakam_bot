@@ -10,7 +10,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram import filters, types
 
 from config import *
-from services.service import check_word, send_message_ia, old_news
+from services.service import check_word, send_message_ia, send_message_user
 from handlers import handler_admin
 
 logger = logging.getLogger(__name__)
@@ -51,10 +51,11 @@ dp['client'] = client
 @client.on(events.NewMessage(chats=channels_id))
 async def handler(event):
     key: str = check_word(event.message.text, key_words)
-    # key2: str = check_word(event.message.text, key_words_not)
+    key2: str = check_word(event.message.text, key_words2)
     if key:
-        # if not key2:
         await send_message_ia(bot, event.message, key)
+    elif key2:
+        await send_message_user(bot, event.message, key2)
 
 
 

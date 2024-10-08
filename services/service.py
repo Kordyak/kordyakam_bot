@@ -18,10 +18,10 @@ async def send_message_ia(bot: Bot, message, key: str = ""):
 
 
 
-async def send_message_user(bot: Bot, message, key: str = ""):
+async def send_message_user(bot: Bot, message, chat_id: int, key: str = ""):
     link = f"https://t.me/{message.sender.username}/{message.id}"
     text = f'key: "{key}"\n{message.text}\n{link}'
-    await bot.send_message(chat_id=1286023315,  # 1286023315 Чат Иринки / 995657021 мой чат
+    await bot.send_message(chat_id=chat_id,  # 1286023315 Чат Иринки / 995657021 мой чат
                            text=text)
 
 

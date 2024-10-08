@@ -40,8 +40,6 @@ group_ia_id = -4246635872
 channels_id = [
     'https://t.me/meduzalive',
     'https://t.me/channelOut2',
-    'https://t.me/erzrf',
-    'https://t.me/biznesufa_investufa',
     # 'https://t.me/LipsitsIgor',
     # 'https://t.me/tvrain',
     # 'https://t.me/kaluginprofit',
@@ -62,6 +60,7 @@ key_words = [
     "квадрокоптер",
     "главные новости",
     "главное",
+    "блокиров",
 ]
 
 key_words2 = [

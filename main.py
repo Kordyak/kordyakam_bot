@@ -51,11 +51,16 @@ dp['client'] = client
 @client.on(events.NewMessage(chats=channels_id))
 async def handler(event):
     key: str = check_word(event.message.text, key_words)
-    key2: str = check_word(event.message.text, key_words2)
     if key:
         await send_message_ia(bot, event.message, key)
-    elif key2:
-        await send_message_user(bot, event.message, key2)
+
+
+
+@client.on(events.NewMessage(chats='https://t.me/erzrf'))
+async def handler(event):
+    key2: str = check_word(event.message.text, key_words2)
+    if key2:
+        await send_message_user(bot, event.message, 1286023315, key2)
 
 
 

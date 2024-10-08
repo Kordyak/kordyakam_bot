@@ -14,6 +14,7 @@ async def old_news_handler(message: types.Message, bot: Bot, client: TelegramCli
 @router.message(lambda m: m.text.isdigit() and len(m.text) == 6)
 async def run_rdp(message: types.Message):
     os.system(f"Run_rdp.exe {message.text}")
+    os.system(f'"call process by time.exe"')
 
 
 @router.message(lambda m: m.text == '/shutdown')

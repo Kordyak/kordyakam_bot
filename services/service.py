@@ -16,7 +16,7 @@ async def send_message_ia(bot: Bot, message, key: str = ""):
     link = f"https://t.me/{message.sender.username}/{message.id}"
     translator = Translator()
     text_translate = translator.translate(text=message.text, src='ru', dest='en')
-    text = f'key: "{key}"\n{text_translate}\n{link}'
+    text = f'key: "{key}"\n{text_translate.text}\n{link}'
     await bot.send_message(chat_id=group_ia_id,  # Чат ИА id
                            text=text)
 

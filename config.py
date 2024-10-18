@@ -38,11 +38,11 @@ def load_config():
 group_ia_id = -4246635872
 
 channels_id = [
-    'https://t.me/LipsitsIgor',
     'https://t.me/meduzalive',
-    'https://t.me/tvrain',
-    'https://t.me/kaluginprofit',
     'https://t.me/channelOut2',
+    # 'https://t.me/LipsitsIgor',
+    # 'https://t.me/tvrain',
+    # 'https://t.me/kaluginprofit',
 ]
 
 key_words = [
@@ -59,10 +59,13 @@ key_words = [
     "бпла",
     "квадрокоптер",
     "главные новости",
+    "главное",
+    "блокиров",
 ]
 
 key_words2 = [
-    "главные новости",
+    "уфа",
+    "башкирия",
 ]
 
 key_words_not = [
@@ -70,5 +73,4 @@ key_words_not = [
     "приглашаем",
     "вакансии",
     "зарплата",
-    "полномасштабного вторжения",
 ]

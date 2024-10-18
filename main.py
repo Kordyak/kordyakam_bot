@@ -10,18 +10,20 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram import filters, types
 
 from config import *
-from services.service import check_word, send_message_ia, old_news
+from services.service import check_word, send_message_ia, send_message_user
 from handlers import handler_admin
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO,
                     style='{',
                     format='#[{asctime}] #{levelname} | {name} | : "{message}"')
+logger.info(f'Start bot!!!')
 
 config: Config = load_config()
 
 loop = asyncio.new_event_loop()
 asyncio.set_event_loop(loop)
+
 client = TelegramClient('kord2', config.client.api_id, config.client.api_hash)
 client.start()
 
@@ -30,24 +32,41 @@ bot = Bot(token=config.tg_bot.token,
 dp = Dispatcher()
 dp.include_router(handler_admin.router)
 
+loop.create_task(dp.start_polling(bot))
+
+
+async def my_channels():
+    dialogs = await client.get_dialogs()
+    for dialog in dialogs:
+        if dialog.is_channel:
+                channels_id.append(dialog.id)
+#             channels_id.append(f"https://t.me/{dialog.entity.username}")
+#             print(f"{dialog.id} | {dialog.entity.username} | {dialog.id}")
+#
+# loop.create_task(my_channels())
+
+dp['client'] = client
 
 
 @client.on(events.NewMessage(chats=channels_id))
 async def handler(event):
     key: str = check_word(event.message.text, key_words)
-    key2: str = check_word(event.message.text, key_words_not)
     if key:
-        if not key2:
-            await send_message_ia(bot, event.message, key)
+        await send_message_ia(bot, event.message, key)
 
 
-@dp.message(filters.Command(commands=['parsing_channel']))
-async def old_news_handler(message: types.Message):
-    await old_news(message, bot, client)
+
+@client.on(events.NewMessage(chats='https://t.me/erzrf'))
+async def handler(event):
+    key2: str = check_word(event.message.text, key_words2)
+    if key2:
+        await send_message_user(bot, event.message, 1286023315, key2)
 
 
-date = datetime.now().time().strftime('%H:%M')
-logger.info(f'Start bot at {date}')
 
-loop.create_task(dp.start_polling(bot))
+
+
 client.run_until_disconnected()
+
+# if __name__ == '__main__':
+#     client.run_until_disconnected()

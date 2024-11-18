@@ -53,6 +53,8 @@ async def handler(event):
     key: str = check_word(event.message.text, key_words)
     if key:
         await send_message_ia(bot, event.message, key)
+    elif event.message.audio != None:
+        await send_message_user(bot, event.message, 'Audio')
 
 
 
@@ -61,6 +63,7 @@ async def handler(event):
     key2: str = check_word(event.message.text, key_words2)
     if key2:
         await send_message_user(bot, event.message, 1286023315, key2)
+
 
 
 

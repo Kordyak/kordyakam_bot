@@ -5,20 +5,22 @@ from datetime import datetime, timedelta
 from telethon import TelegramClient
 from config import key_words2, channels_id, key_words_not
 
-from googletrans import Translator
-
 import logging
+
+from googletrans import Translator
+import re
 
 logger = logging.getLogger(__name__)
 
 
 async def send_message_ia(bot: Bot, message, key: str = ""):
     link = f"https://t.me/{message.sender.username}/{message.id}"
+    clean_text = message.text.replace('*', '')
+    result_re = re.sub('\(.*?\)', "", clean_text)
     translator = Translator()
-    result_translate = translator.translate(text=message.text, src='ru', dest='en')
+    result_translate = translator.translate(text=result_re, src='ru', dest='en')
     text = f'key: "{key}"\n{result_translate.text}\n{link}'
     await bot.send_message(chat_id=group_ia_id, text=text)
-
 
 
 async def send_message_user(bot: Bot, message, chat_id: int, key: str = ""):
@@ -50,4 +52,3 @@ async def old_news(message: types.Message, bot: Bot, client: TelegramClient):
                     if not check_word(message.text, key_words_not):
                         await send_message_ia(bot, message, key)
                         # print(message.text[:100])
-

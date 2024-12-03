@@ -15,8 +15,9 @@ logger = logging.getLogger(__name__)
 
 async def send_message_ia(bot: Bot, message, key: str = ""):
     link = f"https://t.me/{message.sender.username}/{message.id}"
-    clean_text = message.text.replace('*', '')
-    result_re = re.sub('\(.*?\)', "", clean_text)
+    # clean_text = message.text.replace('*', '')
+    result_re = re.sub('[\*\[\]]', "", message.text)
+    result_re = re.sub('\(.*?\)', "", result_re)
     translator = Translator()
     result_translate = translator.translate(text=result_re, src='ru', dest='en')
     text = f'key: "{key}"\n{result_translate.text}\n{link}'

@@ -35,7 +35,7 @@ def load_config():
     )
 
 
-group_ia_id = -4246635872
+group_ia_id = -1002392215111
 
 channels_id = [
     'https://t.me/meduzalive',
@@ -64,6 +64,10 @@ key_words = [
     "уфа",
     "башкор",
     "башкир",
+    "самолет",
+    "отопление",
+    "авария",
+    "переведи",
 ]
 
 key_words2 = [

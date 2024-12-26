@@ -1,9 +1,14 @@
+import os
+
 from config import group_ia_id
 from aiogram import Bot, types
+from aiogram.types import Message, FSInputFile
 import re
 from datetime import datetime, timedelta
 from telethon import TelegramClient
 from config import key_words2, channels_id, key_words_not
+
+from gtts import gTTS
 
 import logging
 
@@ -12,16 +17,25 @@ import re
 
 logger = logging.getLogger(__name__)
 
-
 async def send_message_ia(bot: Bot, message, key: str = ""):
     link = f"https://t.me/{message.sender.username}/{message.id}"
     # clean_text = message.text.replace('*', '')
-    result_re = re.sub('[\*\[\]]', "", message.text)
-    result_re = re.sub('\(.*?\)', "", result_re)
+
+    result_re = re.sub('[\*\[\]]', "", message.text) #удаляем ссылки из текста
+    result_re = re.sub('\(.*?\)', "", result_re) #удаляем символы
     translator = Translator()
     result_translate = translator.translate(text=result_re, src='ru', dest='en')
+
+    audio = gTTS(text=result_translate.text, lang="en", slow=False)
+    name_file = f"{result_translate.text[:7]}.mp3"
+    audio.save(name_file)
+    audio_file = FSInputFile(path=os.path.join(name_file))
+    await bot.send_audio(chat_id=group_ia_id,audio=audio_file)
+
     text = f'key: "{key}"\n{result_translate.text}\n{link}'
     await bot.send_message(chat_id=group_ia_id, text=text)
+
+    os.remove(name_file)
 
 
 async def send_message_user(bot: Bot, message, chat_id: int, key: str = ""):

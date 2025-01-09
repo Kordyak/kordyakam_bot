@@ -1,16 +1,18 @@
 import asyncio
 import logging
+import re
 
 from telethon import events, TelegramClient
 
 from datetime import datetime, timedelta
 
-from aiogram import Dispatcher, Bot
+from aiogram import Dispatcher, Bot, F
 from aiogram.client.default import DefaultBotProperties
-from aiogram import filters, types
+from aiogram.filters import Command
+from aiogram.types import Message
 
 from config import *
-from services.service import check_word, send_message_ia, send_message_user
+from services.service import check_word, send_message_ia, send_audio_message
 from handlers import handler_admin
 
 logger = logging.getLogger(__name__)
@@ -33,18 +35,6 @@ dp = Dispatcher()
 dp.include_router(handler_admin.router)
 
 loop.create_task(dp.start_polling(bot))
-
-
-async def my_channels():
-    dialogs = await client.get_dialogs()
-    for dialog in dialogs:
-        if dialog.is_channel:
-                channels_id.append(dialog.id)
-#             channels_id.append(f"https://t.me/{dialog.entity.username}")
-#             print(f"{dialog.id} | {dialog.entity.username} | {dialog.id}")
-#
-# loop.create_task(my_channels())
-
 dp['client'] = client
 
 
@@ -53,19 +43,14 @@ async def handler(event):
     key: str = check_word(event.message.text, key_words)
     if key:
         await send_message_ia(bot, event.message, key)
-    elif event.message.audio != None:
-        await send_message_user(bot, event.message, 'Audio')
 
 
-
-@client.on(events.NewMessage(chats='https://t.me/erzrf'))
-async def handler(event):
-    key2: str = check_word(event.message.text, key_words2)
-    if key2:
-        await send_message_user(bot, event.message, 1286023315, key2)
-
-
-
+@dp.message(F.text, Command('audio'))
+async def handler(message: Message):
+    text = message.reply_to_message.md_text
+    if text:
+        text = re.sub('https.*', '', string=text)
+        await send_audio_message(bot, text)
 
 
 
@@ -73,3 +58,14 @@ client.run_until_disconnected()
 
 # if __name__ == '__main__':
 #     client.run_until_disconnected()
+
+
+# async def my_channels():
+#     dialogs = await client.get_dialogs()
+#     for dialog in dialogs:
+#         if dialog.is_channel:
+#                 channels_id.append(dialog.id)
+#             channels_id.append(f"https://t.me/{dialog.entity.username}")
+#             print(f"{dialog.id} | {dialog.entity.username} | {dialog.id}")
+#
+# loop.create_task(my_channels())

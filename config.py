@@ -35,7 +35,7 @@ def load_config():
     )
 
 
-group_ia_id = -1002392215111
+chat_id_IA = -1002392215111
 
 channels_id = [
     'https://t.me/meduzalive',

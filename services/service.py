@@ -29,14 +29,19 @@ async def send_message_ia(bot: Bot, message, key: str = ""):
     await bot.send_message(chat_id=chat_id_IA, text=text)
 
     
-async def send_audio_message(bot: Bot, text: str):
-    audio = gTTS(text=text, lang="en", slow=True)
-    name_file = f"{text[:15]}.mp3"
-    audio.save(name_file)
+async def send_audio_message(reply_to_message: Message):
+    text = reply_to_message.md_text
+    if text:
+        text = re.sub('https.*', '', string=text)
+        audio = gTTS(text=text, lang="en", slow=True)
+        name_file = f"{text[:15]}.mp3"
+        audio.save(name_file)
 
-    audio_to_telega = FSInputFile(path=os.path.join(name_file))
-    await bot.send_audio(chat_id=chat_id_IA, audio=audio_to_telega)
-    os.remove(name_file)
+        audio_to_telega = FSInputFile(path=os.path.join(name_file))
+
+        await reply_to_message.reply_audio(audio=audio_to_telega)
+        # await bot.send_audio(chat_id=chat_id_IA, audio=audio_to_telega)
+        os.remove(name_file)
 
 
 def check_word(news: str, words: list) -> str:  # парсинг новостей на слово

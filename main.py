@@ -47,10 +47,7 @@ async def handler(event):
 
 @dp.message(F.text, Command('audio'))
 async def handler(message: Message):
-    text = message.reply_to_message.md_text
-    if text:
-        text = re.sub('https.*', '', string=text)
-        await send_audio_message(bot, text)
+        await send_audio_message(message.reply_to_message)
 
 
 

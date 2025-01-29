@@ -17,52 +17,25 @@ import re
 
 logger = logging.getLogger(__name__)
 
-async def send_message_ia(bot: Bot, message, key: str = ""):
-    link = f"https://t.me/{message.sender.username}/{message.id}"
-    # clean_text = message.text.replace('*', '')
 
-    result_re = re.sub('[\*\[\]]', "", message.text) #удаляем ссылки из текста
-    result_re = re.sub('\(.*?\)', "", result_re) #удаляем символы
+def translate_rus_eng(in_text: str) -> str:
+    result_re = re.sub(r"[\*\[\]]", "", in_text)  #удаляем ссылки из текста
+    result_re = re.sub(r"\(.*?\)", "", result_re)  #удаляем символы
     translator = Translator()
     result_translate = translator.translate(text=result_re, src='ru', dest='en')
-    text = f'{result_translate.text}\n{link}'
-    await bot.send_message(chat_id=chat_id_IA, text=text)
+    return result_translate.text
 
-    
-async def send_audio_message(reply_to_message: Message):
-    text = reply_to_message.md_text
-    if text:
-        text = re.sub('https.*', '', string=text)
-        audio = gTTS(text=text, lang="en", slow=True)
-        name_file = f"{text[:15]}.mp3"
-        audio.save(name_file)
 
-        audio_to_telega = FSInputFile(path=os.path.join(name_file))
-
-        await reply_to_message.reply_audio(audio=audio_to_telega)
-        # await bot.send_audio(chat_id=chat_id_IA, audio=audio_to_telega)
-        os.remove(name_file)
+def convert_text_audio(in_text: str) -> FSInputFile:
+    text = re.sub('https.*', '', string=in_text)
+    audio = gTTS(text=text, lang="en", slow=True)
+    name_file = f"{text[:15]}.mp3"
+    name_file = re.sub(r"[\n]", '', name_file)  #удаляем символы
+    audio.save(name_file)
+    return FSInputFile(path=os.path.join(name_file))
 
 
 def check_word(news: str, words: list) -> str:  # парсинг новостей на слово
     for key in words:
         if re.search(key, news.lower()):
             return key
-
-
-async def old_news(message: types.Message, bot: Bot, client: TelegramClient):
-    days: int = 1
-    arr_text = message.text.split(" ")
-    if len(arr_text) > 1:
-        if arr_text[1].isdigit():
-            days = int(arr_text[1])
-    offset_date = datetime.today().date() - timedelta(days=days)
-    for id1 in channels_id:
-        iter_messages = client.iter_messages(entity=id1, offset_date=offset_date, reverse=True)
-        async for message in iter_messages:
-            if message.date.date() != datetime.today().date():
-                key: str = check_word(message.text, key_words2)
-                if key:
-                    if not check_word(message.text, key_words_not):
-                        await send_message_ia(bot, message, key)
-                        # print(message.text[:100])

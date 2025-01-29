@@ -1,17 +1,7 @@
 import os
-
-from config import chat_id_IA
-from aiogram import Bot, types
-from aiogram.types import Message, FSInputFile
-import re
-from datetime import datetime, timedelta
-from telethon import TelegramClient
-from config import key_words2, channels_id, key_words_not
-
+from aiogram.types import  FSInputFile
 from gtts import gTTS
-
 import logging
-
 from googletrans import Translator
 import re
 

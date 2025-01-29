@@ -9,7 +9,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.types import Message, BotCommand, FSInputFile
 
 from config import *
-from services.service import check_word, translate_rus_eng, convert_text_audio
+from services.service_1 import check_word, translate_rus_eng, convert_text_audio
 from handlers import handler_1
 
 logger = logging.getLogger(__name__)

@@ -6,7 +6,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.filters import Command
 from aiogram.types import Message, BotCommand, FSInputFile
 
-from services.service import check_word, translate_rus_eng, convert_text_audio
+from services.service_1 import check_word, translate_rus_eng, convert_text_audio
 
 router = Router()
 

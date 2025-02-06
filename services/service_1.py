@@ -4,16 +4,35 @@ from gtts import gTTS
 import logging
 from googletrans import Translator
 import re
+import requests
+
+import argostranslate.package
+import argostranslate.translate
+
 
 logger = logging.getLogger(__name__)
+
+
 
 
 def translate_rus_eng(in_text: str) -> str:
     result_re = re.sub(r"[\*\[\]]", "", in_text)  #удаляем символы
     result_re = re.sub(r"\(https.*?\)", "", result_re)  #удаляем ссылки из текста
+
     translator = Translator()
     result_translate = translator.translate(text=result_re, src='ru', dest='en')
     return result_translate.text
+
+    # # Download and install Argos Translate package
+    # argostranslate.package.update_package_index()
+    # available_packages = argostranslate.package.get_available_packages()
+    # package_to_install = next(
+    #     filter(
+    #         lambda x: x.from_code == "ru" and x.to_code == "en", available_packages
+    #     )
+    # )
+    # argostranslate.package.install_from_path(package_to_install.download())
+    # argostranslate.translate.translate(result_re, "ru", "en")
 
 
 def convert_text_audio(in_text: str) -> FSInputFile:

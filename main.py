@@ -12,6 +12,12 @@ from config import *
 from services.service_1 import check_word, translate_rus_eng, convert_text_audio
 from handlers import handler_1
 
+
+
+
+
+
+
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO,
                     style='{',
@@ -40,6 +46,8 @@ dp.include_router(handler_1.router)
 
 loop.create_task(dp.start_polling(bot))
 dp['client'] = client
+
+
 
 
 async def set_bot_commands():

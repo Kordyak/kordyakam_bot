@@ -20,10 +20,6 @@ logger.info(f'Start bot!')
 
 config: Config = load_config()
 
-# Retry settings
-MAX_RETRIES = 120  # Maximum number of retry attempts
-RETRY_DELAY = 5  # Delay between retries in seconds
-
 loop = asyncio.new_event_loop()
 asyncio.set_event_loop(loop)
 
@@ -70,6 +66,10 @@ def is_internet_available():
         return True
     except requests.ConnectionError:
         return False
+
+# Retry settings
+MAX_RETRIES = 120  # Maximum number of retry attempts
+RETRY_DELAY = 15  # Delay between retries in seconds
 
 
 async def send_with_retry(bot, chat_id, text, max_retries=MAX_RETRIES, delay=RETRY_DELAY):

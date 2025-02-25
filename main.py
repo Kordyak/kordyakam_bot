@@ -1,7 +1,7 @@
 import asyncio
 import logging
-import os
 
+import requests
 from telethon import events, TelegramClient
 
 from aiogram import Dispatcher, Bot, F
@@ -12,19 +12,17 @@ from config import *
 from services.service_1 import check_word, translate_rus_eng, convert_text_audio
 from handlers import handler_1
 
-
-
-
-
-
-
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO,
                     style='{',
                     format='#[{asctime}] #{levelname} | {name} | : "{message}"')
-logger.info(f'Start bot!!!')
+logger.info(f'Start bot!')
 
 config: Config = load_config()
+
+# Retry settings
+MAX_RETRIES = 120  # Maximum number of retry attempts
+RETRY_DELAY = 5  # Delay between retries in seconds
 
 loop = asyncio.new_event_loop()
 asyncio.set_event_loop(loop)
@@ -41,19 +39,17 @@ commands = [
 ]
 
 
-dp = Dispatcher()
-dp.include_router(handler_1.router)
-
-loop.create_task(dp.start_polling(bot))
-dp['client'] = client
-
-
-
-
 async def set_bot_commands():
     await bot.set_my_commands(commands)
 
 loop.create_task(set_bot_commands())
+
+dp = Dispatcher()
+dp.include_router(handler_1.router)
+
+loop.create_task(dp.start_polling(bot))
+
+dp['client'] = client
 
 
 @client.on(events.NewMessage(chats=channels_id))
@@ -62,30 +58,49 @@ async def handler(event: events):
     if key:
         message_link = f"https://t.me/{event.message.chat.username}/{event.message.id}"
         eng_text = translate_rus_eng(event.message.text)
-        await bot.send_message(chat_id=chat_id_IA, text=f'{eng_text}\n{message_link}')
+        # await bot.send_message(chat_id=chat_id_IA, text=f'{eng_text}\n{message_link}')
+        await send_with_retry(bot, chat_id_IA, f'{eng_text}\n{message_link}')
+
+
+# Function to check internet connectivity
+def is_internet_available():
+    try:
+        # Try to connect to a reliable external server
+        requests.get("https://www.google.com", timeout=5)
+        return True
+    except requests.ConnectionError:
+        return False
+
+
+async def send_with_retry(bot, chat_id, text, max_retries=MAX_RETRIES, delay=RETRY_DELAY):
+    """
+    Send a message with retry logic in case of connection errors.
+    """
+    for attempt in range(max_retries):
+        try:
+            if not is_internet_available():
+                logger.warning(f"No internet connection. Retrying in {delay} seconds...")
+                await asyncio.sleep(delay)
+                continue
+
+            await bot.send_message(chat_id=chat_id, text=text)
+            logger.info(f"Message sent to {chat_id}")
+            break  # Exit the loop if the message is sent successfully
+        except Exception as e:
+            logger.error(f"Attempt {attempt + 1} failed: {e}")
+            if attempt < max_retries - 1:  # Don't wait on the last attempt
+                await asyncio.sleep(delay)
+            else:
+                logger.error(f"Max retries reached. Failed to send message to {chat_id}")
+
+if __name__ == "__main__":
+    try:
+        client.run_until_disconnected()
+    except Exception as e:
+        logger.error(f"Fatal error: {e}")
+    finally:
+        logger.info("Bot stopped.")
 
 
 
 
-
-
-
-client.run_until_disconnected()
-
-
-
-
-
-
-# if __name__ == '__main__':
-#     client.run_until_disconnected()
-
-# async def my_channels():
-#     dialogs = await client.get_dialogs()
-#     for dialog in dialogs:
-#         if dialog.is_channel:
-#                 channels_id.append(dialog.id)
-#             channels_id.append(f"https://t.me/{dialog.entity.username}")
-#             print(f"{dialog.id} | {dialog.entity.username} | {dialog.id}")
-#
-# loop.create_task(my_channels())

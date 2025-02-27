@@ -12,6 +12,10 @@ from config import *
 from services.service_1 import check_word, translate_rus_eng, convert_text_audio
 from handlers import handler_1
 
+import argostranslate.package
+
+
+
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO,
                     style='{',
@@ -45,7 +49,18 @@ dp.include_router(handler_1.router)
 
 loop.create_task(dp.start_polling(bot))
 
+# Install translation packages (only need to do this once)
+argostranslate.package.update_package_index()
+available_packages = argostranslate.package.get_available_packages()
+package_to_install = next(
+    filter(
+        lambda x: x.from_code == "ru" and x.to_code == "en", available_packages
+    )
+)
+argostranslate.package.install_from_path(package_to_install.download())
+
 dp['client'] = client
+# dp['argostranslate'] = argostranslate
 
 
 @client.on(events.NewMessage(chats=channels_id))

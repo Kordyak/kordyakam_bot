@@ -2,13 +2,12 @@ import os
 from aiogram.types import FSInputFile
 import logging
 
-from googletrans import Translator
+# from googletrans import Translator
 from gtts import gTTS
 
 import re
-import requests
+#import requests
 
-import argostranslate.package
 import argostranslate.translate
 
 
@@ -18,9 +17,12 @@ def translate_rus_eng(in_text: str) -> str:
     result_re = re.sub(r"[\*\[\]]", "", in_text)  #удаляем символы
     result_re = re.sub(r"\(https.*?\)", "", result_re).strip()  #удаляем ссылки из текста
 
-    translator = Translator()
-    result_translate = translator.translate(text=result_re, src='ru', dest='en')
-    return result_translate.text
+    # translator = Translator()
+    # result_translate = translator.translate(text=result_re, src='ru', dest='en')
+    # return result_translate.text
+    # argostranslate = dp['argostranslate']
+    return argostranslate.translate.translate(result_re, "ru", "en")
+
 
 
 

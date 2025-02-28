@@ -37,7 +37,8 @@ bot = Bot(token=config.tg_bot.token,
           default=DefaultBotProperties(parse_mode='MARKDOWN'))
 commands = [
     #BotCommand(command="/start", description="Запустить бота"),
-    BotCommand(command="/eng", description="Перевести рус. - англ."),
+    BotCommand(command="/ru_en", description="Перевод русcко-английский"),
+    BotCommand(command="/en_ru", description="Перевод англо-русский"),
     BotCommand(command="/audio", description="Конвертировать текст в аудио на англ."),
 ]
 
@@ -52,14 +53,12 @@ dp.include_router(handler_1.router)
 
 loop.create_task(dp.start_polling(bot))
 
-# Install translation packages (only need to do this once)
+
+languages_to_install = ['en', 'ru']  # Add more language codes as needed
+
 argostranslate.package.update_package_index()
 available_packages = argostranslate.package.get_available_packages()
-package_to_install = next(
-    filter(
-        lambda x: x.from_code == "ru" and x.to_code == "en", available_packages
-    )
-)
+package_to_install = next(filter(lambda x: x.from_code == "ru" and x.to_code == "en", available_packages))
 argostranslate.package.install_from_path(package_to_install.download())
 
 dp['client'] = client

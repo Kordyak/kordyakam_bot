@@ -14,14 +14,23 @@ import argostranslate.translate
 logger = logging.getLogger(__name__)
 
 def translate_rus_eng(in_text: str) -> str:
-    result_re = re.sub(r"[\*\[\]]", "", in_text)  #удаляем символы
+    en_ru: bool = False
+    if re.match(r"/en_ru", in_text):
+        en_ru = True
+    if re.match(r"/en_ru", in_text) or re.match(r"/ru_en", in_text) :
+        arr = in_text.split(' ')[1:]
+        text = " ".join(arr)
+    else:
+        text = in_text
+
+    result_re = re.sub(r"[\*\[\]]", "", text)  #удаляем символы
     result_re = re.sub(r"\(https.*?\)", "", result_re).strip()  #удаляем ссылки из текста
 
-    # translator = Translator()
-    # result_translate = translator.translate(text=result_re, src='ru', dest='en')
-    # return result_translate.text
-    # argostranslate = dp['argostranslate']
-    return argostranslate.translate.translate(result_re, "ru", "en")
+    if en_ru:
+        return argostranslate.translate.translate(result_re, "en", "ru")
+    else:
+        return argostranslate.translate.translate(result_re, "ru", "en")
+
 
 
 

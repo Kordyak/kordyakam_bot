@@ -27,8 +27,11 @@ config: Config = load_config()
 loop = asyncio.new_event_loop()
 asyncio.set_event_loop(loop)
 
-client = TelegramClient('kord2', config.client.api_id, config.client.api_hash)
+client = TelegramClient('kord1', config.client.api_id, config.client.api_hash, device_model="MS Windows", system_version="11")
+client.session.save()
 client.start()
+
+
 
 bot = Bot(token=config.tg_bot.token,
           default=DefaultBotProperties(parse_mode='MARKDOWN'))

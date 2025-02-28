@@ -1,7 +1,0 @@
-#!/bin/bash
-
-# Активация виртуального окружения
-source /home/users/j/j85184307/venv310/bin/activate
-
-# Запуск скрипта Python
-python3 /home/users/j/j85184307/tg_bot/bot.py

@@ -38,8 +38,8 @@ def load_config():
 chat_id_IA = -1002392215111
 
 channels_id = [
-    'https://t.me/meduzalive',
-    'https://t.me/channelOut2',
+    -1001036240821, #https://t.me/meduzalive
+    -1002066112684, #https://t.me/channelOut2
     # 'https://t.me/LipsitsIgor',
     # 'https://t.me/tvrain',
     # 'https://t.me/kaluginprofit',

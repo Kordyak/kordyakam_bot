@@ -6,6 +6,8 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.filters import Command
 from aiogram.types import Message, BotCommand, FSInputFile
 
+import re
+
 from services.service_1 import check_word, translate_rus_eng, convert_text_audio
 
 router = Router()
@@ -13,11 +15,10 @@ router = Router()
 @router.message(lambda m: m.text.isdigit() and len(m.text) == 6)
 async def run_rdp(message: types.Message):
     os.system(f"Run_rdp.exe {message.text}")
-    os.system(f"start call_process_by_time.lnk")
+    os.system(f"start call_process_by_time.exe")
 
 
-
-@router.message(F.text, Command('eng'))
+@router.message(lambda m: re.match(r"^/eng.*", m.text)  )
 async def handler(message: Message):
     eng_text: str
     message_link: str
@@ -32,12 +33,11 @@ async def handler(message: Message):
         message_link = ""
         eng_text = translate_rus_eng(text)
 
-
     if eng_text:
         await message.reply(f'{eng_text}\n{message_link}')
 
 
-@router.message(F.text, Command('audio'))
+@router.message(Command('audio'))
 async def handler(message: Message):
     audio_file: FSInputFile = convert_text_audio(message.reply_to_message.text)
     await message.reply_audio(audio_file)

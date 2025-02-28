@@ -1,13 +1,8 @@
 import os
 from aiogram.types import FSInputFile
 import logging
-
-# from googletrans import Translator
-from gtts import gTTS
-
 import re
-#import requests
-
+from gtts import gTTS
 import argostranslate.translate
 
 
@@ -30,10 +25,6 @@ def translate_rus_eng(in_text: str) -> str:
         return argostranslate.translate.translate(result_re, "en", "ru")
     else:
         return argostranslate.translate.translate(result_re, "ru", "en")
-
-
-
-
 
 
 def convert_text_audio(in_text: str) -> FSInputFile:

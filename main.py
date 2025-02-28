@@ -53,9 +53,6 @@ dp.include_router(handler_1.router)
 
 loop.create_task(dp.start_polling(bot))
 
-
-languages_to_install = ['en', 'ru']  # Add more language codes as needed
-
 argostranslate.package.update_package_index()
 available_packages = argostranslate.package.get_available_packages()
 package_to_install = next(filter(lambda x: x.from_code == "ru" and x.to_code == "en", available_packages))

@@ -1,19 +1,13 @@
-from dataclasses import replace
-
-from aiogram import Router, types, filters, Bot
 import os
 
-from aiogram import Dispatcher, Bot, F
-from aiogram.client.default import DefaultBotProperties
+from aiogram import Router, types, filters, Bot
 from aiogram.filters import Command
 from aiogram.types import Message, BotCommand, FSInputFile
 
-import re
-
 from services.service_1 import check_word, translate_rus_eng, convert_text_audio
-import argostranslate.translate
 
 router = Router()
+
 
 @router.message(lambda m: m.text.isdigit() and len(m.text) == 6)
 async def run_rdp(message: types.Message):
@@ -35,7 +29,6 @@ async def handler(message: Message):
 
     if eng_text:
         await message.reply(f'{eng_text}\n{message_link}')
-
 
 
 @router.message(Command('audio'))

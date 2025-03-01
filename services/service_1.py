@@ -5,14 +5,14 @@ import re
 from gtts import gTTS
 import argostranslate.translate
 
+import requests
+import asyncio
 
 logger = logging.getLogger(__name__)
 
-def translate_rus_eng(in_text: str) -> str:
-    en_ru: bool = False
-    if re.match(r"/en_ru", in_text):
-        en_ru = True
-    if re.match(r"/en_ru", in_text) or re.match(r"/ru_en", in_text) :
+
+def translate_rus_eng(in_text: str, how_translate: str) -> str:
+    if re.match(r"/en_ru", in_text) or re.match(r"/ru_en", in_text):
         arr = in_text.split(' ')[1:]
         text = " ".join(arr)
     else:
@@ -21,9 +21,9 @@ def translate_rus_eng(in_text: str) -> str:
     result_re = re.sub(r"[\*\[\]]", "", text)  #удаляем символы
     result_re = re.sub(r"\(https.*?\)", "", result_re).strip()  #удаляем ссылки из текста
 
-    if en_ru:
+    if how_translate == '/en_ru':
         return argostranslate.translate.translate(result_re, "en", "ru")
-    else:
+    elif how_translate == '/ru_en':
         return argostranslate.translate.translate(result_re, "ru", "en")
 
 
@@ -40,3 +40,38 @@ def check_word(news: str, words: list) -> str:  # парсинг новосте�
     for key in words:
         if re.search(key, news.lower()):
             return key
+
+
+# Function to check internet connectivity
+def is_internet_available():
+    try:
+        # Try to connect to a reliable external server
+        requests.get("https://www.google.com", timeout=5)
+        return True
+    except requests.ConnectionError:
+        return False
+
+# Retry settings
+MAX_RETRIES = 120  # Maximum number of retry attempts
+RETRY_DELAY = 15  # Delay between retries in seconds
+
+
+async def send_with_retry(bot, chat_id, text, max_retries=MAX_RETRIES, delay=RETRY_DELAY):
+    """
+    Send a message with retry logic in case of connection errors.
+    """
+    for attempt in range(max_retries):
+        try:
+            if not is_internet_available():
+                logger.warning(f"No internet connection. Retrying in {delay} seconds...")
+                await asyncio.sleep(delay)
+                continue
+            await bot.send_message(chat_id=chat_id, text=text)
+            logger.info(f"Message sent to {chat_id}")
+            break  # Exit the loop if the message is sent successfully
+        except Exception as e:
+            logger.error(f"Attempt {attempt + 1} failed: {e}")
+            if attempt < max_retries - 1:  # Don't wait on the last attempt
+                await asyncio.sleep(delay)
+            else:
+                logger.error(f"Max retries reached. Failed to send message to {chat_id}")

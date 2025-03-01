@@ -1,10 +1,8 @@
-import os
-
 from aiogram import Router, types, filters, Bot
 from aiogram.filters import Command
 from aiogram.types import Message, BotCommand, FSInputFile
 
-from services.service_1 import check_word, translate_rus_eng, convert_text_audio
+from services.service_1 import *
 
 router = Router()
 
@@ -17,15 +15,17 @@ async def run_rdp(message: types.Message):
 
 @router.message(Command('ru_en', 'en_ru'))
 async def handler(message: Message):
+    how_translate = message.text.split(' ')[0]
+
     if message.reply_to_message:
         message_link = f"https://t.me/{message.chat.username}/{message.message_id}"
-        eng_text = translate_rus_eng(message.reply_to_message.text)
+        eng_text = translate_rus_eng(message.reply_to_message.text, how_translate)
     elif message.quote:
         message_link = f"https://t.me/{message.external_reply.chat.username}/{message.external_reply.message_id}"
-        eng_text = translate_rus_eng(message.quote.text)
+        eng_text = translate_rus_eng(message.quote.text, how_translate)
     else:
         message_link = ""
-        eng_text = translate_rus_eng(message.text)
+        eng_text = translate_rus_eng(message.text, how_translate)
 
     if eng_text:
         await message.reply(f'{eng_text}\n{message_link}')

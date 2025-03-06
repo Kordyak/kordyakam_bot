@@ -18,13 +18,13 @@ def translate_rus_eng(in_text: str, how_translate: str) -> str:
     else:
         text = in_text
 
-    result_re = re.sub(r"[\*\[\]]", "", text)  #удаляем символы
-    result_re = re.sub(r"\(https.*?\)", "", result_re).strip()  #удаляем ссылки из текста
+    text = re.sub(r"[\*\[\]]", "", text)  #удаляем символы
+    text = re.sub(r"\(https.*?\)", "", text).strip()  #удаляем ссылки из текста
 
-    if how_translate == '/en_ru':
-        return argostranslate.translate.translate(result_re, "en", "ru")
-    elif how_translate == '/ru_en':
-        return argostranslate.translate.translate(result_re, "ru", "en")
+    if re.match('/en_ru',how_translate) :
+        return argostranslate.translate.translate(text, "en", "ru")
+    elif  re.match('/ru_en',how_translate):
+        return argostranslate.translate.translate(text, "ru", "en")
 
 
 def convert_text_audio(in_text: str) -> FSInputFile:

@@ -10,7 +10,7 @@ router = Router()
 @router.message(lambda m: m.text.isdigit() and len(m.text) == 6)
 async def run_rdp(message: types.Message):
     os.system(f"Run_rdp.exe {message.text}")
-    os.system(f'start "call process by time.exe"')
+    os.system(f"start call_process_by_time.exe")
 
 
 @router.message(Command('ru_en', 'en_ru'))

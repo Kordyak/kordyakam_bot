@@ -28,7 +28,7 @@ async def handler(message: Message):
         eng_text = translate_rus_eng(message.text, how_translate)
 
     if eng_text:
-        await message.reply(f'{eng_text}\n{message_link}')
+        await message.reply(f'{eng_text}')
 
 
 @router.message(Command('audio'))

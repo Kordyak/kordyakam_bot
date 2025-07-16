@@ -26,7 +26,7 @@ asyncio.set_event_loop(loop)
 client = TelegramClient('kord1', config.client.api_id, config.client.api_hash, device_model="MS Windows", system_version="11")
 client.start()
 
-bot = Bot(token=config.tg_bot.token, default=DefaultBotProperties(parse_mode='MarkdownV2'))
+bot = Bot(token=config.tg_bot.token, default=DefaultBotProperties(parse_mode='Markdown'))
 commands = [
     #BotCommand(command="/start", description="Запустить бота"),
     BotCommand(command="/ru_en", description="Перевод русcко-английский"),

@@ -61,6 +61,7 @@ async def send_with_retry(bot, chat_id, text, max_retries=MAX_RETRIES, delay=RET
     Send a message with retry logic in case of connection errors.
     """
     for attempt in range(max_retries):
+
         try:
             if not is_internet_available():
                 logger.warning(f"No internet connection. Retrying in {delay} seconds...")
@@ -69,6 +70,7 @@ async def send_with_retry(bot, chat_id, text, max_retries=MAX_RETRIES, delay=RET
             await bot.send_message(chat_id=chat_id, text=text)
             logger.info(f"Message sent to {chat_id}")
             break  # Exit the loop if the message is sent successfully
+
         except Exception as e:
             logger.error(f"Attempt {attempt + 1} failed: {e}")
             if attempt < max_retries - 1:  # Don't wait on the last attempt

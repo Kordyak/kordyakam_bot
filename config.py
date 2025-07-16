@@ -40,7 +40,7 @@ chat_id_IA = -1002392215111
 channels_id = [
     -1001036240821, #https://t.me/meduzalive
     -1002066112684, #https://t.me/channelOut2
-    'https://t.me/team_milov'
+    -1001124373913, #'https://t.me/team_milov'
     # 'https://t.me/LipsitsIgor',
     # 'https://t.me/tvrain',
     # 'https://t.me/kaluginprofit',
@@ -48,27 +48,16 @@ channels_id = [
 
 key_words = [
     "apple",
+    "iphone",
     "nvidia",
     "netflix",
     "openai",
-    "илон",
     "маск",
     "tesla",
     "space",
-    "gpt",
-    "искусственн",
+    "chatgpt",
     "интеллект",
-    "национализ",
-    "мобилизаци",
-    "курс рубля",
-    "курс доллара",
     "главные новости",
-    # "глазами читател",
-    "блокиров",
-    "уфа",
-    "башкор",
-    "башкир",
-    "самолет",
-    "авария",
     "день войны:",
+    "Россия:",
 ]

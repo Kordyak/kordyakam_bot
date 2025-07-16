@@ -1,3 +1,5 @@
+from idlelib.replace import replace
+
 from telethon import events, TelegramClient
 
 from aiogram import Dispatcher, Bot, F
@@ -24,15 +26,13 @@ asyncio.set_event_loop(loop)
 client = TelegramClient('kord1', config.client.api_id, config.client.api_hash, device_model="MS Windows", system_version="11")
 client.start()
 
-bot = Bot(token=config.tg_bot.token,
-          default=DefaultBotProperties(parse_mode='MARKDOWN'))
+bot = Bot(token=config.tg_bot.token, default=DefaultBotProperties(parse_mode='MarkdownV2'))
 commands = [
     #BotCommand(command="/start", description="Запустить бота"),
     BotCommand(command="/ru_en", description="Перевод русcко-английский"),
     BotCommand(command="/en_ru", description="Перевод англо-русский"),
     BotCommand(command="/audio", description="Конвертировать текст в аудио на англ."),
 ]
-
 
 async def set_bot_commands():
     await bot.set_my_commands(commands)
@@ -57,7 +57,12 @@ dp['client'] = client
 async def handler(event: events):
     key: str = check_word(event.message.text, key_words)
     if key:
-        message_link = f"https://t.me/{event.message.chat.username}/{event.message.id}"
+        username = event.message.chat.username
+
+        if '_' in username:
+            username = username.replace('_', '\\_')
+
+        message_link = f"https://t.me/{username}/{event.message.id}"
         eng_text = translate_rus_eng(event.message.text, '/ru_en')
         # await bot.send_message(chat_id=chat_id_IA, text=f'{eng_text}\n{message_link}')
         await send_with_retry(bot, chat_id_IA, f'{eng_text}\n{message_link}')

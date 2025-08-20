@@ -67,7 +67,10 @@ async def send_with_retry(bot, chat_id, text, max_retries=MAX_RETRIES, delay=RET
                 logger.warning(f"No internet connection. Retrying in {delay} seconds...")
                 await asyncio.sleep(delay)
                 continue
-            await bot.send_message(chat_id=chat_id, text=text)
+            if '_' in text:
+                await bot.send_message(chat_id=chat_id, text=text, parse_mode=None)
+            else:
+                await bot.send_message(chat_id=chat_id, text=text)
             logger.info(f"Message sent to {chat_id}")
             break  # Exit the loop if the message is sent successfully
 

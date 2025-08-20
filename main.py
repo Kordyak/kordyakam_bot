@@ -59,8 +59,8 @@ async def handler(event: events):
     if key:
         username = event.message.chat.username
 
-        if '_' in username:
-            username = username.replace('_', '\\_')
+        # if '_' in username:
+        #     username = username.replace('_', '\\_')
 
         message_link = f"https://t.me/{username}/{event.message.id}"
         eng_text = translate_rus_eng(event.message.text, '/ru_en')

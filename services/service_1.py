@@ -38,7 +38,7 @@ def convert_text_audio(in_text: str) -> FSInputFile:
 
 def check_word(news: str, words: list) -> str:  # парсинг новостей на слово
     for key in words:
-        if re.search(key, news.lower()):
+        if re.search(key.lower(), news.lower()):
             return key
 
 

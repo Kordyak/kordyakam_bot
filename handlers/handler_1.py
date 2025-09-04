@@ -33,7 +33,12 @@ async def handler(message: Message):
 
 @router.message(Command('audio'))
 async def handler(message: Message):
-    audio_file: FSInputFile = convert_text_audio(message.reply_to_message.text)
+    if message.reply_to_message:
+        text = message.reply_to_message.text
+    else:
+        text = message.md_text.replace('/audio','')
+
+    audio_file: FSInputFile = convert_text_audio(text)
     await message.reply_audio(audio_file)
     os.remove(audio_file.filename)
 

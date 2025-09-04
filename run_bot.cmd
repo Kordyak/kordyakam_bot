@@ -1,2 +1,2 @@
 @echo off
-python main.py
+python "C:\Users\user\PycharmProjects\kordyakam_bot\main.py"

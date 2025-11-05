@@ -42,9 +42,10 @@ channels = [
     -1002066112684, #https://t.me/channelOut2
     -1001124373913, #'https://t.me/team_milov'
     #-1001295424173, #'https://t.me/English_Books_TG'
-    # 'https://t.me/LipsitsIgor',
-    # 'https://t.me/tvrain',
-    # 'https://t.me/kaluginprofit',
+]
+channels2 = [
+    -1002066112684, #https://t.me/channelOut2
+    -1001295424173, #'https://t.me/English_Books_TG'
 ]
 
 key_words = [

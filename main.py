@@ -67,9 +67,26 @@ async def handler(event: events):
         # await bot.send_message(chat_id=chat_id_IA, text=f'{eng_text}\n{message_link}')
         await send_with_retry(bot, chat_id_IA, f'{eng_text}\n{message_link}')
 
-@client.on(events.NewMessage(chats=-1001295424173))
+
+@client.on(events.NewMessage(chats=channels2))
 async def handler(event: events):
-    pass
+    text = event.message.text
+    text = re.sub(r'[^\w\s.,!?;:()\-–—\"\']', '', text) #Удаляет эмодзи и специальные символы
+    link = f"t.me/{event.chat.username}/{event.message.id}"
+    if text:
+        #Текст из чата про книги
+        match = re.search(r'Description:\s*(.*?)\s*Read book', text, re.DOTALL)
+        if match:
+            text_match = match.group(1).strip()
+            if check_english_content(text_match):  # Проверяет, является ли текст преимущественно английским
+                audio_file: FSInputFile = convert_text_audio(text_match)
+                await bot.send_audio(chat_id= chat_id_IA, audio= audio_file, caption= f"{text_match}\n🔗 {link}")
+                os.remove(audio_file.filename)
+            else:
+                await bot.send_message(chat_id_IA, "Текст преимущественно (70%) не на английском!!!")
+        else:
+            await bot.send_message(chat_id_IA, "Текст не совпал по условию Description:\s*(.*?)\s*Read book!!!")
+
 
 
 if __name__ == "__main__":

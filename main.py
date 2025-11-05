@@ -31,7 +31,7 @@ commands = [
     #BotCommand(command="/start", description="Запустить бота"),
     BotCommand(command="/ru_en", description="Перевод русcко-английский"),
     BotCommand(command="/en_ru", description="Перевод англо-русский"),
-    BotCommand(command="/audio", description="Конвертировать текст в аудио на англ."),
+    BotCommand(command="/audio_eng", description="Конвертировать текст в аудио на англ."),
 ]
 
 async def set_bot_commands():

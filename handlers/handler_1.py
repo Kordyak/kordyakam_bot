@@ -31,22 +31,51 @@ async def handler(message: Message):
         await message.reply(f'{eng_text}')
 
 
-@router.message(Command('audio'))
+@router.message(Command('audio_eng'))
 async def handler(message: Message):
     if message.reply_to_message.text:
         text = message.reply_to_message.text
-    elif message.reply_to_message.caption:
+    elif message.reply_to_message.caption: # Текст из подписи под медиа сообщением
+        #Текст из чата про книги
         match = re.search(r'Description:\s*(.*?)\s*Read book', message.reply_to_message.caption, re.DOTALL)
         if match:
             text = match.group(1).strip()
         else:
             text = message.reply_to_message.caption
     else:
-        text = message.md_text.replace('/audio','')
+        text = message.md_text.replace('/audio_eng','')
+    #Проверяет, является ли текст преимущественно английским
+    if check_english_content(text):
+        audio_file: FSInputFile = convert_text_audio(text)
+        await message.reply_audio(audio_file)
+        os.remove(audio_file.filename)
+    else:
+        await message.reply("Текст преимущественно (70%) не на английском!!!")
 
-    audio_file: FSInputFile = convert_text_audio(text)
-    await message.reply_audio(audio_file)
-    os.remove(audio_file.filename)
 
 
+def has_russian_text(text):
+    """Проверяет, содержит ли текст английские символы"""
+    return bool(re.search(r'[а-яА-Я]', text))
 
+
+def check_english_content(text, threshold=0.7):
+    """
+    Проверяет, является ли текст преимущественно английским
+
+    Args:
+        text: текст для проверки
+        threshold: порог (0.7 = 70% английских символов)
+    """
+    if not text:
+        return False
+
+    # Считаем английские символы
+    english_count = len(re.findall(r'[a-zA-Z]', text))
+    total_chars = len(re.findall(r'[a-zA-Zа-яА-Я]', text))  # только буквы
+
+    if total_chars == 0:
+        return False
+
+    ratio = english_count / total_chars
+    return ratio >= threshold

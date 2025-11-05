@@ -44,6 +44,7 @@ async def handler(message: Message):
             text = message.reply_to_message.caption
     else:
         text = message.md_text.replace('/audio_eng','')
+    text = clean_text(text)
     #Проверяет, является ли текст преимущественно английским
     if check_english_content(text):
         audio_file: FSInputFile = convert_text_audio(text)
@@ -79,3 +80,9 @@ def check_english_content(text, threshold=0.7):
 
     ratio = english_count / total_chars
     return ratio >= threshold
+
+def clean_text(text):
+    """Удаляет эмодзи и специальные символы"""
+    # Удаляем эмодзи и символы вне базовой многоязычной плоскости Unicode
+    cleaned = re.sub(r'[^\w\s.,!?;:()\-–—\"\']', '', text)
+    return cleaned

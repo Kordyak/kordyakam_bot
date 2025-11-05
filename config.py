@@ -37,10 +37,11 @@ def load_config():
 
 chat_id_IA = -1002392215111
 
-channels_id = [
+channels = [
     -1001036240821, #https://t.me/meduzalive
     -1002066112684, #https://t.me/channelOut2
     -1001124373913, #'https://t.me/team_milov'
+    #-1001295424173, #'https://t.me/English_Books_TG'
     # 'https://t.me/LipsitsIgor',
     # 'https://t.me/tvrain',
     # 'https://t.me/kaluginprofit',

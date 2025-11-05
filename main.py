@@ -53,7 +53,7 @@ dp['client'] = client
 # dp['argostranslate'] = argostranslate
 
 
-@client.on(events.NewMessage(chats=channels_id))
+@client.on(events.NewMessage(chats=channels))
 async def handler(event: events):
     key: str = check_word(event.message.text, key_words)
     if key:
@@ -66,6 +66,10 @@ async def handler(event: events):
         eng_text = translate_rus_eng(event.message.text, '/ru_en')
         # await bot.send_message(chat_id=chat_id_IA, text=f'{eng_text}\n{message_link}')
         await send_with_retry(bot, chat_id_IA, f'{eng_text}\n{message_link}')
+
+@client.on(events.NewMessage(chats=-1001295424173))
+async def handler(event: events):
+    pass
 
 
 if __name__ == "__main__":

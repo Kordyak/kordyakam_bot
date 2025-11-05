@@ -79,8 +79,14 @@ async def handler(event: events):
         if match:
             text_match = match.group(1).strip()
             if check_english_content(text_match):  # Проверяет, является ли текст преимущественно английским
+                text_rus = translate_rus_eng(text_match, "/en_ru")
                 audio_file: FSInputFile = convert_text_audio(text_match)
-                await bot.send_audio(chat_id= chat_id_IA, audio= audio_file, caption= f"{text_match}\n🔗 {link}")
+                await bot.send_audio(chat_id= chat_id_IA,
+                                     audio= audio_file,
+                                     parse_mode='HTML',
+                                     caption= f"{text_match}\n"
+                                              f"<tg-spoiler>{text_rus}</tg-spoiler>"
+                                              f"\n🔗 {link}")
                 os.remove(audio_file.filename)
             else:
                 await bot.send_message(chat_id_IA, "Текст преимущественно (70%) не на английском!!!")

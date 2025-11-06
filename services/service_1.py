@@ -27,11 +27,12 @@ def translate_rus_eng(in_text: str, how_translate: str) -> str:
         return argostranslate.translate.translate(text, "ru", "en")
 
 
-def convert_text_audio(in_text: str) -> FSInputFile:
+def convert_text_audio(in_text: str, name_file: str = "") -> FSInputFile:
     text = re.sub('https.*', '', string=in_text)
     audio = gTTS(text=text, lang="en", slow=True)
-    name_file = f"{text[:15]}.mp3"
-    name_file = re.sub(r"[\n]", '', name_file)  #удаляем символы
+    if name_file == "" :
+        name_file = f"{text[:15]}.mp3"
+        name_file = re.sub(r"[\n]", '', name_file)  #удаляем символы
     audio.save(name_file)
     return FSInputFile(path=os.path.join(name_file))
 

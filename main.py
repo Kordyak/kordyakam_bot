@@ -72,6 +72,7 @@ async def handler(event: events):
 async def handler(event: events):
     text = event.message.text
     text = re.sub(r'[^\w\s.,!?;:()\-–—\"\']', '', text) #Удаляет эмодзи и специальные символы
+    book_name = text.split("\n")[0]
     link = f"t.me/{event.chat.username}/{event.message.id}"
     if text:
         #Текст из чата про книги
@@ -80,7 +81,7 @@ async def handler(event: events):
             text_match = match.group(1).strip()
             if check_english_content(text_match):  # Проверяет, является ли текст преимущественно английским
                 text_rus = translate_rus_eng(text_match, "/en_ru")
-                audio_file: FSInputFile = convert_text_audio(text_match)
+                audio_file: FSInputFile = convert_text_audio(text_match, book_name)
                 await bot.send_audio(chat_id= chat_id_IA,
                                      audio= audio_file,
                                      parse_mode='HTML',

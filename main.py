@@ -85,7 +85,7 @@ async def handler(event: events):
                 await bot.send_audio(chat_id= chat_id_IA,
                                      audio= audio_file,
                                      parse_mode='HTML',
-                                     caption= f"{text_match}\n"
+                                     caption= f"{text_match}\n\n"
                                               f"<tg-spoiler>{text_rus}</tg-spoiler>"
                                               f"\n🔗 {link}")
                 os.remove(audio_file.filename)

@@ -33,16 +33,18 @@ async def handler(message: Message):
 
 @router.message(Command('audio_eng'))
 async def handler(message: Message):
-    if message.reply_to_message.text: # Если просто текст в АУДИО перевести когда репли делаешь
-        text = message.reply_to_message.text
-    elif message.reply_to_message.caption: # Текст из чата про книги в АУДИО (капча под картинкой)
-        match = re.search(r'Description:\s*(.*?)\s*Read book', message.reply_to_message.caption, re.DOTALL)
-        if match:
-            text = match.group(1).strip()
-        else:
-            text = message.reply_to_message.caption
+    if message.reply_to_message: # Если просто текст в АУДИО перевести когда репли делаешь
+        if message.reply_to_message.text: # Если просто текст в АУДИО перевести когда репли делаешь
+            text = message.reply_to_message.text
+        elif message.reply_to_message.caption: # Текст из чата про книги в АУДИО (капча под картинкой)
+            match = re.search(r'Description:\s*(.*?)\s*Read book', message.reply_to_message.caption, re.DOTALL)
+            if match:
+                text = match.group(1).strip()
+            else:
+                text = message.reply_to_message.caption
     else: # когда просто отправляешь текст с командой /audio_eng
-        text = message.md_text.replace('/audio_eng','')
+        text = message.text.replace('/audio_eng','')
+        text = text.replace('@KordyakBot','')
 
     text = re.sub(r'[^\w\s.,!?;:()\-–—\"\']', '', text) #Удаляет эмодзи и специальные символы
 

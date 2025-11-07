@@ -55,44 +55,37 @@ dp['client'] = client
 
 @client.on(events.NewMessage(chats=channels))
 async def handler(event: events):
-    key: str = check_word(event.message.text, key_words)
+    rus_text = Clean_text(event.message.text)
+    key: str = check_word(rus_text, key_words)
     if key:
-        username = event.message.chat.username
-
-        # if '_' in username:
-        #     username = username.replace('_', '\\_')
-
-        message_link = f"https://t.me/{username}/{event.message.id}"
-        eng_text = translate_rus_eng(event.message.text, '/ru_en')
-        # await bot.send_message(chat_id=chat_id_IA, text=f'{eng_text}\n{message_link}')
-        await send_with_retry(bot, chat_id_IA, f'{eng_text}\n{message_link}')
+        link = f"🔗 t.me/{event.chat.username}/{event.message.id}"
+        eng_text = translate_rus_eng(rus_text, '/ru_en')
+        mix_text = Mix_text(eng_text, rus_text)
+        # await bot.send_message(chat_id=chat_id_IA, text=f'{eng_text}\n{link}')
+        await send_with_retry(bot, chat_id_IA, f'{mix_text}\n{link}')
 
 
 @client.on(events.NewMessage(chats=channels2))
 async def handler(event: events):
-    text = event.message.text
-    text = re.sub(r'[^\w\s.,!?;:()\-–—\"\']', '', text) #Удаляет эмодзи и специальные символы
-    book_name = text.split("\n")[0]
-    link = f"t.me/{event.chat.username}/{event.message.id}"
-    if text:
-        #Текст из чата про книги
-        match = re.search(r'Description:\s*(.*?)\s*Read book', text, re.DOTALL)
-        if match:
-            text_match = match.group(1).strip()
-            if check_english_content(text_match):  # Проверяет, является ли текст преимущественно английским
-                text_rus = translate_rus_eng(text_match, "/en_ru")
-                audio_file: FSInputFile = convert_text_audio(text_match, book_name)
-                await bot.send_audio(chat_id= chat_id_IA,
-                                     audio= audio_file,
-                                     parse_mode='HTML',
-                                     caption= f"{text_match}\n\n"
-                                              f"<tg-spoiler>{text_rus}</tg-spoiler>"
-                                              f"\n🔗 {link}")
-                os.remove(audio_file.filename)
-            else:
-                await bot.send_message(chat_id_IA, "Текст преимущественно (70%) не на английском!!!")
+    text = Clean_text(event.message.text)
+    match = re.search(r'Description:\s*(.*?)\s*Read book', text, re.DOTALL)
+    #Текст из чата про книги
+    if match:
+        text_match = match.group(1).strip()
+        if check_english_content(text_match):  # Проверяет, является ли текст преимущественно английским
+            text_rus = translate_rus_eng(text_match, "/en_ru")
+            book_name = text.split("\n")[0]
+            audio_file: FSInputFile = convert_text_audio(text_match, book_name)
+            link = f"🔗 t.me/{event.chat.username}/{event.message.id}"
+            await bot.send_audio(chat_id= chat_id_IA,
+                                 audio= audio_file,
+                                 parse_mode='HTML',
+                                 caption= f"{text_match}\n\n"
+                                          f"<tg-spoiler>{text_rus}</tg-spoiler>\n"
+                                          f"{link}")
+            os.remove(audio_file.filename)
         else:
-            await bot.send_message(chat_id_IA, "Текст не совпал по условию Description:\s*(.*?)\s*Read book!!!")
+            await bot.send_message(chat_id_IA, "Текст преимущественно (70%) не на английском!!!")
 
 
 

@@ -25,7 +25,7 @@ def translate_rus_eng(in_text: str, how_translate: str) -> str:
 
 def Clean_text(text: str) -> str:
     text = re.sub(r'[^\w\s.,!?;:()\-–—\"\']', '', text) #Удаляет эмодзи и специальные символы
-    text = re.sub(r"[\*\[\]]", "", text)  #удаляем символы
+    text = re.sub(r"[\*\[\]_]", "", text)  #удаляем символы
     text = re.sub(r"\(https.*?\)", "", text).strip()  #удаляем ссылки из текста
     return text
 

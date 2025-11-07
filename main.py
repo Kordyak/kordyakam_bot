@@ -55,7 +55,7 @@ dp['client'] = client
 
 @client.on(events.NewMessage(chats=channels))
 async def handler(event: events):
-    rus_text = Clean_text(event.message.text)
+    rus_text = event.message.raw_text
     key: str = check_word(rus_text, key_words)
     if key:
         link = f"🔗 t.me/{event.chat.username}/{event.message.id}"
@@ -67,7 +67,7 @@ async def handler(event: events):
 
 @client.on(events.NewMessage(chats=channels2))
 async def handler(event: events):
-    text = Clean_text(event.message.text)
+    text = event.message.raw_text
     match = re.search(r'Description:\s*(.*?)\s*Read book', text, re.DOTALL)
     #Текст из чата про книги
     if match:

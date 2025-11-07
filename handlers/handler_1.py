@@ -16,15 +16,11 @@ async def run_rdp(message: types.Message):
 @router.message(Command('ru_en', 'en_ru'))
 async def handler(message: Message):
     how_translate = message.text.split(' ')[0]
-
     if message.reply_to_message:
-        message_link = f"https://t.me/{message.chat.username}/{message.message_id}"
         eng_text = translate_rus_eng(message.reply_to_message.text, how_translate)
     elif message.quote:
-        message_link = f"https://t.me/{message.external_reply.chat.username}/{message.external_reply.message_id}"
         eng_text = translate_rus_eng(message.quote.text, how_translate)
     else:
-        message_link = ""
         eng_text = translate_rus_eng(message.text, how_translate)
 
     if eng_text:

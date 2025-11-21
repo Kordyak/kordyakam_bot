@@ -4,7 +4,7 @@ from aiogram.types import Message, BotCommand, FSInputFile
 
 from services.service_1 import *
 
-router = Router()
+router = Router(name='Kordyak_router')
 
 
 @router.message(lambda m: m.text.isdigit() and len(m.text) == 6)
@@ -46,7 +46,7 @@ async def handler(message: Message):
 
     if check_english_content(text):  #Проверяет, является ли текст преимущественно английским
         audio_file: FSInputFile = convert_text_audio(text)
-        await message.reply_audio(audio_file)
+        await message.reply_audio(audio_file,performer=router.name)
         os.remove(audio_file.filename)
     else:
         await message.reply("Текст преимущественно (70%) не на английском!!!")

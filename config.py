@@ -43,7 +43,7 @@ channels = [
     -1001124373913, #'https://t.me/team_milov'
     #-1001295424173, #'https://t.me/English_Books_TG'
 ]
-channels2 = [
+channels_english_book = [
     -1002066112684, #https://t.me/channelOut2
     -1001295424173, #'https://t.me/English_Books_TG'
 ]

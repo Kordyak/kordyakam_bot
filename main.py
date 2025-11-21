@@ -65,10 +65,12 @@ async def handler(event: events):
         await send_with_retry(bot, chat_id_IA, f'{mix_text}\n{link}')
 
 
-@client.on(events.NewMessage(chats=channels2))
+@client.on(events.NewMessage(chats=channels_english_book))
 async def handler(event: events):
     text = event.message.raw_text
     match = re.search(r'Description:\s*(.*?)\s*Read book', text, re.DOTALL)
+    match = re.sub(r'[^\w\s.,!?;:()\-–—\"\']', '', match) #Удаляет эмодзи и специальные символы
+
     #Текст из чата про книги
     if match:
         text_match = match.group(1).strip()
@@ -80,6 +82,7 @@ async def handler(event: events):
             await bot.send_audio(chat_id= chat_id_IA,
                                  audio= audio_file,
                                  parse_mode='HTML',
+                                 performer=bot.name,
                                  caption= f"{text_match}\n\n"
                                           f"<tg-spoiler>{text_rus}</tg-spoiler>\n"
                                           f"{link}")

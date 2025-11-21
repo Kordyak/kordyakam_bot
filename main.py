@@ -69,11 +69,11 @@ async def handler(event: events):
 async def handler(event: events):
     text = event.message.raw_text
     match = re.search(r'Description:\s*(.*?)\s*Read book', text, re.DOTALL)
-    match = re.sub(r'[^\w\s.,!?;:()\-–—\"\']', '', match) #Удаляет эмодзи и специальные символы
 
     #Текст из чата про книги
     if match:
         text_match = match.group(1).strip()
+        text_match = re.sub(r'[^\w\s.,!?;:()\-–—\"\']', '', text_match) #Удаляет эмодзи и специальные символы
         if check_english_content(text_match):  # Проверяет, является ли текст преимущественно английским
             text_rus = translate_rus_eng(text_match, "/en_ru")
             book_name = text.split("\n")[0]
@@ -82,7 +82,6 @@ async def handler(event: events):
             await bot.send_audio(chat_id= chat_id_IA,
                                  audio= audio_file,
                                  parse_mode='HTML',
-                                 performer=bot.name,
                                  caption= f"{text_match}\n\n"
                                           f"<tg-spoiler>{text_rus}</tg-spoiler>\n"
                                           f"{link}")

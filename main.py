@@ -81,10 +81,14 @@ async def handler(event: events):
             link = f"🔗 t.me/{event.chat.username}/{event.message.id}"
             await bot.send_audio(chat_id= chat_id_IA,
                                  audio= audio_file,
-                                 parse_mode='HTML',
-                                 caption= f"{text_match}\n\n"
-                                          f"<tg-spoiler>{text_rus}</tg-spoiler>\n"
+
+                                 performer=bot._me.first_name,
+                                 title=book_name,
+                                 caption= f"{text_match}\n"
                                           f"{link}")
+            await bot.send_message(chat_id= chat_id_IA,
+                                    text=f"<tg-spoiler>{text_rus}</tg-spoiler>",
+                                    parse_mode = 'HTML')
             os.remove(audio_file.filename)
         else:
             await bot.send_message(chat_id_IA, "Текст преимущественно (70%) не на английском!!!")

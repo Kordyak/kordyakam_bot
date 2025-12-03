@@ -55,8 +55,8 @@ def is_internet_available():
         return False
 
 # Retry settings
-MAX_RETRIES = 120  # Maximum number of retry attempts
-RETRY_DELAY = 15  # Delay between retries in seconds
+MAX_RETRIES = 60  # Maximum number of retry attempts
+RETRY_DELAY = 60  # Delay between retries in seconds
 
 
 async def send_with_retry(bot, chat_id, text, max_retries=MAX_RETRIES, delay=RETRY_DELAY):
@@ -72,7 +72,9 @@ async def send_with_retry(bot, chat_id, text, max_retries=MAX_RETRIES, delay=RET
                 continue
 
             #if '_' in text:
-            await bot.send_message(chat_id=chat_id, text=text, parse_mode='HTML')
+            await bot.send_message(chat_id=chat_id,
+                                   text=text,
+                                   parse_mode='HTML')
             #else:
                 #await bot.send_message(chat_id=chat_id, text=text)
             logger.info(f"Message sent to {chat_id}")

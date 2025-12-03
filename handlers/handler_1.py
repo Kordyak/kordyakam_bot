@@ -50,7 +50,7 @@ async def handler(message: Message):
     if check_english_content(text):  #Проверяет, является ли текст преимущественно английским
         audio_file: FSInputFile = convert_text_audio(text)
         await message.reply_audio(audio_file,
-                                  performer=router.name,
+                                  performer=message.bot._me.first_name,
                                   title=audio_file.filename,
                                   )
         os.remove(audio_file.filename)

@@ -97,7 +97,9 @@ async def handler(event: events):
                                  performer=bot._me.first_name,
                                  title=book_name,
                                  caption= f"{text_match}\n"
-                                          f"{link}")
+                                          f"{link}",
+                                 parse_mode = 'HTML'
+                                 )
             await bot.send_message(chat_id= chat_id_IA,
                                     text=f"<tg-spoiler>{text_rus}</tg-spoiler>",
                                     parse_mode = 'HTML')

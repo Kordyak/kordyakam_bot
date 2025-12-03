@@ -79,7 +79,7 @@ async def handler(event: events):
         await send_with_retry(bot, chat_id_IA, f'{mix_text}\n{link}')
 
 
-@client.on(events.NewMessage(chats=channels_english_book)) #Книги на английском
+@client.on(events.NewMessage(chats=channels_english_book)) # Книги на английском
 async def handler(event: events):
     text = event.message.raw_text
     match = re.search(r'Description:\s*(.*?)\s*Read book', text, re.DOTALL)
@@ -87,7 +87,6 @@ async def handler(event: events):
     #Текст из чата про книги
     if match:
         text_match = match.group(1).strip()
-        text_match = re.sub(r'[^\w\s.,!?;:()\-–—\"\']', '', text_match) #Удаляет эмодзи и специальные символы
         if check_english_content(text_match):  # Проверяет, является ли текст преимущественно английским
             text_rus = translate_rus_eng(text_match, "/en_ru")
             book_name = text.split("\n")[0]
@@ -95,7 +94,6 @@ async def handler(event: events):
             link = f"🔗 t.me/{event.chat.username}/{event.message.id}"
             await bot.send_audio(chat_id= chat_id_IA,
                                  audio= audio_file,
-
                                  performer=bot._me.first_name,
                                  title=book_name,
                                  caption= f"{text_match}\n"

@@ -31,7 +31,11 @@ def Clean_text(text: str) -> str:
 
 def convert_text_audio(in_text: str, name_file: str, lang: str) -> FSInputFile:
     text = re.sub('https.*', '', string=in_text)
-    audio = gTTS(text=text, lang=lang, slow=True)
+    if lang == "en":
+        audio = gTTS(text=text, lang=lang, slow=True)
+    else:
+        audio = gTTS(text=text, lang=lang)
+
     if name_file == "" :
         name_file = f"{text[:15]}.mp3"
         name_file = re.sub(r"[\n]", '', name_file)  #удаляем символы

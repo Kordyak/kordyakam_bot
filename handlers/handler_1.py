@@ -1,6 +1,8 @@
 from aiogram import Router, types, filters, Bot
 from aiogram.filters import Command
+from aiogram.filters.command import CommandObject
 from aiogram.types import Message, BotCommand, FSInputFile
+
 
 from services.service_1 import *
 
@@ -27,9 +29,9 @@ async def handler(message: Message):
         await message.reply(f'{eng_text}')
 
 
-@router.message(Command('audio_eng'))
-async def handler(message: Message):
-
+@router.message(Command('audio_eng', 'audio_ru'))
+async def handler(message: Message, command: CommandObject):
+    text = command.args
     if message.reply_to_message: # Если просто текст в АУДИО перевести когда репли делаешь
         if message.reply_to_message.text: # Если просто текст в АУДИО перевести когда репли делаешь
             text = message.reply_to_message.text
@@ -41,22 +43,25 @@ async def handler(message: Message):
             else:
                 text = message.reply_to_message.caption
 
-    else: # когда просто отправляешь текст с командой /audio_eng
-        text = message.text.replace('/audio_eng','')
-        text = text.replace('@KordyakBot','')
+    # else: # когда просто отправляешь текст с командой /audio_eng
+    #     text = message.text.replace('/*','')
+    #     text = text.replace('@KordyakBot','')
 
     #text = re.sub(r'[^\w\s.,!?;:()\-–—\"\']', '', text) #Удаляет эмодзи и специальные символы
 
     if check_english_content(text):  #Проверяет, является ли текст преимущественно английским
-        audio_file: FSInputFile = convert_text_audio(text)
-        await message.reply_audio(audio_file,
-                                  performer=message.bot._me.first_name,
-                                  title=audio_file.filename,
-                                  )
-        os.remove(audio_file.filename)
+        lang = "en"
+    elif command.command == "audio_ru":
+        lang = "ru"
     else:
         await message.reply("Текст преимущественно (70%) не на английском!!!")
 
+    audio_file: FSInputFile = convert_text_audio(text,"",lang)
+    await message.reply_audio(audio_file,
+                              performer=message.bot._me.first_name,
+                              title=audio_file.filename,
+                              )
+    os.remove(audio_file.filename)
 
 #@router.message()
 #async def handler(message: Message):

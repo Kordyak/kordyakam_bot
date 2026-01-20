@@ -29,9 +29,9 @@ def Clean_text(text: str) -> str:
     text = re.sub(r"\(https.*?\)", "", text).strip()  #удаляем ссылки из текста
     return text
 
-def convert_text_audio(in_text: str, name_file: str = "") -> FSInputFile:
+def convert_text_audio(in_text: str, name_file: str, lang: str) -> FSInputFile:
     text = re.sub('https.*', '', string=in_text)
-    audio = gTTS(text=text, lang="en", slow=True)
+    audio = gTTS(text=text, lang=lang, slow=True)
     if name_file == "" :
         name_file = f"{text[:15]}.mp3"
         name_file = re.sub(r"[\n]", '', name_file)  #удаляем символы

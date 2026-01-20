@@ -36,6 +36,7 @@ commands = [
     BotCommand(command="/ru_en", description="Перевод русcко-английский"),
     BotCommand(command="/en_ru", description="Перевод англо-русский"),
     BotCommand(command="/audio_eng", description="Конвертировать текст в аудио на англ."),
+    BotCommand(command="/audio_ru", description="Конвертировать текст в аудио на рус."),
 ]
 async def set_bot_commands():
     await bot.set_my_commands(commands)
@@ -90,7 +91,7 @@ async def handler(event: events):
         if check_english_content(text_match):  # Проверяет, является ли текст преимущественно английским
             text_rus = translate_rus_eng(text_match, "/en_ru")
             book_name = text.split("\n")[0]
-            audio_file: FSInputFile = convert_text_audio(text_match, book_name)
+            audio_file: FSInputFile = convert_text_audio(text_match, book_name, "en")
             link = f"🔗 t.me/{event.chat.username}/{event.message.id}"
             await bot.send_audio(chat_id= chat_id_IA,
                                  audio= audio_file,

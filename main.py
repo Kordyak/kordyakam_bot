@@ -68,16 +68,16 @@ except Exception as e:
     model = None
 
 
-@client.on(events.NewMessage(chats=channels))# МЕДУЗА
-async def handler(event: events):
-    rus_text = event.message.raw_text
-    key: str = check_word(rus_text, key_words)
-    if key:
-        link = f"🔗 t.me/{event.chat.username}/{event.message.id}"
-        eng_text = translate_rus_eng(rus_text, '/ru_en')
-        mix_text = Mix_text(eng_text, rus_text)
-        # await bot.send_message(chat_id=chat_id_IA, text=f'{eng_text}\n{link}')
-        await send_with_retry(bot, chat_id_IA, f'{mix_text}\n{link}')
+# @client.on(events.NewMessage(chats=channels))# МЕДУЗА, Милов
+# async def handler(event: events):
+#     rus_text = event.message.raw_text
+#     key: str = check_word(rus_text, key_words)
+#     if key:
+#         link = f"🔗 t.me/{event.chat.username}/{event.message.id}"
+#         eng_text = translate_rus_eng(rus_text, '/ru_en')
+#         mix_text = Mix_text(eng_text, rus_text)
+#         # await bot.send_message(chat_id=chat_id_IA, text=f'{eng_text}\n{link}')
+#         await send_with_retry(bot, chat_id_IA, f'{mix_text}\n{link}')
 
 
 @client.on(events.NewMessage(chats=channels_english_book)) # Книги на английском

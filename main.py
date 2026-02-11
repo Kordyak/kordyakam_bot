@@ -1,11 +1,13 @@
 import whisper
 import io
-
+from pathlib import Path
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from telethon import events, TelegramClient
 
 from aiogram import Dispatcher, Bot, F
 from aiogram.client.default import DefaultBotProperties
 
+from Epub import send_daily_text, ReaderService
 from config import *
 from handlers.handler_1 import *
 
@@ -20,33 +22,51 @@ logger.info(f'Start bot!')
 
 config: Config = load_config()
 
-#Асинхронный цикл
-loop = asyncio.new_event_loop()
-asyncio.set_event_loop(loop)
-
 #Клиент моей телеграм уз
-client = TelegramClient('kord1', config.client.api_id, config.client.api_hash, device_model="MS Windows", system_version="11")
-client.start()
+client = TelegramClient(
+    'kord1',
+    config.client.api_id,
+    config.client.api_hash,
+    device_model="MS Windows",
+    system_version="11",
+)
 
 #Бот
-bot = Bot(token=config.tg_bot.token, default=DefaultBotProperties(parse_mode='Markdown'))
+bot = Bot(
+    token=config.tg_bot.token,
+    default=DefaultBotProperties(parse_mode='Markdown')
+)
 
-#Устанавливаем команды
-commands = [
-    BotCommand(command="/ru_en", description="Перевод русcко-английский"),
-    BotCommand(command="/en_ru", description="Перевод англо-русский"),
-    BotCommand(command="/audio_eng", description="Конвертировать текст в аудио на англ."),
-    BotCommand(command="/audio_ru", description="Конвертировать текст в аудио на рус."),
-]
+#ЧИТАЕМ КНИГУ
+async def Read_book_on_schedule():
+    EPUB_FILE = Path(__file__).parent / "books" / "Black_Beauty-Anna_Sewell.epub"
+    reader = ReaderService(EPUB_FILE)
+    scheduler = AsyncIOScheduler()
+    scheduler.add_job(
+        send_daily_text,
+        "cron",
+        hour=7,
+        minute=0,
+        args=[bot, reader]
+    )
+    scheduler.start()
+    # await send_daily_text(bot,reader) # отправка первого чанка КНИГИ при запуске для проверки
+
+
 async def set_bot_commands():
+    # Устанавливаем команды
+    commands = [
+        BotCommand(command="/ru_en", description="Перевод русcко-английский"),
+        BotCommand(command="/en_ru", description="Перевод англо-русский"),
+        BotCommand(command="/audio_eng", description="Конвертировать текст в аудио на англ."),
+        BotCommand(command="/audio_ru", description="Конвертировать текст в аудио на рус."),
+    ]
     await bot.set_my_commands(commands)
 
-loop.create_task(set_bot_commands())
 
 # Диспечтер для прослушивания БОТА
 dp = Dispatcher()
 dp.include_router(router)
-loop.create_task(dp.start_polling(bot))
 
 # АРГО транслятор
 argostranslate.package.update_package_index()
@@ -55,9 +75,9 @@ package_to_install = next(filter(lambda x: x.from_code == "ru" and x.to_code == 
 argostranslate.package.install_from_path(package_to_install.download())
 
 dp['client'] = client
-# dp['argostranslate'] = argostranslate
 
-# Загрузка модели Whisper
+
+# Загрузка модели Whisper для распознавания текста в аудио
 try:
     # Загружаем модель для распознавания (по умолчанию используется GPU, если доступен)
     model = whisper.load_model("base")
@@ -67,48 +87,7 @@ except Exception as e:
     # Вы можете выйти или установить model = None, чтобы избежать ошибок.
     model = None
 
-
-# @client.on(events.NewMessage(chats=channels))# МЕДУЗА, Милов
-# async def handler(event: events):
-#     rus_text = event.message.raw_text
-#     key: str = check_word(rus_text, key_words)
-#     if key:
-#         link = f"🔗 t.me/{event.chat.username}/{event.message.id}"
-#         eng_text = translate_rus_eng(rus_text, '/ru_en')
-#         mix_text = Mix_text(eng_text, rus_text)
-#         # await bot.send_message(chat_id=chat_id_IA, text=f'{eng_text}\n{link}')
-#         await send_with_retry(bot, chat_id_IA, f'{mix_text}\n{link}')
-
-
-@client.on(events.NewMessage(chats=channels_english_book)) # Книги на английском
-async def handler(event: events):
-    text = event.message.raw_text
-    match = re.search(r'Description:\s*(.*?)\s*Read book', text, re.DOTALL)
-
-    #Текст из чата про книги
-    if match:
-        text_match = match.group(1).strip()
-        if check_english_content(text_match):  # Проверяет, является ли текст преимущественно английским
-            text_rus = translate_rus_eng(text_match, "/en_ru")
-            book_name = text.split("\n")[0]
-            audio_file: FSInputFile = convert_text_audio(text_match, book_name, "en")
-            link = f"🔗 t.me/{event.chat.username}/{event.message.id}"
-            await bot.send_audio(chat_id= chat_id_IA,
-                                 audio= audio_file,
-                                 performer=bot._me.first_name,
-                                 title=book_name,
-                                 caption= f"{text_match}\n"
-                                          f"{link}",
-                                 parse_mode = 'HTML'
-                                 )
-            await bot.send_message(chat_id= chat_id_IA,
-                                    text=f"<tg-spoiler>{text_rus}</tg-spoiler>",
-                                    parse_mode = 'HTML')
-            os.remove(audio_file.filename)
-        else:
-            await bot.send_message(chat_id_IA, "Текст преимущественно (70%) не на английском!!!")
-
-
+#Обрабатывает голосовые сообщения и переводит их в текст с помощью Whisper
 @dp.message(F.voice)
 async def voice_message_handler(message: types.Message):
     """Обрабатывает голосовые сообщения и переводит их в текст с помощью Whisper."""
@@ -162,14 +141,57 @@ async def voice_message_handler(message: types.Message):
         if os.path.exists(temp_ogg_path):
             os.remove(temp_ogg_path)
 
+# Слушает новости МЕДУЗА, Милов
+# @client.on(events.NewMessage(chats=channels))
+# async def handler(event: events):
+#     rus_text = event.message.raw_text
+#     key: str = check_word(rus_text, key_words)
+#     if key:
+#         link = f"🔗 t.me/{event.chat.username}/{event.message.id}"
+#         eng_text = translate_rus_eng(rus_text, '/ru_en')
+#         mix_text = Mix_text(eng_text, rus_text)
+#         # await bot.send_message(chat_id=chat_id_IA, text=f'{eng_text}\n{link}')
+#         await send_with_retry(bot, chat_id_IA, f'{mix_text}\n{link}')
+
+# Слушает обзоры книг на английском
+# @client.on(events.NewMessage(chats=channels_english_book))
+# async def handler(event: events):
+#     text = event.message.raw_text
+#     match = re.search(r'Description:\s*(.*?)\s*Read book', text, re.DOTALL)
+#
+#     #Текст из чата про книги
+#     if match:
+#         text_match = match.group(1).strip()
+#         if check_english_content(text_match):  # Проверяет, является ли текст преимущественно английским
+#             text_rus = translate_rus_eng(text_match, "/en_ru")
+#             book_name = text.split("\n")[0]
+#             audio_file: FSInputFile = convert_text_audio(text_match, book_name, "en")
+#             link = f"🔗 t.me/{event.chat.username}/{event.message.id}"
+#             await bot.send_audio(chat_id= chat_id_IA,
+#                                  audio= audio_file,
+#                                  performer=bot._me.first_name,
+#                                  title=book_name,
+#                                  caption= f"{text_match}\n"
+#                                           f"{link}",
+#                                  parse_mode = 'HTML'
+#                                  )
+#             await bot.send_message(chat_id= chat_id_IA,
+#                                     text=f"<tg-spoiler>{text_rus}</tg-spoiler>",
+#                                     parse_mode = 'HTML')
+#             os.remove(audio_file.filename)
+#         else:
+#             await bot.send_message(chat_id_IA, "Текст преимущественно (70%) не на английском!!!")
+
+
+
+async def main():
+    await client.start() # запускаем telethon внутри общего loop
+    await set_bot_commands()
+    await Read_book_on_schedule()
+    await dp.start_polling(bot)
 
 if __name__ == "__main__":
-    try:
-        client.run_until_disconnected()
-    except Exception as e:
-        logger.error(f"Fatal error: {e}")
-    finally:
-        logger.info("Bot stopped.")
+    asyncio.run(main())
 
 
 

@@ -1,17 +1,75 @@
-from aiogram import Router, types, filters, Bot, F
+import io
+
+from aiogram import Router, F
 from aiogram.filters import Command
 from aiogram.filters.command import CommandObject
-from aiogram.types import Message, BotCommand, FSInputFile
+from aiogram.types import Message
 
 
 from services.service_1 import *
 
 router = Router(name='Kordyak_router')
 
+# Обрабатывает голосовые сообщения и переводит их в текст с помощью Whisper
+@router.message(F.voice)
+async def voice_message_handler(message: Message, model):
 
-@router.message(lambda m: m.text.isdigit() and len(m.text) == 6)
-async def run_rdp(message: types.Message):
-    #os.system(f"Run_rdp.exe {message.text}")
+    """Обрабатывает голосовые сообщения и переводит их в текст с помощью Whisper."""
+    if not model:
+        await message.reply("❌ Модель распознавания речи не загружена. Проверьте логи.")
+        return
+
+    bot = message.bot
+
+    await message.bot.send_chat_action(chat_id=message.chat.id, action="typing")
+
+    # 1. Скачивание голосового сообщения
+    file_id = message.voice.file_id
+    file = await bot.get_file(file_id)
+    file_path = file.file_path
+
+    # Скачиваем файл в байты
+    audio_data = io.BytesIO()
+    await bot.download_file(file_path, audio_data)
+    audio_data.seek(0)
+
+    # Создаем временный файл для Whisper, так как он лучше работает с путями, чем с буферами
+    temp_ogg_path = "temp_voice.ogg"
+
+    try:
+        # Сохраняем OGG-файл на диск
+        with open(temp_ogg_path, "wb") as f:
+            f.write(audio_data.read())
+
+        # 2. Распознавание речи с помощью Whisper
+        # Указываем `language="ru"` для повышения точности и скорости
+        result = model.transcribe(
+            temp_ogg_path,
+            language="ru",
+            # Дополнительный параметр, чтобы избежать "мусора"
+            fp16=False # Раскомментируйте, если есть проблемы с GPU
+        )
+
+        text = result["text"]
+
+        # 3. Отправка результата
+        if text.strip():
+            await message.reply(f"🎤 **Распознанный текст (Whisper):**\n`{text}`")
+        else:
+            await message.reply("😔 Извините, не удалось распознать речь (пустой результат).")
+
+    except Exception as e:
+        logging.error(f"Ошибка при обработке голосового сообщения с Whisper: {e}")
+        await message.reply("❌ Произошла ошибка при обработке аудио.")
+
+    finally:
+        # 4. Очистка временного файла
+        if os.path.exists(temp_ogg_path):
+            os.remove(temp_ogg_path)
+
+
+@router.message(F.text.regexp(r"^\d{6}$"))
+async def run_rdp(message: Message):
     os.system(f"start call_process_by_time.exe {message.text}")
 
 
@@ -43,13 +101,8 @@ async def handler(message: Message, command: CommandObject):
             else:
                 text = message.reply_to_message.caption
 
-    # else: # когда просто отправляешь текст с командой /audio_eng
-    #     text = message.text.replace('/*','')
-    #     text = text.replace('@KordyakBot','')
 
-    #text = re.sub(r'[^\w\s.,!?;:()\-–—\"\']', '', text) #Удаляет эмодзи и специальные символы
-
-    if check_english_content(text):  #Проверяет, является ли текст преимущественно английским
+    if check_english_content(text):  # Проверяет, является ли текст преимущественно английским
         lang = "en"
     elif command.command == "audio_ru":
         lang = "ru"
@@ -63,11 +116,6 @@ async def handler(message: Message, command: CommandObject):
                               )
     os.remove(audio_file.filename)
 
-
-
-#@router.message()
-#async def handler(message: Message):
-#    await message.reply(f"<tg-spoiler>{message.text}</tg-spoiler>", parse_mode="html")
 
 
 

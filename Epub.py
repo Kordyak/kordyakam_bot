@@ -25,7 +25,6 @@ def epub_paragraph_generator(epub_path):
                 yield text
 
 
-import re
 
 def smart_telegram_split(text, limit):
 
@@ -117,8 +116,8 @@ class ReaderService:
 
 
 
-
-def make_audio_title(text, words=6, max_len=60):
+# Заголовок из текста
+def make_title(text, words=6, max_len=60):
     # убираем переносы строк
     clean = text.replace("\n", " ").strip()
     # берём первые N слов
@@ -142,7 +141,7 @@ async def send_daily_text(bot, reader):
         chat_id=chat_id_IA,
         audio=audio_file,
         performer="kordyak_bot",
-        title=make_audio_title(chunk),
+        title=make_title(chunk),
         caption=chunk,
         parse_mode='HTML'
     )

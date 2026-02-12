@@ -3,12 +3,12 @@ from config import Config, load_config
 import logging
 
 import asyncio
-from aiogram import Dispatcher, Bot, F
+from aiogram import Dispatcher, Bot
 from aiogram.client.default import DefaultBotProperties
 from aiogram.types import BotCommand
 
 import whisper
-from Epub import send_daily_text, ReaderService
+from Epub import send_daily_text, Current_book
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import argostranslate.package
 
@@ -31,8 +31,8 @@ bot = Bot(
 )
 
 # Диспечтер для прослушивания БОТА
-dp = Dispatcher()
-dp.include_router(router)
+dispatcher = Dispatcher()
+dispatcher.include_router(router)
 
 # Устанавливаем команды
 async def set_bot_commands():
@@ -55,31 +55,32 @@ async def set_argostranslate():
 
 # Загружаем модель для распознавания РЕЧИ (по умолчанию используется GPU, если доступен)
 model = whisper.load_model("base")
-dp["model"] = model
+dispatcher["model"] = model
 
+scheduler = AsyncIOScheduler() # Планировщик
 
 # Устанавливаем планировщик для чтения книги по расписанию
-async def read_book_on_schedule():
+def setup_reader_schedule():
     EPUB_FILE = Path(__file__).parent / "books" / "Black_Beauty-Anna_Sewell.epub"
-    reader = ReaderService(EPUB_FILE)
-    scheduler = AsyncIOScheduler()
+    current_book = Current_book(EPUB_FILE, "reader_state.json")
     scheduler.add_job(
         send_daily_text,
         "cron",
-        hour=7,
+        hour=6,
         minute=0,
-        args=[bot, reader]
+        args=[bot, current_book]
     )
-    scheduler.start()
-    # await send_daily_text(bot,reader) # отправка первого чанка КНИГИ при запуске для проверки
 
 
 
 async def main():
     await set_bot_commands()
     await set_argostranslate()
-    await read_book_on_schedule()
-    await dp.start_polling(bot)
+
+    setup_reader_schedule()
+    scheduler.start()
+
+    await dispatcher.start_polling(bot)
 
 if __name__ == "__main__":
     asyncio.run(main())

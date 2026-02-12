@@ -58,20 +58,40 @@ def smart_telegram_split(text, limit):
 
 
 
-class ReaderService:
+
+def get_epub_metadata(book_path):
+
+    book = epub.read_epub(str(book_path))
+
+    title = book.get_metadata('DC', 'title')
+    creator = book.get_metadata('DC', 'creator')
+
+    title = title[0][0] if title else Path(book_path).stem
+    creator = creator[0][0] if creator else ""
+
+    return title, creator
+
+
+class Current_book:
 
     TELEGRAM_LIMIT = 1000
 
-    def __init__(self, book_path, state_file="reader_state.json"):
-
+    def __init__(self, book_path, state_file):
+        self.book_title, self.book_author = get_epub_metadata(book_path)
         self.book_path = book_path
         self.state_file = Path(state_file)
-
-        # Загружаем все параграфы (или чанки)
+        # Загружаем все параграфы
         self.paragraphs = list(epub_paragraph_generator(book_path))
-
         # текущий индекс
         self.index = self.load_state()
+        self.index_all = len(self.paragraphs)
+
+
+    @property
+    def progress(self):
+        if self.index_all == 0:
+            return 0
+        return round((self.index / self.index_all) * 100, 1)
 
     # =====================
     # STATE
@@ -127,9 +147,9 @@ def make_title(text, words=6, max_len=60):
 
 
 # Отправка сообщения
-async def send_daily_text(bot, reader):
+async def send_daily_text(bot, current_book):
 
-    chunk = reader.get_next_chunk()
+    chunk = current_book.get_next_chunk()
 
     if not chunk:
         await bot.send_message(chat_id_IA, "Книга закончилась 📚")
@@ -140,15 +160,15 @@ async def send_daily_text(bot, reader):
     await bot.send_audio(
         chat_id=chat_id_IA,
         audio=audio_file,
-        performer="kordyak_bot",
-        title=make_title(chunk),
-        caption=chunk,
+        # performer="kordyak_bot",
+        title=f"{current_book.book_author}-{current_book.book_title}-{current_book.progress}%",
+        caption=f"{chunk}",
         parse_mode='HTML'
     )
 
-    text_rus = translate_rus_eng(chunk, "/en_ru")
+    chunk_rus = translate_rus_eng(chunk, "/en_ru")
     await bot.send_message(chat_id= chat_id_IA,
-                            text=f"<tg-spoiler>{text_rus}</tg-spoiler>",
+                            text=f"<tg-spoiler>{chunk_rus}</tg-spoiler>",
                             parse_mode = 'HTML')
     os.remove(audio_file.filename)
 

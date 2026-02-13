@@ -6,7 +6,7 @@ from aiogram.filters.command import CommandObject
 from aiogram.types import Message
 
 
-from services.service_1 import *
+from services.converter_service import *
 
 router = Router(name='Kordyak_router')
 

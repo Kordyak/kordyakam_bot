@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 from config import chat_id_IA
 import re
 
-from services.service_1 import translate_rus_eng, convert_text_audio
+from services.converter_service import translate_rus_eng, convert_text_audio
 
 
 def epub_paragraph_generator(epub_path):
@@ -160,7 +160,7 @@ async def send_daily_text(bot, current_book):
     await bot.send_audio(
         chat_id=chat_id_IA,
         audio=audio_file,
-        # performer="kordyak_bot",
+        performer="@KordyakBot",
         title=f"{current_book.book_author}-{current_book.book_title}-{current_book.progress}%",
         caption=f"{chunk}",
         parse_mode='HTML'

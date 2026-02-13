@@ -58,6 +58,9 @@ async def receive_epub(message: Message, state: FSMContext, bot: Bot):
 
     await bot.download_file(file.file_path, destination=path)
 
+    # ===== RESET ПРОГРЕССА =====
+    UserManager.reset_state(user_id)
+
     # ВАЖНО — очистить cache reader
     ReaderService.cache.pop(user_id, None)
 

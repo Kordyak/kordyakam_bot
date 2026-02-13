@@ -21,3 +21,8 @@ class UserManager:
     @classmethod
     def get_config_path(cls, user_id):
         return cls.get_user_folder(user_id) / "config.json"
+
+    @classmethod
+    def reset_state(cls, user_id):
+        state_path = cls.get_state_path(user_id)
+        state_path.unlink(missing_ok=True)

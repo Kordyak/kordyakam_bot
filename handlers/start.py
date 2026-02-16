@@ -1,5 +1,11 @@
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.filters import CommandStart
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message
 
+from aiogram import Router
+
+from services.user_manager import UserManager
+
+router3 = Router(name='start')
 
 def main_menu(has_book: bool):
 
@@ -18,7 +24,7 @@ def main_menu(has_book: bool):
 
 
 
-@router.message(CommandStart())
+@router3.message(CommandStart())
 async def start(message: Message):
 
     has_book = UserManager.get_book_path(message.from_user.id).exists()

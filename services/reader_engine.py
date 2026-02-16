@@ -1,6 +1,4 @@
-import json
 import os
-from pathlib import Path
 
 from aiogram.types import FSInputFile
 from ebooklib import epub, ITEM_DOCUMENT
@@ -17,11 +15,6 @@ import json
 from pathlib import Path
 
 from services.book_cache import BookCache
-from services.Epub import (
-    get_epub_metadata,
-    smart_telegram_split,
-)
-
 
 class Current_book:
 
@@ -102,8 +95,6 @@ class Current_book:
         return "\n".join(buffer).strip()
 
 
-
-
 def epub_paragraph_generator(epub_path):
 
     book = epub.read_epub(str(epub_path))
@@ -116,7 +107,6 @@ def epub_paragraph_generator(epub_path):
             text = p.get_text(strip=True)
             if text:
                 yield text
-
 
 
 def smart_telegram_split(text, limit):
@@ -150,8 +140,6 @@ def smart_telegram_split(text, limit):
     return result.strip()
 
 
-
-
 def get_epub_metadata(book_path):
 
     book = epub.read_epub(str(book_path))
@@ -163,10 +151,6 @@ def get_epub_metadata(book_path):
     creator = creator[0][0] if creator else ""
 
     return title, creator
-
-
-
-
 
 
 # Заголовок из текста

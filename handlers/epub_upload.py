@@ -1,6 +1,14 @@
+from aiogram import Router, F
+from aiogram.fsm.context import FSMContext
+from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
+
+from fsm.states import UploadBook
+
+router2 = Router(name='epub')
 
 
-@router.message(F.document)
+
+@router2.message(F.document)
 async def receive_epub(message: Message, state: FSMContext):
 
     if not message.document.file_name.endswith(".epub"):
@@ -17,7 +25,7 @@ async def receive_epub(message: Message, state: FSMContext):
     await state.set_state(UploadBook.waiting_confirm)
 
 
-@router.callback_query(F.data=="confirm_book")
+@router2.callback_query(F.data == "confirm_book")
 async def confirm_book(callback: CallbackQuery, state: FSMContext, bot: Bot):
 
     data = await state.get_data()
@@ -34,7 +42,7 @@ async def confirm_book(callback: CallbackQuery, state: FSMContext, bot: Bot):
 
 
 
-@router.callback_query(F.data.in_(["upload_book","replace_book"]))
+@router2.callback_query(F.data.in_(["upload_book", "replace_book"]))
 async def upload_book_start(callback: CallbackQuery, state: FSMContext):
 
     await callback.message.answer("Отправь EPUB файл 📚")
@@ -43,7 +51,7 @@ async def upload_book_start(callback: CallbackQuery, state: FSMContext):
 
 
 
-@router.message(UploadBook.waiting_epub, F.document)
+@router2.message(UploadBook.waiting_epub, F.document)
 async def receive_epub(message: Message, state: FSMContext, bot: Bot):
 
     if not message.document.file_name.endswith(".epub"):
@@ -67,7 +75,7 @@ async def receive_epub(message: Message, state: FSMContext, bot: Bot):
     await message.answer("Книга загружена 😈")
 
 
-@router.callback_query(F.data=="current_book")
+@router2.callback_query(F.data == "current_book")
 async def show_book(callback: CallbackQuery):
 
     reader = ReaderService.get_reader(callback.from_user.id)

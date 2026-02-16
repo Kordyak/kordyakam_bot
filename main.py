@@ -8,11 +8,9 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.types import BotCommand
 
 import whisper
-from services.reader_engine import send_daily_text, Current_book
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import argostranslate.package
 
-from handlers.converter_handler import router
+from handlers.converter import router
 
 # Загружаем конфигурацию
 config: Config = load_config()

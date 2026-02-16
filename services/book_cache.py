@@ -1,3 +1,6 @@
+from services.reader_engine import epub_paragraph_generator
+
+
 class BookCache:
 
     cache = {}

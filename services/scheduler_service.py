@@ -1,41 +1,49 @@
-from datetime import datetime
-
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from services.user_manager import UserManager
 
 scheduler = AsyncIOScheduler()
-
-
 
 
 class SchedulerService:
 
     @classmethod
-    def create_user_job(cls, user_id, time):
+    def restore_all_jobs(cls, sender_service):
+        users = UserManager.get_all_users()
 
-        hour, minute = map(int, time.split(":"))
+        if not users:
+            print("No users to restore")
+            return
+
+        for user_id in users:
+            time_str = UserManager.get_time(user_id)
+            if not time_str:
+                continue
+
+            cls.create_user_job(sender_service, user_id, time_str)
+
+    @classmethod
+    def create_user_job(cls, sender_service, user_id, time):
+        hour, minute = cls._parse_time(time)
+        job_id = cls._job_id(user_id)
+
+        if scheduler.get_job(job_id):
+            scheduler.remove_job(job_id)
 
         scheduler.add_job(
-            ReaderService.send_next_chunk,
-            "cron",
+            sender_service.send_daily_text,
+            trigger="cron",
             hour=hour,
             minute=minute,
             args=[user_id],
-            id=f"user_{user_id}"
+            id=job_id,
+            replace_existing=True,
         )
 
+    @staticmethod
+    def _parse_time(time_str: str):
+        hour, minute = map(int, time_str.split(":"))
+        return hour, minute
 
-
-
-async def check_users(bot):
-
-    users = UserRegistry.load()
-
-    now = datetime.now().strftime("%H:%M")
-
-    for user_id, data in users.items():
-
-        if data["time"] == now:
-
-            reader = ReaderService.get_reader(user_id)
-
-            await send_daily_text(bot, reader)
+    @staticmethod
+    def _job_id(user_id: int):
+        return f"user_{user_id}"

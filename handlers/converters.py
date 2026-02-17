@@ -8,10 +8,10 @@ from aiogram.types import Message
 
 from services.converter_service import *
 
-router1 = Router(name='converter')
+convert_router = Router(name='converter')
 
 # Обрабатывает голосовые сообщения и переводит их в текст с помощью Whisper
-@router1.message(F.voice)
+@convert_router.message(F.voice)
 async def voice_message_handler(message: Message, model):
 
     """Обрабатывает голосовые сообщения и переводит их в текст с помощью Whisper."""
@@ -68,7 +68,7 @@ async def voice_message_handler(message: Message, model):
             os.remove(temp_ogg_path)
 
 
-@router1.message(Command('ru_en', 'en_ru'))
+@convert_router.message(Command('ru_en', 'en_ru'))
 async def handler(message: Message):
     how_translate = message.text.split(' ')[0]
     if message.reply_to_message:
@@ -82,7 +82,7 @@ async def handler(message: Message):
         await message.reply(f'{eng_text}')
 
 
-@router1.message(Command('audio_eng', 'audio_ru'))
+@convert_router.message(Command('audio_eng', 'audio_ru'))
 async def handler(message: Message, command: CommandObject):
     text = command.args
     if message.reply_to_message: # Если просто текст в АУДИО перевести когда репли делаешь

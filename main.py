@@ -10,12 +10,17 @@ from aiogram.types import BotCommand
 import whisper
 import argostranslate.package
 
-from handlers.converter import router
+from handlers.rdp import rdp_router
+from handlers.converters import convert_router
+from handlers.book_handler import book_router
+from services.reader import Sender
+
+from services.scheduler_service import scheduler, SchedulerService
 
 # Загружаем конфигурацию
 config: Config = load_config()
 
-# Включаем Логгера
+# Включаем Лог
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO,
                     style='{',
@@ -28,14 +33,17 @@ bot = Bot(
     default=DefaultBotProperties(parse_mode='Markdown')
 )
 
-# Диспечтер для прослушивания БОТА
+# Диспетчер для прослушивания БОТА
 dispatcher = Dispatcher()
-dispatcher.include_router(router)
+dispatcher.include_router(convert_router)
+dispatcher.include_router(book_router)
+dispatcher.include_router(rdp_router)
 
 # Устанавливаем команды
 async def set_bot_commands():
     commands = [
-        BotCommand(command="/ru_en", description="Перевод русcко-английский"),
+        BotCommand(command="/book", description="Читаю книги на английском"),
+        BotCommand(command="/ru_en", description="Перевод русско-английский"),
         BotCommand(command="/en_ru", description="Перевод англо-русский"),
         BotCommand(command="/audio_eng", description="Конвертировать текст в аудио на англ."),
         BotCommand(command="/audio_ru", description="Конвертировать текст в аудио на рус."),
@@ -55,20 +63,6 @@ async def set_argostranslate():
 model = whisper.load_model("base")
 dispatcher["model"] = model
 
-# scheduler = AsyncIOScheduler() # Планировщик
-#
-# # Устанавливаем планировщик для чтения книги по расписанию
-# def setup_reader_schedule():
-#     EPUB_FILE = Path(__file__).parent / "books" / "Black_Beauty-Anna_Sewell.epub"
-#     current_book = Current_book(EPUB_FILE, "reader_state.json")
-#     scheduler.add_job(
-#         send_daily_text,
-#         "cron",
-#         hour=6,
-#         minute=0,
-#         args=[bot, current_book]
-#     )
-
 
 
 
@@ -76,16 +70,11 @@ async def main():
     await set_bot_commands()
     await set_argostranslate()
 
-    scheduler.add_job(
-        check_users,
-        "cron",
-        minute="*",
-        args=[bot]
-    )
+    sender_service = Sender(bot)
+    dispatcher["sender"] = sender_service
 
-    # setup_reader_schedule()
-    # scheduler.start()
-
+    SchedulerService.restore_all_jobs(sender_service)
+    scheduler.start()
     await dispatcher.start_polling(bot)
 
 if __name__ == "__main__":

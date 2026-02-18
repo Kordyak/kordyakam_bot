@@ -5,7 +5,7 @@ from aiogram import Router, F, Bot
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, BufferedInputFile
 from aiogram.filters import Command
-from sqlalchemy.util import await_only
+from aiogram.enums import ChatAction
 
 from fsm.states import UploadBook
 from services.library import Library, BOOK_DIR
@@ -16,7 +16,6 @@ from services.scheduler_service import SchedulerService
 from services.UserState import UserState
 
 book_router = Router(name='book')
-
 
 def main_menu(reader):
     if not reader:
@@ -202,12 +201,29 @@ async def show_book(callback: CallbackQuery):
 @book_router.callback_query(F.data == "next_chunk")
 async def next_chunk_handler(callback: CallbackQuery, sender: Sender):
     await callback.answer()
+    temp_msg = await callback.message.answer("Готовим абзац книги...")
+
+    user_id = callback.from_user.id
+    chat_id = callback.message.chat.id
+
+    # Удаляем старое меню
     await callback.message.delete()
-    temp_msg = await callback.message.answer('Готовим абзац книги!')
-    await sender.send_daily_text(callback.from_user.id)
-    await temp_msg.delete()
-    reader = Cache_reader.get_reader(callback.message.from_user.id)
-    await callback.message.answer(reply_markup=main_menu(reader))
+
+    # Показываем typing
+    await callback.bot.send_chat_action(
+        chat_id=chat_id,
+        action=ChatAction.TYPING
+    )
+
+    try:
+        await sender.send_daily_text(user_id)
+    finally:
+        # Удалится даже если будет ошибка
+        await temp_msg.delete()
+
+
+
+
 
 
 # установить номер абзаца

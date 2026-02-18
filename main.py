@@ -10,7 +10,7 @@ from aiogram.types import BotCommand
 import whisper
 import argostranslate.package
 
-from handlers.rdp import rdp_router
+from handlers.start import start_router
 from handlers.converters import convert_router
 from handlers.book_handler import book_router
 from services.reader import Sender
@@ -37,7 +37,7 @@ bot = Bot(
 dispatcher = Dispatcher()
 dispatcher.include_router(convert_router)
 dispatcher.include_router(book_router)
-dispatcher.include_router(rdp_router)
+dispatcher.include_router(start_router)
 
 # Устанавливаем команды
 async def set_bot_commands():

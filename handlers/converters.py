@@ -21,7 +21,7 @@ async def voice_message_handler(message: Message, model):
 
     bot = message.bot
 
-    await message.bot.send_chat_action(chat_id=message.chat.id, action="typing")
+    temp_msg = await message.answer('Подготавливаю текст!')
 
     # 1. Скачивание голосового сообщения
     file_id = message.voice.file_id
@@ -67,6 +67,8 @@ async def voice_message_handler(message: Message, model):
         if os.path.exists(temp_ogg_path):
             os.remove(temp_ogg_path)
 
+        await temp_msg.delete()
+
 
 @convert_router.message(Command('ru_en', 'en_ru'))
 async def handler(message: Message):
@@ -80,10 +82,14 @@ async def handler(message: Message):
 
     if eng_text:
         await message.reply(f'{eng_text}')
+    else:
+        await message.answer('Текст не обнаружен, вставьте его после команды!')
 
 
 @convert_router.message(Command('audio_eng', 'audio_ru'))
 async def handler(message: Message, command: CommandObject):
+    temp_msg = await message.answer('Подготавливаю текст!')
+
     text = command.args
     if message.reply_to_message: # Если просто текст в АУДИО перевести когда репли делаешь
         if message.reply_to_message.text: # Если просто текст в АУДИО перевести когда репли делаешь
@@ -97,19 +103,25 @@ async def handler(message: Message, command: CommandObject):
                 text = message.reply_to_message.caption
 
 
-    if check_english_content(text):  # Проверяет, является ли текст преимущественно английским
-        lang = "en"
-    elif command.command == "audio_ru":
-        lang = "ru"
-    else:
+    if not check_english_content(text):  # Проверяет, является ли текст преимущественно английским
         await message.reply("Текст преимущественно (70%) не на английском!!!")
 
-    audio_file: FSInputFile = convert_text_audio(text,"",lang)
-    await message.reply_audio(audio_file,
-                              performer=message.bot._me.first_name,
-                              title=audio_file.filename,
-                              )
-    os.remove(audio_file.filename)
+    if command.command == "audio_ru":
+        lang = "ru"
+    else:
+        lang = "en"
+
+    if text:
+        audio_file: FSInputFile = convert_text_audio(text,"",lang)
+        await message.reply_audio(audio_file,
+                                  performer=message.bot._me.first_name,
+                                  title=audio_file.filename,
+                                  )
+        os.remove(audio_file.filename)
+    else:
+        await message.answer('Текст не обнаружен, вставьте его после команды!')
+
+    await temp_msg.delete()
 
 
 

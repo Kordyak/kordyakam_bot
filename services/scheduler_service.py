@@ -1,5 +1,5 @@
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from services.user_manager import UserManager
+from services.UserState import UserState
 
 scheduler = AsyncIOScheduler()
 
@@ -8,14 +8,14 @@ class SchedulerService:
 
     @classmethod
     def restore_all_jobs(cls, sender_service):
-        users = UserManager.get_all_users()
+        users = UserState.get_all_users()
 
         if not users:
             print("No users to restore")
             return
 
         for user_id in users:
-            time_str = UserManager.get_time(user_id)
+            time_str = UserState.get_time(user_id)
             if not time_str:
                 continue
 

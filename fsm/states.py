@@ -4,3 +4,4 @@ class UploadBook(StatesGroup):
     waiting_epub = State()
     waiting_confirm = State()
     waiting_time = State()
+    waiting_index = State()

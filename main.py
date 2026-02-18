@@ -63,18 +63,21 @@ async def set_argostranslate():
 model = whisper.load_model("base")
 dispatcher["model"] = model
 
+async def set_reader():
+    sender_service = Sender(bot)
+    dispatcher["sender"] = sender_service
+
+    SchedulerService.restore_all_jobs(sender_service)
+    scheduler.start()
+
+
 
 
 
 async def main():
     await set_bot_commands()
     await set_argostranslate()
-
-    sender_service = Sender(bot)
-    dispatcher["sender"] = sender_service
-
-    SchedulerService.restore_all_jobs(sender_service)
-    scheduler.start()
+    await set_reader()
     await dispatcher.start_polling(bot)
 
 if __name__ == "__main__":

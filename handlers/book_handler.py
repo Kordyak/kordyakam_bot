@@ -22,17 +22,18 @@ def main_menu(reader):
     if not reader:
         return InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="📚 Загрузить книгу", callback_data="upload_book")],
-            [InlineKeyboardButton(text="📚 Библиотека книг", callback_data="library")],
+            #[InlineKeyboardButton(text="📚 Библиотека книг", callback_data="library")],
         ])
 
 
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text=f"📖У вас есть загруженная книга, информация о ней", callback_data="current_book")],
-        [InlineKeyboardButton(text=f"📖Установить номер абзаца с которого начать читать", callback_data="set_paragraf_index")],
         [InlineKeyboardButton(text="🔄 Заменить книгу", callback_data="upload_book")],
+        #[InlineKeyboardButton(text="📚 Библиотека книг", callback_data="library")],
+        [InlineKeyboardButton(text=f"📖Установить номер абзаца с которого начать читать", callback_data="set_paragraf_index")],
         [InlineKeyboardButton(text="▶ Отправь мне очередной абзац", callback_data="next_chunk")],
         [InlineKeyboardButton(text="⏰ Установить время отправки абзаца", callback_data="change_time")],
-        [InlineKeyboardButton(text="Удалить подписку на книгу", callback_data="del_subscription")],
+        #[InlineKeyboardButton(text="Удалить подписку на книгу", callback_data="del_subscription")],
     ])
 
 
@@ -201,11 +202,12 @@ async def show_book(callback: CallbackQuery):
 @book_router.callback_query(F.data == "next_chunk")
 async def next_chunk_handler(callback: CallbackQuery, sender: Sender):
     await callback.answer()
-    #await callback.message.delete()
+    await callback.message.delete()
     temp_msg = await callback.message.answer('Готовим абзац книги!')
     await sender.send_daily_text(callback.from_user.id)
     await temp_msg.delete()
-
+    reader = Cache_reader.get_reader(callback.message.from_user.id)
+    await callback.message.answer(reply_markup=main_menu(reader))
 
 
 # установить номер абзаца

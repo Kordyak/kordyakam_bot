@@ -2,7 +2,7 @@ import json
 import hashlib
 from pathlib import Path
 
-BOOK_DIR = Path("Book")
+BOOK_DIR = Path("Books")
 BOOK_DIR.mkdir(exist_ok=True)
 
 INDEX_FILE = BOOK_DIR / "books_index.json"

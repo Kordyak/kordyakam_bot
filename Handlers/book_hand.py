@@ -8,6 +8,7 @@ from aiogram.enums import ChatAction
 
 from FSM.states import UploadBook
 from Services.BookMetadata import BookMetadata
+from Services.Converter_service import translate_rus_eng
 from Services.Library import Library, BOOK_DIR, load_books_index
 
 from Services.Reader import ReaderCache, Sender, Reader
@@ -21,15 +22,16 @@ book_router = Router(name='book')
 def main_menu(reader):
     if not reader:
         return InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="📖 Загрузить книгу", callback_data="upload_book")],
+            [InlineKeyboardButton(text="📖 Загрузить свою книгу (.epub)", callback_data="upload_book")],
             [InlineKeyboardButton(text="📚 Библиотека", callback_data="library")],
         ])
 
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text=f"📖 Загружена книга {reader.book_title}, информация", callback_data="current_book")],
-        [InlineKeyboardButton(text=f"🔄 Заменить книгу", callback_data="upload_book")],
+        [InlineKeyboardButton(text=f"📖 Описание загруженной книги {reader.book_title}", callback_data="current_book")],
+        [InlineKeyboardButton(text=f"🔄 Загрузить свою книгу (.epub)", callback_data="upload_book")],
         [InlineKeyboardButton(text="📚 Библиотека", callback_data="library")],
-        [InlineKeyboardButton(text=f"#️⃣ № последнего прочитанного абзаца: {reader.index}", callback_data="set_paragraf_index")],
+        [InlineKeyboardButton(text=f"прогресс {reader.progress}, # абзаца: {reader.index}",
+                              callback_data="set_paragraf_index")],
         [InlineKeyboardButton(text="▶️ Читаем далее", callback_data="next_chunk")],
         [InlineKeyboardButton(text=f"⏰ Время отправки абзаца: {reader.time}", callback_data="change_time")],
         [InlineKeyboardButton(text="❌ Удалить книгу", callback_data="del_book")],
@@ -101,7 +103,7 @@ async def show_library(callback: CallbackQuery, state: FSMContext):
     await state.set_state(UploadBook.waiting_book_number)
 
 
-# Шаг 2: обработка выбора номера книги
+# обработка выбора номера книги
 @book_router.message(UploadBook.waiting_book_number)
 async def choose_book_by_number(message: Message, state: FSMContext):
     data = await state.get_data()
@@ -123,20 +125,21 @@ async def choose_book_by_number(message: Message, state: FSMContext):
             [InlineKeyboardButton(text="🔙 Назад в библиотеку", callback_data="library")],
         ]
     )
-
     await message.answer(
         f"Что надумал мой дружок?",
         reply_markup=kb
     )
-
     await state.clear()  # очищаем состояние
 
 
+# Описани книги
 async def msg_book_info(message, book_info):
+    description = book_info['description']
+
     caption = (
         f"Автор: {book_info['book_creator']}\n"
         f"Книга: {book_info['book_title']}\n"
-        f"\nОписание книги:\n{book_info['description']}"
+        f"\nОписание книги:\n{description}"
     )
 
     if book_info['cover_image']:  # если есть байты картинки
@@ -145,10 +148,14 @@ async def msg_book_info(message, book_info):
     else:
         await message.answer(caption)
 
+    description_ru = translate_rus_eng(description, "/en_ru")
+    await message.answer(
+        text=f"<tg-spoiler>{description_ru}</tg-spoiler>",
+        parse_mode="HTML",
+    )
 
-# ================
+
 # Загрузка книги
-# ================
 @book_router.callback_query(F.data == "upload_book")
 async def upload_book_start(callback: CallbackQuery, state: FSMContext):
     await callback.answer()  # 🔴 обязательно
@@ -202,7 +209,7 @@ async def upload_book_wait(message: Message, bot: Bot, state: FSMContext):
     await upload_book_end(message, user_id, final_path, state)
 
 
-# Загрузка книги КОНЕЦ
+# Загрузка книги КОНЕЦ КОЛБЭК
 @book_router.callback_query(F.data.startswith("upload_book_end:"))
 async def upload_book_end_callback(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
@@ -210,6 +217,7 @@ async def upload_book_end_callback(callback: CallbackQuery, state: FSMContext):
     await upload_book_end(callback.message, callback.from_user.id, path, state)
 
 
+# Загрузка книги КОНЕЦ ФУНКЦИЯ
 async def upload_book_end(message, user_id, path, state):
     # Создаем состояние для user
     StateUser.reset_state(user_id, path)
@@ -278,20 +286,15 @@ async def show_book(callback: CallbackQuery):
         await  callback.answer("Сначала загрузите книгу 📚")
         return
 
-    caption = (
-        f"Автор: {reader.book_author}\n"
-        f"Книга: {reader.book_title}\n"
-        f"Прогресс вашего чтения: {reader.progress}%\n"
-        f"Номер последнего отправленного абзаца: №{reader.index}\n"
-        f"Время отправки абзаца: {StateUser.get_time(callback.from_user.id)}\n"
-        f"\nОписание книги:\n{reader.description}"
-    )
+    book_info = {
+        'book_title': reader.book_title,
+        'book_creator': reader.book_author,
+        'description': reader.description,
+        'cover_image': reader.cover_image,
+        'path': reader.book_path,
+    }
 
-    if reader.cover:  # если есть байты картинки
-        photo = BufferedInputFile(reader.cover, filename="cover.jpg")
-        await callback.message.answer_photo(photo=photo, caption=caption)
-    else:
-        await callback.answer(caption)
+    await msg_book_info(callback.message, book_info)
 
 
 # Отправить ЧАНК
@@ -335,13 +338,21 @@ async def save_index(message: Message, state: FSMContext):
     reader = ReaderCache.get_reader(user_id)
 
     if not reader:
-        await message.answer("Книга не найдена")
+        await message.answer("Книга не найдена!")
         await state.clear()
         return
 
     if not message.text.isdigit():
-        await message.answer("Введите число")
-        return
+        kb = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [InlineKeyboardButton(text="❌ Отмена", callback_data="cancel_index")]
+            ]
+        )
+
+        await message.answer(
+            'Укажите № абзаца от которого начнем читать',
+            reply_markup=kb
+        )
 
     index = int(message.text)
 
@@ -367,9 +378,7 @@ async def del_book(callback: CallbackQuery):
     await callback.message.edit_text('Вы уверены?', reply_markup=confirm_kb('del_book'))
 
 
-# ================================
-# Универсальная клавиатура подтверждения
-# ================================
+# Универсальная клавиатура подтверждения =================================
 def confirm_kb(action: str):
     """
     action — короткое имя действия (например: change_time, delete_book)
@@ -422,3 +431,10 @@ async def handle_cancel(callback: CallbackQuery):
         )
 
     await callback.message.edit_text("👌Оставляем без изменений")
+
+
+# Сброс состояния
+@book_router.callback_query(F.data == "cancel_index")
+async def cancel_index(callback: CallbackQuery, state: FSMContext):
+    await callback.answer()
+    await state.clear()

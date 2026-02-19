@@ -37,9 +37,9 @@ bot = Bot(
 
 # Диспетчер для прослушивания БОТА
 dispatcher = Dispatcher()
+dispatcher.include_router(start_router)
 dispatcher.include_router(convert_router)
 dispatcher.include_router(book_router)
-dispatcher.include_router(start_router)
 
 # Устанавливаем команды
 async def set_bot_commands():

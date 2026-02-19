@@ -29,7 +29,7 @@ def main_menu(reader):
         [InlineKeyboardButton(text=f"📖 Загружена книга {reader.book_title}, информация", callback_data="current_book")],
         [InlineKeyboardButton(text=f"🔄 Заменить книгу", callback_data="upload_book")],
         [InlineKeyboardButton(text="📚 Библиотека", callback_data="library")],
-        [InlineKeyboardButton(text=f"#️⃣ № абзаца от которого читаем: {reader.index}", callback_data="set_paragraf_index")],
+        [InlineKeyboardButton(text=f"#️⃣ № последнего прочитанного абзаца: {reader.index}", callback_data="set_paragraf_index")],
         [InlineKeyboardButton(text="▶️ Читаем далее", callback_data="next_chunk")],
         [InlineKeyboardButton(text=f"⏰ Время отправки абзаца: {reader.time}", callback_data="change_time")],
         [InlineKeyboardButton(text="❌ Удалить книгу", callback_data="del_book")],

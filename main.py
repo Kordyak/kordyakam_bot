@@ -1,4 +1,6 @@
 from pathlib import Path
+
+from Services.Library import Library
 from config import Config, load_config
 import logging
 
@@ -10,12 +12,12 @@ from aiogram.types import BotCommand
 import whisper
 import argostranslate.package
 
-from handlers.start import start_router
-from handlers.converters import convert_router
-from handlers.book_handler import book_router
-from services.reader import Sender
+from Handlers.start_hand import start_router
+from Handlers.converter_hand import convert_router
+from Handlers.book_hand import book_router
+from Services.Reader import Sender
 
-from services.scheduler_service import scheduler, SchedulerService
+from Services.Scheduler import scheduler, Scheduler
 
 # Загружаем конфигурацию
 config: Config = load_config()
@@ -42,6 +44,7 @@ dispatcher.include_router(start_router)
 # Устанавливаем команды
 async def set_bot_commands():
     commands = [
+        BotCommand(command="/start", description="Приветствую!"),
         BotCommand(command="/book", description="Читаю книги на английском"),
         BotCommand(command="/ru_en", description="Перевод русско-английский"),
         BotCommand(command="/en_ru", description="Перевод англо-русский"),
@@ -67,7 +70,7 @@ async def set_reader():
     sender_service = Sender(bot)
     dispatcher["sender"] = sender_service
 
-    SchedulerService.restore_all_jobs(sender_service)
+    Scheduler.restore_all_jobs(sender_service)
     scheduler.start()
 
 
@@ -78,6 +81,7 @@ async def main():
     await set_bot_commands()
     await set_argostranslate()
     await set_reader()
+    Library.sync_library()
     await dispatcher.start_polling(bot)
 
 if __name__ == "__main__":

@@ -2,9 +2,10 @@ import json
 from pathlib import Path
 
 
-class UserState:
+class StateUser:
 
     BASE_PATH = Path("Users")
+    _cache: dict[int, dict] = {}
 
     # -----------------------
     # Вспомогательные методы
@@ -20,20 +21,37 @@ class UserState:
     def get_state_path(cls, user_id: int) -> Path:
         return cls.get_user_folder(user_id) / "state.json"
 
+    # 🔹 Новый метод: загрузка с кэшем
     @classmethod
-    def _load_state(cls, user_id: int) -> dict:
+    def _get_cached_state(cls, user_id: int) -> dict:
+        if user_id in cls._cache:
+            return cls._cache[user_id]
+
         path = cls.get_state_path(user_id)
         if not path.exists():
-            return {}
-        return json.loads(path.read_text(encoding="utf-8"))
+            cls._cache[user_id] = {}
+        else:
+            cls._cache[user_id] = json.loads(path.read_text(encoding="utf-8"))
 
+        return cls._cache[user_id]
+
+    # 🔹 Сохранение с обновлением кэша
     @classmethod
     def _save_state(cls, user_id: int, data: dict):
+        cls._cache[user_id] = data
         path = cls.get_state_path(user_id)
         path.write_text(
             json.dumps(data, ensure_ascii=False, indent=4),
             encoding="utf-8"
         )
+
+    # 🔹 Опционально: ручной сброс кэша
+    @classmethod
+    def clear_cache(cls, user_id: int | None = None):
+        if user_id is None:
+            cls._cache.clear()
+        else:
+            cls._cache.pop(user_id, None)
 
     # -----------------------
     # Работа с книгой
@@ -41,17 +59,15 @@ class UserState:
 
     @classmethod
     def get_book_path(cls, user_id: int) -> Path | None:
-        data = cls._load_state(user_id)
+        data = cls._get_cached_state(user_id)
         book_path = data.get("book_path")
-        if not book_path:
-            return None
-        else:
-            return Path(book_path)
+        return Path(book_path) if book_path else None
 
     @classmethod
-    def set_state(cls, user_id: int, book_path: str):
+    def reset_state(cls, user_id: int, book_path: str):
         cls._save_state(user_id, {
             "index": 0,
+            "all_index": 0,
             "time": "",
             "book_path": str(book_path)
         })
@@ -62,12 +78,12 @@ class UserState:
 
     @classmethod
     def get_index(cls, user_id: int) -> int:
-        data = cls._load_state(user_id)
+        data = cls._get_cached_state(user_id)
         return data.get("index", 0)
 
     @classmethod
     def save_index(cls, user_id: int, idx: int):
-        data = cls._load_state(user_id)
+        data = cls._get_cached_state(user_id)
         data["index"] = idx
         cls._save_state(user_id, data)
 
@@ -75,16 +91,15 @@ class UserState:
     # Работа со ВРЕМЕНЕМ
     # -----------------------
 
-
     @classmethod
     def save_time(cls, user_id: int, time: str):
-        data = cls._load_state(user_id)
+        data = cls._get_cached_state(user_id)
         data["time"] = time
         cls._save_state(user_id, data)
 
     @classmethod
     def get_time(cls, user_id: int) -> str | None:
-        data = cls._load_state(user_id)
+        data = cls._get_cached_state(user_id)
         return data.get("time")
 
     # -----------------------
@@ -101,4 +116,3 @@ class UserState:
             for path in cls.BASE_PATH.iterdir()
             if path.is_dir() and path.name.isdigit()
         ]
-

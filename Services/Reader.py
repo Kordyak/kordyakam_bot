@@ -1,0 +1,173 @@
+import os
+from pathlib import Path
+
+from aiogram import Bot
+from aiogram.types import FSInputFile
+
+
+from Services.BookMetadata import BookMetadata
+from Services.Converter_service import translate_rus_eng, convert_text_audio
+from Services.Library import epub_paragraph_generator, Library, load_books_index
+from Services.StateUser import StateUser
+
+
+# КЭШИРОВАНИЕ reader
+class ReaderCache:
+    cache = {}
+
+    @classmethod
+    def get_reader(cls, user_id):
+        book_path = StateUser.get_book_path(user_id)
+
+        if book_path is None:
+            cls.cache.pop(user_id, None)
+            return None
+
+        reader = cls.cache.get(user_id)
+
+        # Если нет в кэше — создаём
+        if reader is None:
+            print("🔥 Creating NEW reader (no cache)")
+            reader = Reader(book_path, user_id)
+            cls.cache[user_id] = reader
+            return reader
+
+        # Если книга изменилась — пересоздаём
+        if reader.book_path != book_path:
+            print("♻ Book changed — recreating reader")
+            reader = Reader(book_path, user_id)
+            cls.cache[user_id] = reader
+            return reader
+
+        return reader
+
+
+# Читатель по сути user (разночтения с КЭШ, надо править)
+class Reader:
+    TELEGRAM_LIMIT = 1000
+
+    def __init__(self, book_path, user_id):
+        self.book_path = Path(book_path)
+        self.user_id = user_id
+
+        book_metadata = BookMetadata.get_cache(book_path)
+        self.book_title = book_metadata["book_title"]
+        self.book_author = book_metadata["book_creator"]
+        self.description = book_metadata["description"]
+        self.cover = book_metadata["cover_image"]
+
+        self.index = StateUser.get_index(self.user_id)
+        self.time = StateUser.get_time(self.user_id)
+
+        # Получаем hash книги и суммарный индекс книги
+        file_hash = Library.calculate_hash(book_path)
+        books_index = load_books_index()
+        book_entry = books_index.get(file_hash, {})
+        self.index_all = book_entry.get("total_paragraphs", 0)
+
+        self.reader = LazyEpubReader(book_path, self.index)
+
+    # PROGRESS
+    @property
+    def progress(self):
+        if self.index_all == 0:
+            return 0
+        return round((self.index / self.index_all) * 100, 1)
+
+    # MAX SPEED CHUNK BUILDER
+    def get_next_chunk(self, min_len=300):
+
+        if self.index >= self.index_all:
+            return None
+
+        buffer = []
+        current_len = 0  # ⭐ ключевой speed upgrade
+
+        # Набираем абзацы
+        while self.index < self.index_all:
+            paragraph = self.reader.get_next_paragraph()
+            if paragraph is None:
+                break
+
+            buffer.append(paragraph)
+            current_len += len(paragraph)
+            self.index += 1
+
+            if current_len >= min_len:
+                break
+
+        StateUser.save_index(self.user_id, self.index)
+
+        return "\n".join(buffer).strip()
+
+
+# Ленивое чтение книги, без кэша всей книги
+class LazyEpubReader:
+    def __init__(self, path, saved_index):
+        self.path = path
+        self.generator = epub_paragraph_generator(path)
+        # Пропускаем уже прочитанные абзацы один раз
+        for _ in range(saved_index):
+            try:
+                next(self.generator)
+            except StopIteration:
+                break
+
+    def get_next_paragraph(self):
+        try:
+            paragraph = next(self.generator)
+            return paragraph
+        except StopIteration:
+            return None
+
+
+
+
+# Отправляет ЧАНКИ книги
+class Sender:
+
+    def __init__(self, bot: Bot):
+        self.bot = bot
+
+    async def send_daily_text(self, user_id: int):
+        reader = ReaderCache.get_reader(user_id)
+
+        chunk = reader.get_next_chunk()
+
+        if not chunk:
+            await self.bot.send_message(user_id, "Книга закончилась 📚")
+            return
+
+        audio_file: FSInputFile = convert_text_audio(chunk, "", "en")
+
+        await self.bot.send_audio(
+            chat_id=user_id,
+            audio=audio_file,
+            performer="@KordyakBot",
+            title=make_title(chunk),
+            caption=(
+                f"{reader.book_author} / {reader.book_title}\n"
+                f"Прогресс: {reader.progress}%\n"
+                f"№ абзаца: {reader.index}\n"
+                f"{chunk}"
+            ),
+            parse_mode="HTML",
+        )
+        os.remove(audio_file.filename)
+
+        chunk_rus = translate_rus_eng(chunk, "/en_ru")
+        await self.bot.send_message(
+            chat_id=user_id,
+            text=f"<tg-spoiler>{chunk_rus}</tg-spoiler>",
+            parse_mode="HTML",
+        )
+
+
+# Заголовок из текста
+def make_title(text, words=6, max_len=60):
+    # убираем переносы строк
+    clean = text.replace("\n", " ").strip()
+    # берём первые N слов
+    title = " ".join(clean.split()[:words])
+    # ограничиваем длину
+    return title[:max_len]

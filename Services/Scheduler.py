@@ -1,21 +1,21 @@
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from services.UserState import UserState
+from Services.StateUser import StateUser
 
 scheduler = AsyncIOScheduler()
 
 
-class SchedulerService:
+class Scheduler:
 
     @classmethod
     def restore_all_jobs(cls, sender_service):
-        users = UserState.get_all_users()
+        users = StateUser.get_all_users()
 
         if not users:
             print("No users to restore")
             return
 
         for user_id in users:
-            time_str = UserState.get_time(user_id)
+            time_str = StateUser.get_time(user_id)
             if not time_str:
                 continue
 
@@ -23,8 +23,8 @@ class SchedulerService:
 
     @classmethod
     def create_user_job(cls, sender_service, user_id, time):
-        hour, minute = cls._parse_time(time)
-        job_id = cls._job_id(user_id)
+        hour, minute = map(int, time.split(":"))
+        job_id = f"user_{user_id}"
 
         if scheduler.get_job(job_id):
             scheduler.remove_job(job_id)
@@ -39,11 +39,4 @@ class SchedulerService:
             replace_existing=True,
         )
 
-    @staticmethod
-    def _parse_time(time_str: str):
-        hour, minute = map(int, time_str.split(":"))
-        return hour, minute
 
-    @staticmethod
-    def _job_id(user_id: int):
-        return f"user_{user_id}"

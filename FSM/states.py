@@ -5,3 +5,4 @@ class UploadBook(StatesGroup):
     waiting_confirm = State()
     waiting_time = State()
     waiting_index = State()
+    waiting_book_number = State()

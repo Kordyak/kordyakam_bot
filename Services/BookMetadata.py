@@ -1,50 +1,38 @@
 from pathlib import Path
-
-from bs4 import BeautifulSoup
-from ebooklib import epub, ITEM_DOCUMENT, ITEM_COVER, ITEM_IMAGE
+from ebooklib import epub, ITEM_IMAGE
 
 
-class BookCache:
-
+class BookMetadata:
     cache = {}
 
     @classmethod
     def get_cache(cls, book_path):
-
-        book_path = Path(book_path)
+        book_Path = Path(book_path)
 
         key = str(book_path)
-        mtime = book_path.stat().st_mtime
 
+        book_time = book_Path.stat().st_mtime
         cached = cls.cache.get(key)
 
-        # =========================
         # если нет cache или файл обновился
-        # =========================
-        if not cached or cached["mtime"] != mtime:
-
+        if not cached or cached["book_time"] != book_time:
             print("🔥 Parsing epub (cache refresh)")
-
+            metadata = get_epub_metadata(book_path)
             cls.cache[key] = {
-                "mtime": mtime,
-                "paragraphs": list(epub_paragraph_generator(book_path)),
-                "metadata": get_epub_metadata(book_path),
+                "book_time": book_time,
+                "book_title": metadata[0],
+                "book_creator": metadata[1],
+                "description": metadata[2],
+                "cover_image": metadata[3],
             }
-
         return cls.cache[key]
 
 
 
-def epub_paragraph_generator(epub_path):
-    book = epub.read_epub(str(epub_path))
-    for item in book.get_items_of_type(ITEM_DOCUMENT):
-        soup = BeautifulSoup(item.get_content(), "html.parser")
-        for p in soup.find_all("p"):
-            text = p.get_text(strip=True)
-            if text:
-                yield text
 
 
+
+# Метаданные книги
 def get_epub_metadata(book_path):
     book = epub.read_epub(str(book_path))
 
@@ -52,18 +40,15 @@ def get_epub_metadata(book_path):
     creator = book.get_metadata('DC', 'creator')
     description = book.get_metadata('DC', 'description')
 
-    title = title[0][0] if title else Path(book_path).stem
-    creator = creator[0][0] if creator else "нет создателя"
+    book_title = title[0][0] if title else Path(book_path).stem
+    book_creator = creator[0][0] if creator else "нет создателя"
     description = description[0][0] if description else "нет описания"
-
     cover_image = get_cover(book)
 
-    return title, creator, description, cover_image
+    return book_title, book_creator, description, cover_image
 
 
-
-
-
+# Получаем картинку книги
 def get_cover(book):
     # 1️⃣ Пробуем получить id обложки из metadata
     cover_id = None

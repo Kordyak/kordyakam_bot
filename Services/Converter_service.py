@@ -17,17 +17,18 @@ def translate_rus_eng(in_text: str, how_translate: str) -> str:
         text = " ".join(arr)
     else:
         text = in_text
-    if re.match('/en_ru',how_translate) :
+    if re.match('/en_ru', how_translate):
         return argostranslate.translate.translate(text, "en", "ru")
-    elif  re.match('/ru_en',how_translate):
+    elif re.match('/ru_en', how_translate):
         return argostranslate.translate.translate(text, "ru", "en")
 
 
 def Clean_text(text: str) -> str:
-    text = re.sub(r'[^\w\s.,!?;:()\-–—\"\']', '', text) #Удаляет эмодзи и специальные символы
-    text = re.sub(r"[\*\[\]_]", "", text)  #удаляем символы
-    text = re.sub(r"\(https.*?\)", "", text).strip()  #удаляем ссылки из текста
+    text = re.sub(r'[^\w\s.,!?;:()\-–—\"\']', '', text)  # Удаляет эмодзи и специальные символы
+    text = re.sub(r"[\*\[\]_]", "", text)  # удаляем символы
+    text = re.sub(r"\(https.*?\)", "", text).strip()  # удаляем ссылки из текста
     return text
+
 
 def convert_text_audio(in_text: str, name_file: str, lang: str) -> FSInputFile:
     text = re.sub('https.*', '', string=in_text)
@@ -36,9 +37,9 @@ def convert_text_audio(in_text: str, name_file: str, lang: str) -> FSInputFile:
     else:
         audio = gTTS(text=text, lang=lang)
 
-    if name_file == "" :
+    if name_file == "":
         name_file = f"{text[:15]}.mp3"
-        name_file = re.sub(r"[\n]", '', name_file)  #удаляем символы
+        name_file = re.sub(r"[\n]", '', name_file)  # удаляем символы
     audio.save(name_file)
     return FSInputFile(path=os.path.join(name_file))
 
@@ -58,6 +59,7 @@ def is_internet_available():
     except requests.ConnectionError:
         return False
 
+
 # Retry settings
 MAX_RETRIES = 60  # Maximum number of retry attempts
 RETRY_DELAY = 60  # Delay between retries in seconds
@@ -75,12 +77,12 @@ async def send_with_retry(bot, chat_id, text, max_retries=MAX_RETRIES, delay=RET
                 await asyncio.sleep(delay)
                 continue
 
-            #if '_' in text:
+            # if '_' in text:
             await bot.send_message(chat_id=chat_id,
                                    text=text,
                                    parse_mode='HTML')
-            #else:
-                #await bot.send_message(chat_id=chat_id, text=text)
+            # else:
+            # await bot.send_message(chat_id=chat_id, text=text)
             logger.info(f"Message sent to {chat_id}")
             break  # Exit the loop if the message is sent successfully
 
@@ -109,8 +111,8 @@ def check_english_content(text, threshold=0.7):
     ratio = english_count / total_chars
     return ratio >= threshold
 
-    #"""Проверяет, содержит ли текст английские символы"""
-    #bool(re.search(r'[а-яА-Я]', text))
+    # """Проверяет, содержит ли текст английские символы"""
+    # bool(re.search(r'[а-яА-Я]', text))
 
 
 def Mix_text(eng_text, rus_text):
@@ -119,7 +121,7 @@ def Mix_text(eng_text, rus_text):
     rus_lines = rus_text.split('\n')
 
     result = []
-    for i in range(max(len(eng_lines), len(rus_lines))-1):
+    for i in range(max(len(eng_lines), len(rus_lines)) - 1):
         eng_line = eng_lines[i] if i < len(eng_lines) else ""
         rus_line = rus_lines[i] if i < len(rus_lines) else ""
 

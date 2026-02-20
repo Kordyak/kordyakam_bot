@@ -52,9 +52,9 @@ class Reader:
 
         book_metadata = BookMetadata.get_cache(book_path)
         self.book_title = book_metadata["book_title"]
-        self.book_author = book_metadata["book_creator"]
+        self.book_creator = book_metadata["book_creator"]
         self.description = book_metadata["description"]
-        self.cover = book_metadata["cover_image"]
+        self.cover_image = book_metadata["cover_image"]
 
         self.index = StateUser.get_index(self.user_id)
         self.time = StateUser.get_time(self.user_id)
@@ -146,7 +146,7 @@ class Sender:
             performer=reader.book_title,
             title=make_title(chunk),
             caption=(
-                f"{reader.book_author} / {reader.book_title}\n"
+                f"{reader.book_creator} / {reader.book_title}\n"
                 f"Прогресс: {reader.progress}%\n"
                 f"№ абзаца: {reader.index}\n"
                 f"{chunk}"

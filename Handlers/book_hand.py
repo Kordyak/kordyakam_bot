@@ -140,14 +140,14 @@ async def msg_book_info(callback: CallbackQuery, book_info):
 
     description = book_info['description']
     caption = (
-        f"Автор: {book_info['book_creator']}\n"
-        f"Книга: {book_info['book_title']}\n"
-        f"\nОписание книги:\n{description}"
+        f"<b>Автор</b>: {book_info['book_creator']}\n"
+        f"<b>Книга</b>: {book_info['book_title']}\n"
+        f"<b>Описание</b>:\n{description}"
     )
 
     if book_info['cover_image']:  # если есть байты картинки
         photo = BufferedInputFile(book_info['cover_image'], filename="cover.jpg")
-        await message.answer_photo(photo=photo, caption=caption)
+        await message.answer_photo(photo=photo, caption=caption, parse_mode="HTML")
     else:
         await message.answer(caption)
 
@@ -310,7 +310,7 @@ async def show_book(callback: CallbackQuery):
 
     book_info = {
         'book_title': reader.book_title,
-        'book_creator': reader.book_author,
+        'book_creator': reader.book_creator,
         'description': reader.description,
         'cover_image': reader.cover_image,
         'path': reader.book_path,

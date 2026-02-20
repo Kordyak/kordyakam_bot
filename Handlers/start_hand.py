@@ -2,6 +2,7 @@
 import os
 
 from aiogram import Router, F
+from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 from aiogram.filters import Command
 
@@ -16,7 +17,8 @@ async def run_rdp(message: Message):
 
 # start RDP
 @start_router.message(Command('start'))
-async def run_rdp(message: Message):
+async def run_rdp(message: Message, state: FSMContext):
+    await state.clear()
     text = (
         f"Привет, друг! Меня зовут <b>{message.bot._me.first_name}</b>.\n\n"
         "Я умею:\n"

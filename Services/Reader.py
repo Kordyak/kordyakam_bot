@@ -143,7 +143,7 @@ class Sender:
         await self.bot.send_audio(
             chat_id=user_id,
             audio=audio_file,
-            performer="@KordyakBot",
+            performer=reader.book_title,
             title=make_title(chunk),
             caption=(
                 f"{reader.book_author} / {reader.book_title}\n"

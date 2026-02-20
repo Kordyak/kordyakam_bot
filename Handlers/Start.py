@@ -10,9 +10,10 @@ start_router = Router(name='start')
 
 # start RDP call_process_by_time
 @start_router.message(F.text.regexp(r"^\d{6}$"))
-async def run_rdp(message: Message):
-    os.system(f"start call_process_by_time.exe {message.text}")
-    await message.delete()
+async def run_rdp(message: Message, user_id: int):
+    if user_id == 995657021:
+        os.system(f"start call_process_by_time.exe {message.text}")
+        await message.delete()
 
 
 # start RDP

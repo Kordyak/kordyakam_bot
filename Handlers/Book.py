@@ -298,7 +298,7 @@ async def show_book(callback: CallbackQuery, user_id, reader: Reader):
     await callback.answer()
 
     if not reader:
-        await  callback.answer("Сначала загрузите книгу 📚")
+        await callback.answer("Сначала загрузите книгу 📚")
         return
 
     book_info = {

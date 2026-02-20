@@ -1,4 +1,3 @@
-
 import os
 
 from aiogram import Router, F
@@ -8,6 +7,7 @@ from aiogram.filters import Command
 
 start_router = Router(name='start')
 
+
 # start RDP call_process_by_time
 @start_router.message(F.text.regexp(r"^\d{6}$"))
 async def run_rdp(message: Message, user_id: int):
@@ -16,7 +16,6 @@ async def run_rdp(message: Message, user_id: int):
         await message.delete()
 
 
-# start RDP
 @start_router.message(Command('start'))
 async def run_rdp(message: Message, state: FSMContext):
     await state.clear()
@@ -30,3 +29,10 @@ async def run_rdp(message: Message, state: FSMContext):
     )
 
     await message.answer(text, parse_mode="HTML")
+
+
+@start_router.message(Command("stop"))
+async def stop_bot(message: Message, user_id: int):
+    if user_id == 995657021:
+        await message.answer("Бот выключается...")
+        exit()

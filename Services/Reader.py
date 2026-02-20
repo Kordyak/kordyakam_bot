@@ -6,9 +6,9 @@ from aiogram.types import FSInputFile
 
 
 from Services.BookMetadata import BookMetadata
-from Services.Converter_service import translate_rus_eng, convert_text_audio
+from Services.Converter import translate_rus_eng, convert_text_audio
 from Services.Library import epub_paragraph_generator, Library, load_books_index
-from Services.StateUser import StateUser
+from Services.UserState import UserState
 
 
 # КЭШИРОВАНИЕ reader
@@ -17,7 +17,7 @@ class ReaderCache:
 
     @classmethod
     def get_reader(cls, user_id):
-        book_path = StateUser.get_book_path(user_id)
+        book_path = UserState.get_book_path(user_id)
 
         if book_path is None:
             cls.cache.pop(user_id, None)
@@ -56,8 +56,8 @@ class Reader:
         self.description = book_metadata["description"]
         self.cover_image = book_metadata["cover_image"]
 
-        self.index = StateUser.get_index(self.user_id)
-        self.time = StateUser.get_time(self.user_id)
+        self.index = UserState.get_index(self.user_id)
+        self.time = UserState.get_time(self.user_id)
 
         # Получаем hash книги и суммарный индекс книги
         file_hash = Library.calculate_hash(book_path)
@@ -96,7 +96,7 @@ class Reader:
             if current_len >= min_len:
                 break
 
-        StateUser.save_index(self.user_id, self.index)
+        UserState.save_index(self.user_id, self.index)
 
         return "\n".join(buffer).strip()
 

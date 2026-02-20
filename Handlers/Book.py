@@ -8,13 +8,13 @@ from aiogram.enums import ChatAction
 
 from FSM.states import UploadBook
 from Services.BookMetadata import BookMetadata
-from Services.Converter_service import translate_rus_eng
+from Services.Converter import translate_rus_eng
 from Services.Library import Library, BOOK_DIR, load_books_index
 
 from Services.Reader import ReaderCache, Sender, Reader
 from Services.Scheduler import Scheduler, scheduler
 
-from Services.StateUser import StateUser
+from Services.UserState import UserState
 
 book_router = Router(name='book')
 
@@ -31,7 +31,7 @@ def main_menu(reader):
         [InlineKeyboardButton(text=f"📖 Описание загруженной книги {reader.book_title}", callback_data="current_book")],
         [InlineKeyboardButton(text=f"🔄 Загрузить свою книгу (.epub)", callback_data="upload_book")],
         [InlineKeyboardButton(text="📚 Библиотека", callback_data="library")],
-        [InlineKeyboardButton(text=f"прогресс {reader.progress}, # абзаца: {reader.index}",
+        [InlineKeyboardButton(text=f"прогресс {reader.progress}%, # абзаца: {reader.index}",
                               callback_data="set_paragraf_index")],
         [InlineKeyboardButton(text="▶️ Читаем далее", callback_data="next_chunk")],
         [InlineKeyboardButton(text=f"⏰ Время отправки абзаца: {reader.time}", callback_data="change_time")],
@@ -40,9 +40,9 @@ def main_menu(reader):
 
 
 @book_router.message(Command('book'))
-async def book_handler(message: Message, state: FSMContext):
+async def book_handler(message: Message, state: FSMContext, reader: Reader):
     await state.clear()
-    reader = ReaderCache.get_reader(message.from_user.id)
+    # reader = ReaderCache.get_reader(message.from_user.id)
 
     if not reader:
 
@@ -105,9 +105,9 @@ async def show_library(callback: CallbackQuery, state: FSMContext):
     await state.set_state(UploadBook.waiting_book_number)
 
 
-# обработка выбора номера книги
+# Выбора номера книги из библиотеки
 @book_router.message(UploadBook.waiting_book_number)
-async def choose_book_by_number(message: Message, state: FSMContext):
+async def choose_book_from_library(message: Message, state: FSMContext):
     data = await state.get_data()
     book_map = data.get("book_map", {})
 
@@ -117,13 +117,13 @@ async def choose_book_by_number(message: Message, state: FSMContext):
 
     book_info = book_map[message.text]
 
-    await msg_book_info(message, book_info)
+    await book_description(message, book_info)
 
     # Предлагаем действия
     kb = InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text="ℹ️ Загружаем эту книгу?",
-                                  callback_data=f"upload_book_end:{book_info['path']}")],
+                                  callback_data=f"upload_library_book:{book_info['path']}")],
             [InlineKeyboardButton(text="🔙 Назад в библиотеку", callback_data="library")],
         ]
     )
@@ -135,9 +135,7 @@ async def choose_book_by_number(message: Message, state: FSMContext):
 
 
 # Описание книги
-async def msg_book_info(callback: CallbackQuery, book_info):
-    message = callback.message
-
+async def book_description(message: Message, book_info):
     description = book_info['description']
     caption = (
         f"<b>Автор</b>: {book_info['book_creator']}\n"
@@ -157,7 +155,6 @@ async def msg_book_info(callback: CallbackQuery, book_info):
         text=f"<tg-spoiler>{description_ru}</tg-spoiler>",
         parse_mode="HTML",
     )
-    await callback.message.delete()
 
 
 # Загрузка своей книги КОЛБЭК
@@ -171,7 +168,7 @@ async def upload_book_start(callback: CallbackQuery, state: FSMContext):
 
 # Загрузка своей книги waiting_epub
 @book_router.message(UploadBook.waiting_epub, F.document)
-async def upload_book_wait(message: Message, bot: Bot, state: FSMContext):
+async def upload_book_wait(message: Message, bot: Bot, state: FSMContext, user_id):
     if not message.document.file_name.endswith(".epub"):
         kb = InlineKeyboardMarkup(
             inline_keyboard=[
@@ -183,8 +180,6 @@ async def upload_book_wait(message: Message, bot: Bot, state: FSMContext):
             reply_markup=kb
         )
         return
-
-    user_id = message.from_user.id
 
     await state.clear()
 
@@ -222,22 +217,21 @@ async def upload_book_wait(message: Message, bot: Bot, state: FSMContext):
     await upload_book_end(message, user_id, final_path, state)
 
 
-# Загрузка книги из библиотек (КОНЕЦ КОЛБЭК)
-@book_router.callback_query(F.data.startswith("upload_book_end:"))
-async def upload_book_end_callback(callback: CallbackQuery, state: FSMContext):
+# Загрузка книги из библиотек (КОЛБЭК)
+@book_router.callback_query(F.data.startswith("upload_library_book:"))
+async def upload_library_book(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
     await callback.message.delete()
     path = callback.data.split(":")[1]
     await upload_book_end(callback.message, callback.from_user.id, path, state)
 
 
-# Загрузка книги КОНЕЦ // ФУНКЦИЯ
-async def upload_book_end(message, user_id, path, state):
+# Загрузка книги КОНЕЦ // ФУНКЦИЯ из библ / или своя загруженная
+async def upload_book_end(message, user_id, path, state, reader: Reader):
     # Создаем состояние для user
-    StateUser.reset_state(user_id, path)
+    UserState.reset_state(user_id, path)
     # Сбрасываем кэш reader если есть
     ReaderCache.cache.pop(user_id, None)
-    reader = ReaderCache.get_reader(user_id)
     await message.answer(f"Книга {reader.book_title} установлена.\n"
                          "Сейчас давайте установим время отправки абзаца на каждый день.\n"
                          "Укажите время в формате HH:MM")
@@ -248,7 +242,7 @@ async def upload_book_end(message, user_id, path, state):
 @book_router.callback_query(F.data == "change_time")
 async def change_time(callback: CallbackQuery):
     await callback.answer()  # 🔴 обязательно
-    current_time = StateUser.get_time(callback.from_user.id)
+    current_time = UserState.get_time(callback.from_user.id)
     time_text = current_time if current_time else "не задано"
 
     await callback.message.edit_text(
@@ -261,7 +255,7 @@ async def change_time(callback: CallbackQuery):
 
 # Задаем Время
 @book_router.message(UploadBook.waiting_time)
-async def save_time(message: Message, state: FSMContext, sender: Sender):
+async def save_time(message: Message, state: FSMContext, sender: Sender, user_id, reader: Reader):
     time_text = message.text.strip()
 
     try:
@@ -281,28 +275,24 @@ async def save_time(message: Message, state: FSMContext, sender: Sender):
         )
         return
 
-    user_id = message.from_user.id
+    # user_id = message.from_user.id
 
     # сохраняем время
-    StateUser.save_time(user_id, time_text)
+    UserState.save_time(user_id, time_text)
 
     # 🔥 обновляем scheduler
     sender_service = sender
     Scheduler.create_user_job(sender_service, user_id, time_text)
     ReaderCache.cache.pop(user_id, None)
-    reader = ReaderCache.get_reader(user_id)
-    await message.answer(f"Время: {time_text} установлено, планировщик включен ✅",
-                         reply_markup=main_menu(reader))
+    # reader = ReaderCache.get_reader(user_id)
+    await message.answer(f"Время: {time_text} установлено, планировщик включен ✅")
     await state.clear()
 
 
 # Информация о текущей книги
 @book_router.callback_query(F.data == "current_book")
-async def show_book(callback: CallbackQuery):
+async def show_book(callback: CallbackQuery, user_id, reader: Reader):
     await callback.answer()
-    # await callback.message.delete()
-    user_id = callback.from_user.id
-    reader = ReaderCache.get_reader(user_id)
 
     if not reader:
         await  callback.answer("Сначала загрузите книгу 📚")
@@ -316,21 +306,15 @@ async def show_book(callback: CallbackQuery):
         'path': reader.book_path,
     }
 
-    await msg_book_info(callback, book_info)
+    await book_description(callback.message, book_info)
 
 
 # Отправить ЧАНК
 @book_router.callback_query(F.data == "next_chunk")
-async def next_chunk_handler(callback: CallbackQuery, sender: Sender):
+async def next_chunk_handler(callback: CallbackQuery, sender: Sender, user_id):
     await callback.answer()
     temp_msg = await callback.message.edit_text("Готовим абзац книги...")
-
-    user_id = callback.from_user.id
     chat_id = callback.message.chat.id
-
-    # Удаляем старое меню
-    # await callback.message.delete()
-
     # Показываем typing
     await callback.bot.send_chat_action(
         chat_id=chat_id,
@@ -355,9 +339,9 @@ async def change_index(callback: CallbackQuery, state: FSMContext):
 
 # установить номер абзаца
 @book_router.message(UploadBook.waiting_index)
-async def save_index(message: Message, state: FSMContext):
-    user_id = message.from_user.id
-    reader = ReaderCache.get_reader(user_id)
+async def save_index(message: Message, state: FSMContext, user_id, reader: Reader):
+    # user_id = message.from_user.id
+    # reader = ReaderCache.get_reader(user_id)
     kb = InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text="❌ Отмена", callback_data="cancel_index")]
@@ -384,12 +368,12 @@ async def save_index(message: Message, state: FSMContext):
         )
         return
 
-    StateUser.save_index(user_id, index)
+    UserState.save_index(user_id, index)
 
     ReaderCache.cache.pop(user_id, None)
-    reader = ReaderCache.get_reader(user_id)
+    # reader = ReaderCache.get_reader(user_id)
 
-    await message.answer("✅ Индекс обновлён!", reply_markup=main_menu(reader))
+    await message.answer("✅ Индекс абзаца обновлён!")
     await state.clear()
 
 
@@ -415,8 +399,8 @@ def confirm_kb(action: str):
 
 # Универсальный обработчик подтверждения
 @book_router.callback_query(F.data.startswith("confirm:"))
-async def handle_confirm(callback: CallbackQuery, state: FSMContext):
-    user_id = callback.from_user.id
+async def handle_confirm(callback: CallbackQuery, state: FSMContext, user_id):
+    # user_id = callback.from_user.id
     await callback.answer()
 
     action = callback.data.split(":")[1]
@@ -430,7 +414,7 @@ async def handle_confirm(callback: CallbackQuery, state: FSMContext):
 
     elif action == "del_book":
         # Сбрасываем состояния user в файле STATE
-        StateUser.reset_state(user_id, "")
+        UserState.reset_state(user_id, "")
         # Удаляем кэш reader если есть
         ReaderCache.cache.pop(user_id, None)
         # Удаляем работу из планировщика
@@ -438,6 +422,7 @@ async def handle_confirm(callback: CallbackQuery, state: FSMContext):
         if scheduler.get_job(job_id):
             scheduler.remove_job(job_id)
         await callback.message.edit_text("📚 Книга удалена")
+
 
 # Кнопка отмена
 @book_router.callback_query(F.data.startswith("cancel:"))

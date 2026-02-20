@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from Middlewares.Data import DataMiddleware
 from Services.Library import Library
 from config import Config, load_config
 import logging
@@ -12,9 +13,9 @@ from aiogram.types import BotCommand
 import whisper
 import argostranslate.package
 
-from Handlers.start_hand import start_router
-from Handlers.converter_hand import convert_router
-from Handlers.book_hand import book_router
+from Handlers.Start import start_router
+from Handlers.Converters import convert_router
+from Handlers.Book import book_router
 from Services.Reader import Sender
 
 from Services.Scheduler import scheduler, Scheduler
@@ -37,9 +38,13 @@ bot = Bot(
 
 # Диспетчер для прослушивания БОТА
 dispatcher = Dispatcher()
+
+dispatcher.update.middleware(DataMiddleware())
+
 dispatcher.include_router(start_router)
 dispatcher.include_router(convert_router)
 dispatcher.include_router(book_router)
+
 
 # Устанавливаем команды
 async def set_bot_commands():

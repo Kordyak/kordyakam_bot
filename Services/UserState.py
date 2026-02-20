@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 
-class StateUser:
+class UserState:
 
     BASE_PATH = Path("Users")
     _cache: dict[int, dict] = {}

@@ -67,7 +67,6 @@ class StateUser:
     def reset_state(cls, user_id: int, book_path: str):
         cls._save_state(user_id, {
             "index": 0,
-            "all_index": 0,
             "time": "",
             "book_path": str(book_path)
         })

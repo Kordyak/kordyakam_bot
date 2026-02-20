@@ -17,15 +17,13 @@ class DataMiddleware(BaseMiddleware):
             user_id = event.message.from_user.id
 
         # Если это callback
-        elif  event.callback_query:
+        elif event.callback_query:
             user_id = event.callback_query.from_user.id
-
 
         if user_id:
             reader = ReaderCache.get_reader(user_id)
             data["user_id"] = user_id
             data["reader"] = reader
-
 
             # создаем папку пользователя, если не существует
             user_folder = self.BASE_PATH / str(user_id)

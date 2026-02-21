@@ -12,7 +12,8 @@ from Services.Library import Library
 from Services.Reader import Sender
 from Services.Scheduler import scheduler, Scheduler
 
-from Handlers.Start import start_router
+from Handlers.Universal import universal_router
+from Handlers.Service import start_router
 from Handlers.Converters import convert_router
 from Handlers.Book import book_router
 
@@ -22,10 +23,7 @@ import whisper
 import argostranslate.package
 import argostranslate.translate
 
-# ---------------------------
 # Конфигурация и логирование
-# ---------------------------
-
 config: Config = load_config()
 
 logging.basicConfig(
@@ -48,11 +46,8 @@ dispatcher.update.middleware(DataMiddleware())
 dispatcher.include_router(start_router)
 dispatcher.include_router(convert_router)
 dispatcher.include_router(book_router)
+dispatcher.include_router(universal_router)
 
-
-# ---------------------------
-# Команды бота
-# ---------------------------
 
 async def set_bot_commands():
     commands = [
@@ -72,13 +67,7 @@ dispatcher["model"] = model
 
 
 # Устанавливаем АРГО транслятор
-
 async def set_argostranslate():
-    # # путь к локальной модели
-    # local_model_path = Path(r"C:\Users\user\.argos-translate\translate-en_ru-1_9.argosmodel")
-    # # установка модели
-    # package.install_from_path(local_model_path)
-    # print("Модель установлена ✅")
     # Обновляем индекс пакетов
     argostranslate.package.update_package_index()
     available_packages = argostranslate.package.get_available_packages()
@@ -100,10 +89,7 @@ async def set_argostranslate():
         print("Пакет en->ru не найден")
 
 
-# ---------------------------
 # Reader / Scheduler
-# ---------------------------
-
 async def set_reader():
     sender_service = Sender(bot)
     dispatcher["sender"] = sender_service
@@ -111,10 +97,6 @@ async def set_reader():
     Scheduler.restore_all_jobs(sender_service)
     scheduler.start()
 
-
-# ---------------------------
-# MAIN
-# ---------------------------
 
 async def main():
     await set_bot_commands()

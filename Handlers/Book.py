@@ -7,6 +7,8 @@ from aiogram.filters import Command
 from aiogram.enums import ChatAction
 
 from FSM.states import UploadBook
+from Keyboards.Book import book_menu
+from Keyboards.Universal import confirm_kb, cancel_kb
 from Services.BookMetadata import BookMetadata
 from Services.Converter import translate_rus_eng
 from Services.Library import Library, BOOK_DIR, load_books_index
@@ -18,25 +20,6 @@ from Services.UserState import UserState
 
 book_router = Router(name='book')
 
-
-# Главная клавиатура
-def book_menu(reader):
-    if not reader:
-        return InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="📖 Загрузить свою книгу (.epub)", callback_data="upload_book")],
-            [InlineKeyboardButton(text="📚 Библиотека", callback_data="library")],
-        ])
-
-    return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text=f"📖 Описание загруженной книги {reader.book_title}", callback_data="current_book")],
-        [InlineKeyboardButton(text=f"🔄 Загрузить свою книгу (.epub)", callback_data="upload_book")],
-        [InlineKeyboardButton(text="📚 Библиотека", callback_data="library")],
-        [InlineKeyboardButton(text=f"прогресс {reader.progress}%, # абзаца: {reader.index}",
-                              callback_data="set_paragraf_index")],
-        [InlineKeyboardButton(text="▶️ Читаем далее", callback_data="next_chunk")],
-        [InlineKeyboardButton(text=f"⏰ Время отправки абзаца: {reader.time}", callback_data="change_time")],
-        [InlineKeyboardButton(text="❌ Удалить книгу", callback_data="del_book")],
-    ])
 
 
 @book_router.message(Command('book'))
@@ -168,15 +151,11 @@ async def upload_book_start(callback: CallbackQuery, state: FSMContext):
 # Загрузка своей книги waiting_epub
 @book_router.message(UploadBook.waiting_epub, F.document)
 async def upload_book_wait(message: Message, bot: Bot, state: FSMContext, user_id):
-    kb = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text="❌ Отмена", callback_data="cancel_index")]
-        ]
-    )
+
     if not message.document.file_name.endswith(".epub"):
         await message.answer(
             'Это не epub 😅',
-            reply_markup=kb
+            reply_markup=cancel_kb()
         )
         return
 
@@ -218,11 +197,11 @@ async def upload_book_wait(message: Message, bot: Bot, state: FSMContext, user_i
 
 # Загрузка книги из библиотек (КОЛБЭК)
 @book_router.callback_query(F.data.startswith("upload_library_book:"))
-async def upload_library_book(callback: CallbackQuery, state: FSMContext, reader: Reader):
+async def upload_library_book(callback: CallbackQuery, state: FSMContext, user_id):
     await callback.answer()
     await callback.message.delete()
     path = callback.data.split(":")[1]
-    await upload_book_end(callback.message, callback.from_user.id, path, state, reader)
+    await upload_book_end(callback.message, user_id, path, state)
 
 
 # Загрузка книги КОНЕЦ // ФУНКЦИЯ из библ / или своя загруженная
@@ -263,15 +242,9 @@ async def save_time(message: Message, state: FSMContext, sender: Sender, user_id
         if not (0 <= hours <= 23 and 0 <= minutes <= 59):
             raise ValueError
     except:
-        kb = InlineKeyboardMarkup(
-            inline_keyboard=[
-                [InlineKeyboardButton(text="❌ Отмена", callback_data="cancel_index")]
-            ]
-        )
-
         await message.answer(
             'Некорректное время. Формат HH:MM 😈',
-            reply_markup=kb
+            reply_markup=cancel_kb()
         )
         return
 
@@ -343,14 +316,6 @@ async def change_index(callback: CallbackQuery, state: FSMContext):
 # установить номер абзаца
 @book_router.message(UploadBook.waiting_index)
 async def save_index(message: Message, state: FSMContext, user_id, reader: Reader):
-    # user_id = message.from_user.id
-    # reader = ReaderCache.get_reader(user_id)
-    kb = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text="❌ Отмена", callback_data="cancel_index")]
-        ]
-    )
-
     if not reader:
         await message.answer("Книга не найдена!")
         await state.clear()
@@ -359,7 +324,7 @@ async def save_index(message: Message, state: FSMContext, user_id, reader: Reade
     if not message.text.isdigit():
         await message.answer(
             'Укажите № абзаца от которого начнем читать',
-            reply_markup=kb
+            reply_markup=cancel_kb()
         )
         return
 
@@ -367,7 +332,7 @@ async def save_index(message: Message, state: FSMContext, user_id, reader: Reade
     if index < 0 or index > reader.index_all:
         await message.answer(
             f"Введите число от 0 до {reader.index_all}",
-            reply_markup=kb
+            reply_markup=cancel_kb()
         )
         return
 
@@ -387,57 +352,3 @@ async def del_book(callback: CallbackQuery):
     await callback.message.edit_text('Вы уверены?', reply_markup=confirm_kb('del_book'))
 
 
-# Универсальная клавиатура подтверждения =================================
-def confirm_kb(action: str):
-    """
-    action — короткое имя действия (например: change_time, delete_book)
-    """
-    return InlineKeyboardMarkup(inline_keyboard=[
-        [
-            InlineKeyboardButton(text="✅ Да", callback_data=f"confirm:{action}"),
-            InlineKeyboardButton(text="❌ Нет", callback_data=f"cancel:{action}")
-        ]
-    ])
-
-
-# Универсальный обработчик подтверждения
-@book_router.callback_query(F.data.startswith("confirm:"))
-async def handle_confirm(callback: CallbackQuery, state: FSMContext, user_id):
-    # user_id = callback.from_user.id
-    await callback.answer()
-
-    action = callback.data.split(":")[1]
-
-    if action == "change_time":
-        await callback.message.edit_text(
-            "Отправь время в формате <code>HH:MM</code>",
-            parse_mode="HTML"
-        )
-        await state.set_state(UploadBook.waiting_time)
-
-    elif action == "del_book":
-        # Сбрасываем состояния user в файле STATE
-        UserState.reset_state(user_id, "")
-        # Удаляем кэш reader если есть
-        ReaderCache.cache.pop(user_id, None)
-        # Удаляем работу из планировщика
-        job_id = f"user_{user_id}"
-        if scheduler.get_job(job_id):
-            scheduler.remove_job(job_id)
-        await callback.message.edit_text("📚 Книга удалена")
-
-
-# Кнопка отмена
-@book_router.callback_query(F.data.startswith("cancel:"))
-async def handle_cancel(callback: CallbackQuery, state: FSMContext):
-    await callback.answer()
-    await state.clear()
-    action = callback.data.split(":")[1]
-    await callback.message.edit_text("👌Оставляем без изменений")
-
-
-# Сброс состояния
-@book_router.callback_query(F.data == "cancel_index")
-async def cancel_index(callback: CallbackQuery, state: FSMContext):
-    await callback.answer('Запрос отменен!')
-    await state.clear()

@@ -5,6 +5,8 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 from aiogram.filters import Command
 
+from Keyboards.Universal import confirm_kb
+
 start_router = Router(name='start')
 
 
@@ -31,8 +33,13 @@ async def run_rdp(message: Message, state: FSMContext):
     await message.answer(text, parse_mode="HTML")
 
 
-@start_router.message(Command("stop"))
+@start_router.message(Command("exit"))
 async def stop_bot(message: Message, user_id: int):
     if user_id == 995657021:
-        await message.answer("Бот выключается...")
-        exit()
+        await message.answer('Вы уверены?', reply_markup=confirm_kb('exit'))
+
+
+@start_router.message(Command("hibernate"))
+async def stop_bot(message: Message, user_id: int):
+    if user_id == 995657021:
+        await message.answer('Вы уверены?', reply_markup=confirm_kb('hibernate'))

@@ -10,7 +10,7 @@ def book_menu(reader):
         ])
 
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="▶️ Читаем '{reader.book_title}'", callback_data="next_chunk")],
+        [InlineKeyboardButton(text=f"▶️ Читаем '{reader.book_title}'", callback_data="next_chunk")],
         [InlineKeyboardButton(text=f"📖 Описание: '{reader.book_title}'", callback_data="current_book")],
         # [InlineKeyboardButton(text=f"🔄 Загрузить свою книгу (.epub)", callback_data="upload_book")],
         [InlineKeyboardButton(text="📚 Библиотека", callback_data="library")],

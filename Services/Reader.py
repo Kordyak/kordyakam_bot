@@ -148,7 +148,7 @@ class Sender:
             caption=(
                 f"{reader.book_creator} / {reader.book_title}\n"
                 f"Прогресс: {reader.progress}%\n"
-                f"№ абзаца: {reader.index}\n"
+                f"Абзаца: №{reader.index}\n"
                 f"{chunk}"
             ),
             parse_mode="HTML",

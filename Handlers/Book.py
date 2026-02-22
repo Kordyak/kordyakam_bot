@@ -99,13 +99,15 @@ async def choose_book_from_library(message: Message, state: FSMContext):
         return
 
     book_info = book_map[message.text]
+    await state.update_data(book_info=book_info)
 
-    await book_description(message, book_info)
+    # await book_description(message, book_info)
 
     # Предлагаем действия
     kb = InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="ℹ️ Загружаем эту книгу?",
+            [InlineKeyboardButton(text=f"Описание книги '{book_info['book_title']}'", callback_data="book_description")],
+            [InlineKeyboardButton(text=f"ℹ️ Загружаем '{book_info['book_title']}' для чтения?",
                                   callback_data=f"upload_library_book:{book_info['path']}")],
             [InlineKeyboardButton(text="🔙 Назад в библиотеку", callback_data="library")],
         ]
@@ -114,11 +116,17 @@ async def choose_book_from_library(message: Message, state: FSMContext):
         f"Что надумал мой дружок?",
         reply_markup=kb
     )
-    await state.clear()  # очищаем состояние
+    # await state.clear()  # очищаем состояние
 
 
 # Описание книги
-async def book_description(message: Message, book_info):
+@book_router.callback_query(F.data == "book_description")
+async def book_description(callback: CallbackQuery, state: FSMContext):
+    message = callback.message
+
+    data = await state.get_data()
+    book_info = data.get("book_info", {})
+
     description = book_info['description']
     caption = (
         f"<b>Автор</b>: {book_info['book_creator']}\n"
@@ -138,6 +146,7 @@ async def book_description(message: Message, book_info):
         text=f"<tg-spoiler>{description_ru}</tg-spoiler>",
         parse_mode="HTML",
     )
+    await state.clear()  # очищаем состояние
 
 
 # Загрузка своей книги КОЛБЭК
@@ -252,13 +261,12 @@ async def save_time(message: Message, state: FSMContext, sender: Sender, user_id
 
     # сохраняем время
     UserState.save_time(user_id, time_text)
+    ReaderCache.cache.pop(user_id, None)
     reader = ReaderCache.get_reader(user_id)
 
     # 🔥 обновляем scheduler
     sender_service = sender
     Scheduler.create_user_job(sender_service, user_id, time_text)
-    ReaderCache.cache.pop(user_id, None)
-    # reader = ReaderCache.get_reader(user_id)
     await message.answer(f"Время: {time_text} установлено, планировщик включен ✅",
                          reply_markup=book_menu(reader)
                          )
@@ -337,11 +345,11 @@ async def save_index(message: Message, state: FSMContext, user_id, reader: Reade
         return
 
     UserState.save_index(user_id, index)
-
     ReaderCache.cache.pop(user_id, None)
-    # reader = ReaderCache.get_reader(user_id)
+    reader = ReaderCache.get_reader(user_id)
 
-    await message.answer("✅ Индекс абзаца обновлён!")
+    await message.answer("✅ Индекс абзаца обновлён!",
+                         reply_markup=book_menu(reader))
     await state.clear()
 
 

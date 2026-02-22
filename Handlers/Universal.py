@@ -1,9 +1,8 @@
 import os
 
-from aiogram import Router
+from aiogram import Router, F
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery
-from magic_filter import F
 
 from FSM.states import UploadBook
 from Services.Reader import ReaderCache

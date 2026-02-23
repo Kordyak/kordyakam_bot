@@ -5,15 +5,15 @@ from aiogram.filters import Command
 from aiogram.filters.command import CommandObject
 from aiogram.types import Message
 
-
 from Services.Converter import *
+from Services.Reader import make_title
 
 convert_router = Router(name='converter')
+
 
 # Обрабатывает голосовые сообщения и переводит их в текст с помощью Whisper
 @convert_router.message(F.voice)
 async def voice_message_handler(message: Message, model):
-
     """Обрабатывает голосовые сообщения и переводит их в текст с помощью Whisper."""
     if not model:
         await message.reply("❌ Модель распознавания речи не загружена. Проверьте логи.")
@@ -47,7 +47,7 @@ async def voice_message_handler(message: Message, model):
             temp_ogg_path,
             language="ru",
             # Дополнительный параметр, чтобы избежать "мусора"
-            fp16=False # Раскомментируйте, если есть проблемы с GPU
+            fp16=False  # Раскомментируйте, если есть проблемы с GPU
         )
 
         text = result["text"]
@@ -91,17 +91,16 @@ async def handler(message: Message, command: CommandObject):
     temp_msg = await message.answer('Подготавливаю текст!')
 
     text = command.args
-    if message.reply_to_message: # Если просто текст в АУДИО перевести когда репли делаешь
-        if message.reply_to_message.text: # Если просто текст в АУДИО перевести когда репли делаешь
+    if message.reply_to_message:  # Если просто текст в АУДИО перевести когда репли делаешь
+        if message.reply_to_message.text:  # Если просто текст в АУДИО перевести когда репли делаешь
             text = message.reply_to_message.text
 
-        elif message.reply_to_message.caption: # Текст из чата про книги в АУДИО (капча под картинкой)
+        elif message.reply_to_message.caption:  # Текст из чата про книги в АУДИО (капча под картинкой)
             match = re.search(r'Description:\s*(.*?)\s*Read book', message.reply_to_message.caption, re.DOTALL)
             if match:
                 text = match.group(1).strip()
             else:
                 text = message.reply_to_message.caption
-
 
     if not check_english_content(text):  # Проверяет, является ли текст преимущественно английским
         await message.reply("Текст преимущественно (70%) не на английском!!!")
@@ -112,18 +111,15 @@ async def handler(message: Message, command: CommandObject):
         lang = "en"
 
     if text:
-        audio_file: FSInputFile = convert_text_audio(text,"",lang)
+
+        name_file = make_title(text)
+        audio_file: FSInputFile = convert_text_audio(text, name_file, lang)
         await message.reply_audio(audio_file,
                                   performer=message.bot._me.first_name,
-                                  title=audio_file.filename,
+                                  title=name_file,
                                   )
         os.remove(audio_file.filename)
     else:
         await message.answer('Текст не обнаружен, вставьте его после команды!')
 
     await temp_msg.delete()
-
-
-
-
-

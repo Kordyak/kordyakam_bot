@@ -157,9 +157,9 @@ class Sender:
             performer=reader.book_title,
             title=name_file,
             caption=(
-                f"{reader.book_creator} / {reader.book_title}\n"
-                f"Прогресс: {reader.progress}%\n"
-                f"Абзац: №№{reader.start_index}-{reader.index}\n"
+                f"{reader.book_creator} / <b>{reader.book_title}</b>\n"
+                f"Прогресс: <b>{reader.progress} %</b>\n"
+                f"Абзац: <b>№№ {reader.start_index} - {reader.index}</b>\n"
                 f"{chunk}"
             ),
             parse_mode="HTML",

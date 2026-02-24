@@ -1,4 +1,5 @@
 import os
+import re
 from pathlib import Path
 
 from aiogram import Bot
@@ -138,17 +139,19 @@ class Sender:
             await self.bot.send_message(user_id, "Книга закончилась 📚")
             return
 
-        audio_file: FSInputFile = convert_text_audio(chunk, "", "en")
+        name_file = make_title(chunk)
+
+        audio_file: FSInputFile = convert_text_audio(chunk, name_file, "en")
 
         await self.bot.send_audio(
             chat_id=user_id,
             audio=audio_file,
             performer=reader.book_title,
-            title=make_title(chunk),
+            title=name_file,
             caption=(
                 f"{reader.book_creator} / {reader.book_title}\n"
                 f"Прогресс: {reader.progress}%\n"
-                f"№ абзаца: {reader.index}\n"
+                f"Абзаца: №{reader.index}\n"
                 f"{chunk}"
             ),
             parse_mode="HTML",
@@ -166,7 +169,7 @@ class Sender:
 # Заголовок из текста
 def make_title(text, words=6, max_len=60):
     # убираем переносы строк
-    clean = text.replace("\n", " ").strip()
+    clean = re.sub(r'[<>:"/\\|?*]', '', text)
     # берём первые N слов
     title = " ".join(clean.split()[:words])
     # ограничиваем длину

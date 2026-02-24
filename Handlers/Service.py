@@ -1,4 +1,3 @@
-
 import os
 
 from aiogram import Router, F
@@ -6,7 +5,10 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 from aiogram.filters import Command
 
+from Keyboards.Universal import confirm_kb
+
 start_router = Router(name='start')
+
 
 # start RDP call_process_by_time
 @start_router.message(F.text.regexp(r"^\d{6}$"))
@@ -16,7 +18,6 @@ async def run_rdp(message: Message, user_id: int):
         await message.delete()
 
 
-# start RDP
 @start_router.message(Command('start'))
 async def run_rdp(message: Message, state: FSMContext):
     await state.clear()
@@ -30,3 +31,15 @@ async def run_rdp(message: Message, state: FSMContext):
     )
 
     await message.answer(text, parse_mode="HTML")
+
+
+@start_router.message(Command("exit"))
+async def stop_bot(message: Message, user_id: int):
+    if user_id == 995657021:
+        await message.answer('Вы уверены?', reply_markup=confirm_kb('exit'))
+
+
+@start_router.message(Command("hibernate"))
+async def stop_bot(message: Message, user_id: int):
+    if user_id == 995657021:
+        await message.answer('Вы уверены?', reply_markup=confirm_kb('hibernate'))

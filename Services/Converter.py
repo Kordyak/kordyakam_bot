@@ -37,9 +37,6 @@ def convert_text_audio(in_text: str, name_file: str, lang: str) -> FSInputFile:
     else:
         audio = gTTS(text=text, lang=lang)
 
-    if name_file == "":
-        name_file = f"{text[:15]}.mp3"
-        name_file = re.sub(r"[\n]", '', name_file)  # удаляем символы
     audio.save(name_file)
     return FSInputFile(path=os.path.join(name_file))
 

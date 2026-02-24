@@ -10,7 +10,7 @@ from FSM.states import UploadBook
 from Keyboards.Book import book_menu
 from Keyboards.Universal import confirm_kb, cancel_kb
 from Services.BookMetadata import BookMetadata
-from Services.Converter import translate_rus_eng
+from Services.Converters import translate_rus_eng
 from Services.Library import Library, BOOK_DIR, load_books_index
 
 from Services.Reader import ReaderCache, Sender, Reader

@@ -3,11 +3,10 @@ import re
 from pathlib import Path
 
 from aiogram import Bot
-from aiogram.types import FSInputFile
-
+from aiogram.types import FSInputFile, BufferedInputFile
 
 from Services.BookMetadata import BookMetadata
-from Services.Converter import translate_rus_eng, convert_text_audio
+from Services.Converters import translate_rus_eng, convert_text_audio
 from Services.Library import epub_paragraph_generator, Library, load_books_index
 from Services.UserState import UserState
 
@@ -46,6 +45,7 @@ class ReaderCache:
 # Читатель по сути user (разночтения с КЭШ, надо править)
 class Reader:
     TELEGRAM_LIMIT = 1000
+    start_index = 0
 
     def __init__(self, book_path, user_id):
         self.book_path = Path(book_path)
@@ -77,6 +77,8 @@ class Reader:
 
     # MAX SPEED CHUNK BUILDER
     def get_next_chunk(self, min_len=300):
+
+        self.start_index = self.index+1
 
         if self.index >= self.index_all:
             return None
@@ -143,15 +145,21 @@ class Sender:
 
         audio_file: FSInputFile = convert_text_audio(chunk, name_file, "en")
 
+        cover_file = BufferedInputFile(
+            file=reader.cover_image,
+            filename="cover.jpg"
+        )
+
         await self.bot.send_audio(
             chat_id=user_id,
             audio=audio_file,
+            thumbnail=cover_file,
             performer=reader.book_title,
             title=name_file,
             caption=(
                 f"{reader.book_creator} / {reader.book_title}\n"
                 f"Прогресс: {reader.progress}%\n"
-                f"Абзаца: №{reader.index}\n"
+                f"Абзац: №№{reader.start_index}-{reader.index}\n"
                 f"{chunk}"
             ),
             parse_mode="HTML",

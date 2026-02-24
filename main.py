@@ -13,7 +13,7 @@ from Services.Reader import Sender
 from Services.Scheduler import scheduler, Scheduler
 
 from Handlers.Universal import universal_router
-from Handlers.Service import start_router
+from Handlers.Start_service import start_router
 from Handlers.Converters import convert_router
 from Handlers.Book import book_router
 
@@ -53,8 +53,8 @@ async def set_bot_commands():
     commands = [
         BotCommand(command="/start", description="Приветствую!"),
         BotCommand(command="/book", description="Читаю книги на английском"),
-        BotCommand(command="/ru_en", description="Перевод русско-английский"),
-        BotCommand(command="/en_ru", description="Перевод англо-русский"),
+        BotCommand(command="/ru_en", description="Перевод (RU / EN)"),
+        BotCommand(command="/en_ru", description="Перевод (EN / RU)"),
         BotCommand(command="/audio_eng", description="Текст в аудио (EN)"),
         BotCommand(command="/audio_ru", description="Текст в аудио (RU)"),
     ]

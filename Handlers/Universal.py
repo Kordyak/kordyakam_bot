@@ -42,6 +42,10 @@ async def handle_confirm(callback: CallbackQuery, state: FSMContext, user_id):
         await callback.message.answer("ПК засыпает... 😴")
         os.system(f"shutdown /h")
 
+    elif action == 'reboot':
+        await callback.message.answer("Бот выключается... 🏴‍☠")
+        os.system(f"shutdown -r -t 0")
+
     elif action == 'exit':
         await callback.message.answer("Бот выключается... 🏴‍☠")
         exit()

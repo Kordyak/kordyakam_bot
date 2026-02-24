@@ -148,15 +148,15 @@ async def book_description(callback: CallbackQuery, state: FSMContext):
     )
 
 
-    kb = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text=f"ℹ️ Загружаем '{book_info['book_title']}' для чтения?",
-                                  callback_data=f"upload_library_book:{book_info['path']}")],
-            [InlineKeyboardButton(text="🔙 Назад в библиотеку", callback_data="library")],
-        ]
-    )
-    await message.answer('Что надумал?', reply_markup=kb)
-    await message.delete()
+    # kb = InlineKeyboardMarkup(
+    #     inline_keyboard=[
+    #         [InlineKeyboardButton(text=f"ℹ️ Загружаем '{book_info['book_title']}' для чтения?",
+    #                               callback_data=f"upload_library_book:{book_info['path']}")],
+    #         [InlineKeyboardButton(text="🔙 Назад в библиотеку", callback_data="library")],
+    #     ]
+    # )
+    # await message.answer('Что надумал?', reply_markup=kb)
+    # await message.delete()
     await state.clear()  # очищаем состояние
 
 
@@ -287,7 +287,7 @@ async def save_time(message: Message, state: FSMContext, sender: Sender, user_id
 
 # Информация о текущей книги
 @book_router.callback_query(F.data == "current_book")
-async def show_book(callback: CallbackQuery, user_id, reader: Reader):
+async def show_book(callback: CallbackQuery, state: FSMContext, reader: Reader):
     await callback.answer()
 
     if not reader:
@@ -301,8 +301,9 @@ async def show_book(callback: CallbackQuery, user_id, reader: Reader):
         'cover_image': reader.cover_image,
         'path': reader.book_path,
     }
+    await state.update_data(book_info=book_info)
 
-    await book_description(callback.message, book_info)
+    await book_description(callback, state)
 
 
 # Отправить ЧАНК

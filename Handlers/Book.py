@@ -37,7 +37,7 @@ async def book_handler(message: Message, state: FSMContext, reader: Reader):
             "Вам необходимо загрузить книгу на англ. в формате .epub.\n"
         )
     else:
-        text = f'Привет мой друг, продолжаем читать книгу {reader.book_title}\n'
+        text = f'Привет мой друг, продолжаем читать "{reader.book_title}"\n'
 
     await message.answer(text,
                          reply_markup=book_menu(reader)

@@ -88,7 +88,7 @@ async def handler(message: Message):
 
 @convert_router.message(Command('audio_eng', 'audio_ru'))
 async def handler(message: Message, command: CommandObject):
-    temp_msg = await message.answer('Подготавливаю текст!')
+    temp_msg = await message.answer('Подготавливаю аудио!')
 
     text = command.args
     if message.reply_to_message:  # Если просто текст в АУДИО перевести когда репли делаешь

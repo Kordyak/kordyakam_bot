@@ -1,3 +1,4 @@
+import asyncio
 from pathlib import Path
 
 from aiogram import Router, F, Bot
@@ -8,7 +9,7 @@ from aiogram.enums import ChatAction
 
 from FSM.states import UploadBook
 from Keyboards.Book import book_menu
-from Keyboards.Universal import confirm_kb, cancel_kb
+from Keyboards.Universal import confirm_kb, cancel_kb, send_typing
 from Services.BookMetadata import BookMetadata
 from Services.Converters import translate_rus_eng
 from Services.Library import Library, BOOK_DIR, load_books_index
@@ -311,16 +312,16 @@ async def show_book(callback: CallbackQuery, state: FSMContext, reader: Reader):
 async def next_chunk_handler(callback: CallbackQuery, sender: Sender, user_id):
     await callback.answer()
     temp_msg = await callback.message.edit_text("Готовим абзац книги...")
-    chat_id = callback.message.chat.id
-    # Показываем typing
-    await callback.bot.send_chat_action(
-        chat_id=chat_id,
-        action=ChatAction.TYPING
-    )
+    # chat_id = callback.message.chat.id
+    # # запускаем фоновый typing
+    # typing_task = asyncio.create_task(
+    #     send_typing(callback.bot, chat_id)
+    # )
 
     try:
         await sender.send_daily_text(user_id)
     finally:
+        # typing_task.cancel()  # остановить typing
         # Удалится даже если будет ошибка
         await temp_msg.delete()
 

@@ -5,6 +5,8 @@ from pathlib import Path
 from bs4 import BeautifulSoup
 from ebooklib import epub, ITEM_DOCUMENT
 
+import zipfile
+
 BOOK_DIR = Path("Books")
 BOOK_DIR.mkdir(exist_ok=True)
 
@@ -64,6 +66,12 @@ class Library:
         updated = False
 
         for book_path in BOOK_DIR.glob("*.epub"):
+
+
+            if not zipfile.is_zipfile(book_path):
+                print(f"Файл {book_path.name} поврежден или не EPUB")
+                continue
+
             file_hash = cls.calculate_hash(book_path)
 
             if file_hash not in index:
@@ -87,7 +95,12 @@ class Library:
 
 # Получаем все параграфы книги в массиве
 def epub_paragraph_generator(epub_path):
-    book = epub.read_epub(str(epub_path))
+    try:
+        book = epub.read_epub(str(epub_path))
+    except Exception as e:
+        print(f"Ошибка чтения EPUB {epub_path.name}: {e}")
+        return  # просто пропускаем файл
+
     for item in book.get_items_of_type(ITEM_DOCUMENT):
         soup = BeautifulSoup(item.get_content(), "html.parser")
         for p in soup.find_all("p"):

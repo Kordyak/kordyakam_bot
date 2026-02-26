@@ -69,7 +69,9 @@ class Library:
 
 
             if not zipfile.is_zipfile(book_path):
-                print(f"Файл {book_path.name} поврежден или не EPUB")
+                print(f"\nФайл {book_path.name} поврежден или не EPUB")
+                print(f"Удаляю поврежденный файл: {book_path.name}")
+                book_path.unlink(missing_ok=True)
                 continue
 
             file_hash = cls.calculate_hash(book_path)

@@ -15,15 +15,18 @@ class DataMiddleware(BaseMiddleware):
         bot = data.get("bot")
         user_id = None
         chat_id = None
+        username = None
 
         # Если это сообщение
         if event.message:
             user_id = event.message.from_user.id
+            username = event.message.from_user.username
             chat_id = event.message.chat.id
 
         # Если это callback
         elif event.callback_query:
             user_id = event.callback_query.from_user.id
+            username = event.callback_query.from_user.username
             chat_id = event.callback_query.message.chat.id
 
         if user_id:
@@ -34,6 +37,16 @@ class DataMiddleware(BaseMiddleware):
             # создаем папку пользователя, если не существует
             user_folder = self.BASE_PATH / str(user_id)
             user_folder.mkdir(parents=True, exist_ok=True)
+
+            old_folder = self.BASE_PATH / str(user_id)
+            new_folder = self.BASE_PATH / f"{user_id}_{username}"
+
+            # если существует старая папка и нет новой — переименовываем
+            if old_folder.exists() and not new_folder.exists():
+                old_folder.rename(new_folder)
+
+            # создаём новую (если ещё не существует)
+            new_folder.mkdir(parents=True, exist_ok=True)
 
         typing_task = asyncio.create_task(
             self._typing_loop(bot, chat_id)

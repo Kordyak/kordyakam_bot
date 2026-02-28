@@ -13,6 +13,9 @@ from Services.UserState import UserState
 from mutagen.mp3 import MP3
 from mutagen.id3 import ID3, APIC, TIT2, TPE1, TALB
 
+from PIL import Image
+from io import BytesIO
+
 
 # КЭШИРОВАНИЕ reader
 class ReaderCache:
@@ -81,7 +84,7 @@ class Reader:
     # MAX SPEED CHUNK BUILDER
     def get_next_chunk(self, min_len=300):
 
-        self.start_index = self.index+1
+        self.start_index = self.index + 1
 
         if self.index >= self.index_all:
             return None
@@ -125,8 +128,6 @@ class LazyEpubReader:
             return paragraph
         except StopIteration:
             return None
-
-
 
 
 # Отправляет ЧАНКИ книги
@@ -178,9 +179,12 @@ class Sender:
 
         mp3.save()
 
+        thumbnail = make_thumbnail(reader.cover_image)
+
         await self.bot.send_audio(
             chat_id=user_id,
             audio=FSInputFile(name_file),
+            thumbnail=thumbnail,
             performer=reader.book_title,
             title=name_file,
             caption=(
@@ -198,6 +202,41 @@ class Sender:
             chat_id=user_id,
             text=f"<tg-spoiler>{chunk_rus}</tg-spoiler>",
             parse_mode="HTML",
+        )
+
+
+def make_thumbnail(image_bytes: bytes) -> BufferedInputFile:
+    """
+    Делает JPEG thumbnail ≤320x320 и ≤200KB
+    Возвращает bytes для BufferedInputFile
+    """
+
+    with Image.open(BytesIO(image_bytes)) as img:
+        # Конвертируем в RGB (важно если PNG с прозрачностью)
+        img = img.convert("RGB")
+
+        # Делаем thumbnail максимум 320x320
+        img.thumbnail((320, 320))
+
+        output = BytesIO()
+
+        # Сохраняем с постепенным уменьшением качества,
+        # чтобы уложиться в 200KB
+        quality = 85
+        while True:
+            output.seek(0)
+            output.truncate()
+
+            img.save(output, format="JPEG", quality=quality, optimize=True)
+
+            if output.tell() <= 200 * 1024 or quality <= 40:
+                break
+
+            quality -= 5
+
+        return BufferedInputFile(
+            file=output.getvalue(),
+            filename="thumb.jpg"
         )
 
 

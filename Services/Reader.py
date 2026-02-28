@@ -10,6 +10,9 @@ from Services.Converters import translate_rus_eng, convert_text_audio
 from Services.Library import epub_paragraph_generator, Library, load_books_index
 from Services.UserState import UserState
 
+from mutagen.mp3 import MP3
+from mutagen.id3 import ID3
+
 
 # КЭШИРОВАНИЕ reader
 class ReaderCache:
@@ -143,17 +146,41 @@ class Sender:
 
         name_file = make_title(chunk)
 
-        audio_file: FSInputFile = convert_text_audio(chunk, name_file, "en")
+        convert_text_audio(chunk, name_file, "en")
 
-        cover_file = BufferedInputFile(
-            file=reader.cover_image,
-            filename="cover.jpg"
+        # 2. Открываем файл и добавляем теги
+        mp3 = MP3(name_file, ID3=ID3)
+
+        if mp3.tags is None:
+            mp3.add_tags()
+
+        # Удаляем старую обложку если была
+        mp3.tags.delall("APIC")
+
+        # Добавляем обложку
+        mp3.tags.add(
+            APIC(
+                encoding=3,
+                mime='image/jpeg',
+                type=3,
+                desc='Cover',
+                data=reader.cover_image  # bytes изображения
+            )
         )
+        # Удаляем старые ТЭГИ
+        audio_file.tags.delall("TIT2")
+        audio_file.tags.delall("TPE1")
+        audio_file.tags.delall("TALB")
+        # Добавим нормальные теги (чтобы Telegram красиво показывал)
+        mp3.tags.add(TIT2(encoding=3, text=name_file))
+        mp3.tags.add(TPE1(encoding=3, text=reader.book_creator))
+        mp3.tags.add(TALB(encoding=3, text=reader.book_title))
+
+        mp3.save()
 
         await self.bot.send_audio(
             chat_id=user_id,
-            audio=audio_file,
-            thumbnail=cover_file,
+            audio=FSInputFile(name_file),
             performer=reader.book_title,
             title=name_file,
             caption=(
@@ -164,7 +191,7 @@ class Sender:
             ),
             parse_mode="HTML",
         )
-        os.remove(audio_file.filename)
+        os.remove(name_file)
 
         chunk_rus = translate_rus_eng(chunk, "/en_ru")
         await self.bot.send_message(

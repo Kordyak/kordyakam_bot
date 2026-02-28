@@ -11,7 +11,7 @@ from Services.Library import epub_paragraph_generator, Library, load_books_index
 from Services.UserState import UserState
 
 from mutagen.mp3 import MP3
-from mutagen.id3 import ID3
+from mutagen.id3 import ID3, APIC, TIT2, TPE1, TALB
 
 
 # КЭШИРОВАНИЕ reader
@@ -168,9 +168,9 @@ class Sender:
             )
         )
         # Удаляем старые ТЭГИ
-        audio_file.tags.delall("TIT2")
-        audio_file.tags.delall("TPE1")
-        audio_file.tags.delall("TALB")
+        mp3.tags.delall("TIT2")
+        mp3.tags.delall("TPE1")
+        mp3.tags.delall("TALB")
         # Добавим нормальные теги (чтобы Telegram красиво показывал)
         mp3.tags.add(TIT2(encoding=3, text=name_file))
         mp3.tags.add(TPE1(encoding=3, text=reader.book_creator))

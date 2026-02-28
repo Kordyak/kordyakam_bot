@@ -5,7 +5,7 @@ from aiogram.filters import Command
 from aiogram.filters.command import CommandObject
 from aiogram.types import Message
 
-from Services.Converter import *
+from Services.Converters import *
 from Services.Reader import make_title
 
 convert_router = Router(name='converter')
@@ -88,7 +88,7 @@ async def handler(message: Message):
 
 @convert_router.message(Command('audio_eng', 'audio_ru'))
 async def handler(message: Message, command: CommandObject):
-    temp_msg = await message.answer('Подготавливаю текст!')
+    temp_msg = await message.answer('Подготавливаю аудио!')
 
     text = command.args
     if message.reply_to_message:  # Если просто текст в АУДИО перевести когда репли делаешь

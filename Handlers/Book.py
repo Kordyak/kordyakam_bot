@@ -1,3 +1,4 @@
+import asyncio
 from pathlib import Path
 
 from aiogram import Router, F, Bot
@@ -8,9 +9,9 @@ from aiogram.enums import ChatAction
 
 from FSM.states import UploadBook
 from Keyboards.Book import book_menu
-from Keyboards.Universal import confirm_kb, cancel_kb
+from Keyboards.Universal import confirm_kb, cancel_kb, send_typing
 from Services.BookMetadata import BookMetadata
-from Services.Converter import translate_rus_eng
+from Services.Converters import translate_rus_eng
 from Services.Library import Library, BOOK_DIR, load_books_index
 
 from Services.Reader import ReaderCache, Sender, Reader
@@ -19,7 +20,6 @@ from Services.Scheduler import Scheduler, scheduler
 from Services.UserState import UserState
 
 book_router = Router(name='book')
-
 
 
 @book_router.message(Command('book'))
@@ -37,7 +37,7 @@ async def book_handler(message: Message, state: FSMContext, reader: Reader):
             "Вам необходимо загрузить книгу на англ. в формате .epub.\n"
         )
     else:
-        text = f'Привет мой друг, продолжаем читать книгу {reader.book_title}\n'
+        text = f'Привет мой друг, продолжаем читать "{reader.book_title}"\n'
 
     await message.answer(text,
                          reply_markup=book_menu(reader)
@@ -81,11 +81,30 @@ async def show_library(callback: CallbackQuery, state: FSMContext):
     # Сохраняем mapping в state
     await state.update_data(book_map=book_map)
 
-    await callback.message.answer(
-        book_list_text + "\nНапишите номер книги, чтобы выбрать её для чтения или просмотра информации."
-    )
+    # await callback.message.answer(
+    #     book_list_text + "\nНапишите номер книги, чтобы выбрать её для чтения или просмотра информации."
+    # )
 
+    text = book_list_text + "\nНапишите номер книги, чтобы выбрать её для чтения или просмотра информации."
+    await send_long_message(callback.message, text)
     await state.set_state(UploadBook.waiting_book_number)
+
+
+MAX_MESSAGE_LENGTH = 4096
+
+
+async def send_long_message(message, text: str):
+    current = ""
+
+    for line in text.split("\n"):
+        if len(current) + len(line) + 1 > MAX_MESSAGE_LENGTH:
+            await message.answer(current)
+            current = line
+        else:
+            current += "\n" + line if current else line
+
+    if current:
+        await message.answer(current)
 
 
 # Выбора номера книги из библиотеки
@@ -106,7 +125,8 @@ async def choose_book_from_library(message: Message, state: FSMContext):
     # Предлагаем действия
     kb = InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text=f"Описание книги '{book_info['book_title']}'", callback_data="book_description")],
+            [InlineKeyboardButton(text=f"Описание книги '{book_info['book_title']}'",
+                                  callback_data="book_description")],
             [InlineKeyboardButton(text=f"ℹ️ Загружаем '{book_info['book_title']}' для чтения?",
                                   callback_data=f"upload_library_book:{book_info['path']}")],
             [InlineKeyboardButton(text="🔙 Назад в библиотеку", callback_data="library")],
@@ -147,16 +167,15 @@ async def book_description(callback: CallbackQuery, state: FSMContext):
         parse_mode="HTML",
     )
 
-
-    kb = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text=f"ℹ️ Загружаем '{book_info['book_title']}' для чтения?",
-                                  callback_data=f"upload_library_book:{book_info['path']}")],
-            [InlineKeyboardButton(text="🔙 Назад в библиотеку", callback_data="library")],
-        ]
-    )
-    await message.answer('Что надумал?', reply_markup=kb)
-    await message.delete()
+    # kb = InlineKeyboardMarkup(
+    #     inline_keyboard=[
+    #         [InlineKeyboardButton(text=f"ℹ️ Загружаем '{book_info['book_title']}' для чтения?",
+    #                               callback_data=f"upload_library_book:{book_info['path']}")],
+    #         [InlineKeyboardButton(text="🔙 Назад в библиотеку", callback_data="library")],
+    #     ]
+    # )
+    # await message.answer('Что надумал?', reply_markup=kb)
+    # await message.delete()
     await state.clear()  # очищаем состояние
 
 
@@ -171,7 +190,6 @@ async def upload_book_start(callback: CallbackQuery, state: FSMContext):
 # Загрузка своей книги waiting_epub
 @book_router.message(UploadBook.waiting_epub, F.document)
 async def upload_book_wait(message: Message, bot: Bot, state: FSMContext, user_id):
-
     if not message.document.file_name.endswith(".epub"):
         await message.answer(
             'Это не epub 😅',
@@ -287,7 +305,7 @@ async def save_time(message: Message, state: FSMContext, sender: Sender, user_id
 
 # Информация о текущей книги
 @book_router.callback_query(F.data == "current_book")
-async def show_book(callback: CallbackQuery, user_id, reader: Reader):
+async def show_book(callback: CallbackQuery, state: FSMContext, reader: Reader):
     await callback.answer()
 
     if not reader:
@@ -301,8 +319,9 @@ async def show_book(callback: CallbackQuery, user_id, reader: Reader):
         'cover_image': reader.cover_image,
         'path': reader.book_path,
     }
+    await state.update_data(book_info=book_info)
 
-    await book_description(callback.message, book_info)
+    await book_description(callback, state)
 
 
 # Отправить ЧАНК
@@ -310,16 +329,16 @@ async def show_book(callback: CallbackQuery, user_id, reader: Reader):
 async def next_chunk_handler(callback: CallbackQuery, sender: Sender, user_id):
     await callback.answer()
     temp_msg = await callback.message.edit_text("Готовим абзац книги...")
-    chat_id = callback.message.chat.id
-    # Показываем typing
-    await callback.bot.send_chat_action(
-        chat_id=chat_id,
-        action=ChatAction.TYPING
-    )
+    # chat_id = callback.message.chat.id
+    # # запускаем фоновый typing
+    # typing_task = asyncio.create_task(
+    #     send_typing(callback.bot, chat_id)
+    # )
 
     try:
         await sender.send_daily_text(user_id)
     finally:
+        # typing_task.cancel()  # остановить typing
         # Удалится даже если будет ошибка
         await temp_msg.delete()
 
@@ -360,7 +379,7 @@ async def save_index(message: Message, state: FSMContext, user_id, reader: Reade
     ReaderCache.cache.pop(user_id, None)
     reader = ReaderCache.get_reader(user_id)
 
-    await message.answer("✅ Индекс абзаца обновлён!",reply_markup=book_menu(reader))
+    await message.answer("✅ Индекс абзаца обновлён!", reply_markup=book_menu(reader))
     await state.clear()
 
 
@@ -369,5 +388,3 @@ async def save_index(message: Message, state: FSMContext, user_id, reader: Reade
 async def del_book(callback: CallbackQuery):
     await callback.answer()
     await callback.message.answer('Вы уверены?', reply_markup=confirm_kb('del_book'))
-
-

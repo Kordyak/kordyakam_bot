@@ -34,15 +34,11 @@ class DataMiddleware(BaseMiddleware):
             data["user_id"] = user_id
             data["reader"] = reader
 
-            old_folder = self.BASE_PATH / str(user_id)
-            new_folder = self.BASE_PATH / f"{user_id}_{username}"
-
-            # если существует старая папка и нет новой — переименовываем
-            if old_folder.exists() and not new_folder.exists():
-                old_folder.rename(new_folder)
-
-            # создаём новую (если ещё не существует)
-            new_folder.mkdir(parents=True, exist_ok=True)
+            # создаем папку пользователя, если не существует
+            user_folder = self.BASE_PATH / str(user_id)
+            user_folder.mkdir(parents=True, exist_ok=True)
+            username_file = user_folder / username
+            username_file.write_text("", encoding="utf-8")
 
         typing_task = asyncio.create_task(
             self._typing_loop(bot, chat_id)

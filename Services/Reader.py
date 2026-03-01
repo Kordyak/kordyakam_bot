@@ -149,35 +149,7 @@ class Sender:
 
         convert_text_audio(chunk, name_file, "en")
 
-        # 2. Открываем файл и добавляем теги
-        mp3 = MP3(name_file, ID3=ID3)
-
-        if mp3.tags is None:
-            mp3.add_tags()
-
-        # Удаляем старую обложку если была
-        mp3.tags.delall("APIC")
-
-        # Добавляем обложку
-        mp3.tags.add(
-            APIC(
-                encoding=3,
-                mime='image/jpeg',
-                type=3,
-                desc='Cover',
-                data=reader.cover_image  # bytes изображения
-            )
-        )
-        # Удаляем старые ТЭГИ
-        mp3.tags.delall("TIT2")
-        mp3.tags.delall("TPE1")
-        mp3.tags.delall("TALB")
-        # Добавим нормальные теги (чтобы Telegram красиво показывал)
-        mp3.tags.add(TIT2(encoding=3, text=name_file))
-        mp3.tags.add(TPE1(encoding=3, text=reader.book_creator))
-        mp3.tags.add(TALB(encoding=3, text=reader.book_title))
-
-        mp3.save()
+        rewrite_mp3_tags(name_file, reader)
 
         thumbnail = make_thumbnail(reader.cover_image)
 
@@ -203,6 +175,46 @@ class Sender:
             text=f"<tg-spoiler>{chunk_rus}</tg-spoiler>",
             parse_mode="HTML",
         )
+
+
+
+def rewrite_mp3_tags(file_path: str, reader: Reader):
+    """
+    Полностью очищает ID3 теги MP3
+    и записывает новые (ID3v2.3)
+    """
+
+    # 1️⃣ Удаляем ВСЕ существующие ID3 (v1 и v2)
+    try:
+        ID3(file_path).delete(file_path)
+    except Exception:
+        pass  # если тегов не было — игнорируем
+
+    # 2️⃣ Создаём новый объект тегов
+    tags = ID3()
+
+    # 3️⃣ Добавляем обложку (ТОЛЬКО одну)
+    tags.add(
+        APIC(
+            encoding=3,              # UTF-8
+            mime="image/jpeg",
+            type=3,                  # 3 = Front Cover
+            desc="Cover",
+            data=reader.cover_image,
+        )
+    )
+
+    # 4️⃣ Добавляем основные теги
+    tags.add(TIT2(encoding=3, text=reader.book_title))
+    tags.add(TPE1(encoding=3, text=reader.book_creator))
+    tags.add(TALB(encoding=3, text=reader.book_title))
+
+    # 5️⃣ Сохраняем строго как ID3v2.3 (Telegram стабильнее читает)
+    tags.save(file_path, v2_version=3)
+
+    # 6️⃣ Перепроверяем файл через MP3 (инициализация структуры)
+    MP3(file_path)
+
 
 
 def make_thumbnail(image_bytes: bytes) -> BufferedInputFile:

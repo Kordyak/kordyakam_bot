@@ -34,10 +34,6 @@ class DataMiddleware(BaseMiddleware):
             data["user_id"] = user_id
             data["reader"] = reader
 
-            # создаем папку пользователя, если не существует
-            user_folder = self.BASE_PATH / str(user_id)
-            user_folder.mkdir(parents=True, exist_ok=True)
-
             old_folder = self.BASE_PATH / str(user_id)
             new_folder = self.BASE_PATH / f"{user_id}_{username}"
 

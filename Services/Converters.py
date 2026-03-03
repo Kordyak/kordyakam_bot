@@ -95,25 +95,7 @@ async def send_with_retry(bot, chat_id, text, max_retries=MAX_RETRIES, delay=RET
                 logger.error(f"Max retries reached. Failed to send message to {chat_id}")
 
 
-def check_english_content(text, threshold=0.7):
-    """
-    Проверяет, является ли текст преимущественно английским
-    Args:
-        text: текст для проверки
-        threshold: порог (0.7 = 70% английских символов)
-    """
-    if not text:
-        return False
-    # Считаем английские символы
-    english_count = len(re.findall(r'[a-zA-Z]', text))
-    total_chars = len(re.findall(r'[a-zA-Zа-яА-Я]', text))  # только буквы
-    if total_chars == 0:
-        return False
-    ratio = english_count / total_chars
-    return ratio >= threshold
 
-    # """Проверяет, содержит ли текст английские символы"""
-    # bool(re.search(r'[а-яА-Я]', text))
 
 
 def Mix_text(eng_text, rus_text):

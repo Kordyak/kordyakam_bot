@@ -11,7 +11,7 @@ from Services.Reader import make_title
 convert_router = Router(name='converter')
 
 
-# Обрабатывает голосовые сообщения и переводит их в текст с помощью Whisper
+# Конверт аудио в текст с помощью Whisper
 @convert_router.message(F.voice)
 async def voice_message_handler(message: Message, model):
     """Обрабатывает голосовые сообщения и переводит их в текст с помощью Whisper."""
@@ -41,11 +41,9 @@ async def voice_message_handler(message: Message, model):
         with open(temp_ogg_path, "wb") as f:
             f.write(audio_data.read())
 
-        # 2. Распознавание речи с помощью Whisper
-        # Указываем `language="ru"` для повышения точности и скорости
         result = model.transcribe(
             temp_ogg_path,
-            language="ru",
+            # language="ru",
             # Дополнительный параметр, чтобы избежать "мусора"
             fp16=False  # Раскомментируйте, если есть проблемы с GPU
         )
@@ -123,3 +121,24 @@ async def handler(message: Message, command: CommandObject):
         await message.answer('Текст не обнаружен, вставьте его после команды!')
 
     await temp_msg.delete()
+
+
+def check_english_content(text, threshold=0.7):
+    """
+    Проверяет, является ли текст преимущественно английским
+    Args:
+        text: текст для проверки
+        threshold: порог (0.7 = 70% английских символов)
+    """
+    if not text:
+        return False
+    # Считаем английские символы
+    english_count = len(re.findall(r'[a-zA-Z]', text))
+    total_chars = len(re.findall(r'[a-zA-Zа-яА-Я]', text))  # только буквы
+    if total_chars == 0:
+        return False
+    ratio = english_count / total_chars
+    return ratio >= threshold
+
+    # """Проверяет, содержит ли текст английские символы"""
+    # bool(re.search(r'[а-яА-Я]', text))

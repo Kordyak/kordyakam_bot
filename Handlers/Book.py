@@ -25,10 +25,7 @@ book_router = Router(name='book')
 @book_router.message(Command('book'))
 async def book_handler(message: Message, state: FSMContext, reader: Reader):
     await state.clear()
-    # reader = ReaderCache.get_reader(message.from_user.id)
-
     if not reader:
-
         text = (
             f"Я @KordyakBot:\n\n"
             "Умею читать книги на английском языке абзацами "
@@ -46,10 +43,9 @@ async def book_handler(message: Message, state: FSMContext, reader: Reader):
 
 # 📚 Показать библиотеку ================================
 @book_router.callback_query(F.data == "library")
-async def show_library(callback: CallbackQuery, state: FSMContext, library: Library):
+async def show_library(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
-
-
+    library = Library(PATH_READ_DB)
     books_index = library.list_books()  # {hash: {filename, total_paragraphs}}
 
     if not books_index:
@@ -86,24 +82,18 @@ async def show_library(callback: CallbackQuery, state: FSMContext, library: Libr
     # Можно сохранить в state для кнопок выбора книги, если нужно
     await state.update_data(book_map=book_map)
 
-    await callback.message.answer(book_list_text)
-
     # Сохраняем mapping в state
     await state.update_data(book_map=book_map)
-
-    # await callback.message.answer(
-    #     book_list_text + "\nНапишите номер книги, чтобы выбрать её для чтения или просмотра информации."
-    # )
 
     text = book_list_text + "\nНапишите номер книги, чтобы выбрать её для чтения или просмотра информации."
     await send_long_message(callback.message, text)
     await state.set_state(UploadBook.waiting_book_number)
 
 
-MAX_MESSAGE_LENGTH = 4096
 
 
 async def send_long_message(message, text: str):
+    MAX_MESSAGE_LENGTH = 4096
     current = ""
 
     for line in text.split("\n"):
@@ -297,9 +287,12 @@ async def upload_book_end(message, user_id, path, state):
 
 # Задаем Время ================================
 @book_router.callback_query(F.data == "change_time")
-async def change_time(callback: CallbackQuery):
+async def change_time(callback: CallbackQuery, rr: ReadRepository, user_id: int):
     await callback.answer()  # 🔴 обязательно
-    current_time = UserState.get_time(callback.from_user.id)
+
+    rr.get_or_create_user(user_id, callback.from_user.username)
+    current_time = rr.get_time(user_id)
+
     time_text = current_time if current_time else "не задано"
 
     await callback.message.edit_text(
@@ -312,7 +305,7 @@ async def change_time(callback: CallbackQuery):
 
 # Задаем Время
 @book_router.message(UploadBook.waiting_time)
-async def save_time(message: Message, state: FSMContext, sender: Sender, user_id):
+async def save_time(message: Message, state: FSMContext, sender: Sender, user_id, rr: ReadRepository):
     time_text = message.text.strip()
 
     try:
@@ -329,7 +322,7 @@ async def save_time(message: Message, state: FSMContext, sender: Sender, user_id
     # user_id = message.from_user.id
 
     # сохраняем время
-    UserState.save_time(user_id, time_text)
+    rr.save_time(user_id, time_text)
 
     reader = Reader(user_id)
 
@@ -393,7 +386,7 @@ async def change_index(callback: CallbackQuery, state: FSMContext):
 
 # установить номер абзаца
 @book_router.message(UploadBook.waiting_index)
-async def save_index(message: Message, state: FSMContext, user_id, reader: Reader):
+async def save_index(message: Message, state: FSMContext, user_id, reader: Reader, rr: ReadRepository):
     if not reader:
         await message.answer("Книга не найдена!")
         await state.clear()
@@ -407,14 +400,14 @@ async def save_index(message: Message, state: FSMContext, user_id, reader: Reade
         return
 
     index = int(message.text)
-    if index < 0 or index > reader.index_all:
+    if index < 0 or index > reader.total_paragraphs:
         await message.answer(
-            f"Введите число от 0 до {reader.index_all}",
+            f"Введите число от 0 до {reader.total_paragraphs}",
             reply_markup=cancel_kb()
         )
         return
 
-    UserState.save_index(user_id, index)
+    rr.save_i_chunk(user_id, index)
     reader = Reader(user_id)
 
     await message.answer("✅ Индекс абзаца обновлён!", reply_markup=book_menu(reader))

@@ -5,7 +5,7 @@ from io import BytesIO
 
 from aiogram import Bot
 from aiogram.types import FSInputFile, BufferedInputFile
-from ebooklib import epub
+from ebooklib import epub, ITEM_DOCUMENT
 
 from Services.BookMetadata import BookMetadata
 from Services.Converters import translate_rus_eng, convert_text_audio
@@ -14,6 +14,8 @@ from SQL.RR import ReadRepository
 from mutagen.mp3 import MP3
 from mutagen.id3 import ID3, APIC, TIT2, TPE1, TALB
 from PIL import Image
+
+from bs4 import BeautifulSoup
 
 PATH_READ_DB = Path("SQL/read.db")
 
@@ -37,7 +39,7 @@ class Reader:
         self.index = state[0] or 0  # chunk_index
         self.daily_time = state[1]  # можно использовать
         filename = state[2]
-        self.index_all = state[3] or 0  # total_paragraphs
+        self.total_paragraphs = state[3] or 0  # total_paragraphs
 
         self.book_path = Path(f"Books/{filename}")
         metadata = BookMetadata.get_cache(self.book_path)
@@ -47,23 +49,24 @@ class Reader:
         self.cover_image = metadata.get("cover_image")
 
         # Ленивое чтение epub
-        self.reader = LazyEpubReader(self.book_path, self.index)
+        self.lazy_read = LazyEpubReader(self.book_path, self.index)
 
     @property
     def progress(self):
-        if self.index_all == 0:
+        if self.total_paragraphs == 0:
             return 0
-        return round((self.index / self.index_all) * 100, 1)
+        return round((self.index / self.total_paragraphs) * 100, 1)
 
     def get_next_chunk(self, min_len=300):
-        if self.index >= self.index_all:
+        if self.index >= self.total_paragraphs:
             return None
 
         buffer = []
         current_len = 0
 
-        while self.index < self.index_all:
-            paragraph = self.reader.get_next_paragraph()
+        while self.index < self.total_paragraphs:
+            paragraph = self.lazy_read.get_next_paragraph()
+
             if paragraph is None:
                 break
             buffer.append(paragraph)
@@ -87,7 +90,7 @@ class Reader:
 
         self.index = state[0] or 0
         filename = state[2]
-        self.index_all = state[3] or 0
+        self.total_paragraphs = state[3] or 0
 
         self.book_path = Path(filename)
         metadata = BookMetadata.get_cache(self.book_path)
@@ -96,7 +99,7 @@ class Reader:
         self.description = metadata.get("description", "")
         self.cover_image = metadata.get("cover_image")
 
-        self.reader = LazyEpubReader(self.book_path, self.index)
+        self.lazy_read = LazyEpubReader(self.book_path, self.index)
 
     def increment_chunk(self, step: int = 1) -> bool:
         """
@@ -105,17 +108,20 @@ class Reader:
         """
         new_index, is_completed = self.rr.increment_progress(self.user_id, step)
         self.index = new_index
-        self.reader = LazyEpubReader(self.book_path, self.index)
+        self.lazy_read = LazyEpubReader(self.book_path, self.index)
         return is_completed
 
 
 # -----------------------
 # Ленивое чтение epub
 # -----------------------
+
+
 class LazyEpubReader:
-    def __init__(self, path: Path, saved_index: int):
+    def __init__(self, path, saved_index):
+        self.path = path
         self.generator = epub_paragraph_generator(path)
-        # Пропускаем уже прочитанные абзацы
+        # Пропускаем уже прочитанные абзацы один раз
         for _ in range(saved_index):
             try:
                 next(self.generator)
@@ -124,9 +130,26 @@ class LazyEpubReader:
 
     def get_next_paragraph(self):
         try:
-            return next(self.generator)
+            paragraph = next(self.generator)
+            return paragraph
         except StopIteration:
             return None
+
+
+# Получаем все параграфы книги в массиве
+def epub_paragraph_generator(epub_path):
+    try:
+        book = epub.read_epub(str(epub_path))
+    except Exception as e:
+        print(f"Ошибка чтения EPUB {epub_path.name}: {e}")
+        return  # просто пропускаем файл
+
+    for item in book.get_items_of_type(ITEM_DOCUMENT):
+        soup = BeautifulSoup(item.get_content(), "html.parser")
+        for p in soup.find_all("p"):
+            text = p.get_text(strip=True)
+            if text:
+                yield text
 
 
 # -----------------------
@@ -214,16 +237,3 @@ def make_title(text, words=6, max_len=60):
     clean = re.sub(r'[<>:"/\\|?*]', '', text)
     title = " ".join(clean.split()[:words])
     return title[:max_len]
-
-
-def epub_paragraph_generator(path: Path):
-    """
-    Генератор абзацев из EPUB.
-    """
-    book = epub.read_epub(str(path))
-    for item in book.get_items_of_type(epub.EpubHtml):
-        content = item.get_content()
-        text = content.decode("utf-8", errors="ignore")
-        paragraphs = [p.strip() for p in text.split("\n") if p.strip()]
-        for p in paragraphs:
-            yield p

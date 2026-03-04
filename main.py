@@ -1,14 +1,13 @@
 import logging
 import asyncio
-from pathlib import Path
 
 from aiogram import Dispatcher, Bot
 from aiogram.client.default import DefaultBotProperties
 from aiogram.types import BotCommand
 from argostranslate import package
-from ctranslate2 import library
 
-from Middlewares.Data import DataMiddleware
+from Middlewares.Data import Middleware_typing
+from SQL.RR import ReadRepository
 from Services.Library import Library
 from Services.Reader import Sender, PATH_READ_DB
 from Services.Scheduler import scheduler, Scheduler
@@ -42,7 +41,8 @@ bot = Bot(
 )
 
 dispatcher = Dispatcher()
-dispatcher.update.middleware(DataMiddleware())
+dispatcher.update.middleware(Middleware_typing())
+# dispatcher.callback_query.middleware(Middleware_callback())
 
 dispatcher.include_router(start_router)
 dispatcher.include_router(convert_router)
@@ -96,14 +96,15 @@ async def set_reader():
     sender_service = Sender(bot)
     dispatcher["sender"] = sender_service
 
-    Scheduler.restore_all_jobs(sender_service)
+    rr = ReadRepository(PATH_READ_DB)
+    Scheduler.restore_all_jobs(sender_service, rr)
     scheduler.start()
 
 
 async def main():
     await set_bot_commands()
-    # await set_argostranslate()
-    # await set_whisper
+    await set_argostranslate()
+    await set_whisper()
 
     await set_reader()
     library1 = Library(PATH_READ_DB)

@@ -1,49 +1,37 @@
 import asyncio
-import json
-
 from aiogram import BaseMiddleware
 from aiogram.enums import ChatAction
 from aiogram.types import TelegramObject, Message, CallbackQuery
-from pathlib import Path
 
+from SQL.RR import ReadRepository
 from Services.Library import Library
 from Services.Reader import Reader, PATH_READ_DB
 
 
-class DataMiddleware(BaseMiddleware):
-    BASE_PATH = Path("Users")
-
+class Middleware_typing(BaseMiddleware):
     async def __call__(self, handler, event: TelegramObject, data: dict):
         bot = data.get("bot")
-        user_id = None
-        username = None
         chat_id = None
+        user_id = None
 
-        # Если это сообщение
         if event.message:
-            user = event.message.from_user
-            user_id = user.id
-            username = user.username
-            chat_id = event.message.chat.id
-
-        # Если это callback
+            user_id = event.message.from_user.id
         elif event.callback_query:
-            user = event.callback_query.from_user
-            user_id = user.id
-            username = user.username
-            chat_id = event.callback_query.message.chat.id
+            user_id = event.callback_query.from_user.id
 
         if user_id:
-            reader = Reader(user_id)
-            library = Library(PATH_READ_DB)
-
             data["user_id"] = user_id
-            data["reader"] = reader
-            data["library"] = library
 
-            # создаем папку пользователя
-            user_folder = self.BASE_PATH / str(user_id)
-            user_folder.mkdir(parents=True, exist_ok=True)
+            reader = Reader(user_id)
+            data["reader"] = reader
+
+        rr = ReadRepository(PATH_READ_DB)
+        data["rr"] = rr
+
+        if event.message:
+            chat_id = event.message.chat.id
+        elif event.callback_query:
+            chat_id = event.callback_query.message.chat.id
 
         typing_task = asyncio.create_task(self._typing_loop(bot, chat_id))
 
@@ -52,7 +40,6 @@ class DataMiddleware(BaseMiddleware):
         finally:
             if typing_task:
                 typing_task.cancel()
-
 
     async def _typing_loop(self, bot, chat_id: int):
         try:

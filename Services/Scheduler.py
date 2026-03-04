@@ -1,5 +1,7 @@
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
+from SQL.RR import ReadRepository
+
 scheduler = AsyncIOScheduler()
 
 
@@ -10,7 +12,7 @@ class Scheduler:
     """
 
     @classmethod
-    def restore_all_jobs(cls, sender_service, rr):
+    def restore_all_jobs(cls, sender_service, rr: ReadRepository):
         """Восстанавливает все задачи для пользователей из ReadRepository"""
         users = rr.list_users_with_time()
         if not users:

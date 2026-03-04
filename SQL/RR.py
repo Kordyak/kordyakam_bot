@@ -106,6 +106,23 @@ class ReadRepository:
                 WHERE user_id=?
             """, (time, telegram_id))
 
+    def list_users_with_time(self) -> list[dict]:
+        with self._get_connection() as conn:
+            rows = conn.execute("""
+                SELECT user_id, username, daily_time
+                FROM users
+                WHERE daily_time IS NOT NULL
+            """).fetchall()
+
+        return [
+            {
+                "user_id": r[0],
+                "username": r[1],
+                "daily_time": r[2],
+            }
+            for r in rows
+        ]
+
     # INCREMENT PROGRESS
     def increment_progress(self, telegram_id: int, step: int = 1) -> tuple[int, bool]:
 

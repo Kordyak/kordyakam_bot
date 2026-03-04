@@ -10,14 +10,14 @@ from aiogram.enums import ChatAction
 from FSM.states import UploadBook
 from Keyboards.Book import book_menu
 from Keyboards.Universal import confirm_kb, cancel_kb, send_typing
+from SQL.RR import ReadRepository
 from Services.BookMetadata import BookMetadata
 from Services.Converters import translate_rus_eng
-from Services.Library import Library, BOOK_DIR, load_books_index
+from Services.Library import Library, BOOK_DIR
 
-from Services.Reader import ReaderCache, Sender, Reader
+from Services.Reader import Sender, Reader, PATH_READ_DB, LazyEpubReader, epub_paragraph_generator
 from Services.Scheduler import Scheduler, scheduler
 
-from Services.UserState import UserState
 
 book_router = Router(name='book')
 
@@ -46,37 +46,47 @@ async def book_handler(message: Message, state: FSMContext, reader: Reader):
 
 # 📚 Показать библиотеку ================================
 @book_router.callback_query(F.data == "library")
-async def show_library(callback: CallbackQuery, state: FSMContext):
+async def show_library(callback: CallbackQuery, state: FSMContext, library: Library):
     await callback.answer()
-    # await callback.message.delete()
 
-    books_index = load_books_index()
+
+    books_index = library.list_books()  # {hash: {filename, total_paragraphs}}
+
     if not books_index:
         await callback.message.answer("В библиотеке пока нет книг 📚")
         return
 
     # Формируем пронумерованный список с актуальными метаданными
     book_list_text = "📚 Библиотека:\n\n"
-    book_map = {}  # номер → hash
+    book_map = {}  # номер → данные книги
 
     for i, (file_hash, info) in enumerate(books_index.items(), start=1):
         book_path = BOOK_DIR / info["filename"]
 
+        # Получаем метаданные книги (кешируется внутри BookMetadata)
         metadata = BookMetadata.get_cache(book_path)
-        title = metadata["book_title"]
-        creator = metadata["book_creator"]
-        description = metadata["description"]
-        cover_image = metadata["cover_image"]
+        title = metadata.get("book_title", info["filename"])
+        creator = metadata.get("book_creator", "Неизвестен")
+        description = metadata.get("description", "")
+        cover_image = metadata.get("cover_image", b"")
 
         book_list_text += f"{i}. {title} ({creator})\n"
 
+        # Сохраняем данные для дальнейшего использования
         book_map[str(i)] = {
-            'book_title': title,
-            'book_creator': creator,
-            'description': description,
-            'cover_image': cover_image,
-            'path': book_path,
+            "book_title": title,
+            "book_creator": creator,
+            "description": description,
+            "cover_image": cover_image,
+            "path": book_path,
+            "hash": file_hash,
+            "total_paragraphs": info.get("total_paragraphs", 0),
         }
+
+    # Можно сохранить в state для кнопок выбора книги, если нужно
+    await state.update_data(book_map=book_map)
+
+    await callback.message.answer(book_list_text)
 
     # Сохраняем mapping в state
     await state.update_data(book_map=book_map)
@@ -189,7 +199,7 @@ async def upload_book_start(callback: CallbackQuery, state: FSMContext):
 
 # Загрузка своей книги waiting_epub
 @book_router.message(UploadBook.waiting_epub, F.document)
-async def upload_book_wait(message: Message, bot: Bot, state: FSMContext, user_id):
+async def upload_book_wait(message: Message, bot: Bot, state: FSMContext, user_id, library: Library):
     if not message.document.file_name.endswith(".epub"):
         await message.answer(
             'Это не epub 😅',
@@ -210,8 +220,9 @@ async def upload_book_wait(message: Message, bot: Bot, state: FSMContext, user_i
         await message.answer(f"Ошибка при сохранении файла: {e}")
         return
 
-    file_hash = Library.calculate_hash(temp_path)
-    books_index = load_books_index()
+    # Вычисляем hash загруженной книги
+    file_hash = library.calculate_hash(temp_path)
+    books_index = library.list_books()  # возвращает {hash: {filename, total_paragraphs}}
 
     # 🔎 Если уже есть по хэшу
     if file_hash in books_index:
@@ -228,7 +239,7 @@ async def upload_book_wait(message: Message, bot: Bot, state: FSMContext, user_i
             counter += 1
         temp_path.rename(final_path)
         # сохраняем книгу в books_index
-        Library.add_book(final_path)
+        library.add_book(final_path)
 
     await upload_book_end(message, user_id, final_path, state)
 
@@ -244,14 +255,43 @@ async def upload_library_book(callback: CallbackQuery, state: FSMContext, user_i
 
 # Загрузка книги КОНЕЦ // ФУНКЦИЯ из библ / или своя загруженная
 async def upload_book_end(message, user_id, path, state):
-    # Создаем состояние для user
-    UserState.reset_state(user_id, path)
-    # Сбрасываем кэш reader если есть
-    ReaderCache.cache.pop(user_id, None)
-    reader = ReaderCache.get_reader(user_id)
-    await message.answer(f"Книга {reader.book_title} установлена.\n"
-                         "Сейчас давайте установим время отправки абзаца на каждый день.\n"
-                         "Укажите время в формате HH:MM")
+    """
+    Завершение загрузки книги:
+    - Проверяем, есть ли книга в библиотеке по хэшу
+    - Если нет, добавляем её
+    - Назначаем пользователю
+    """
+    from pathlib import Path
+    import hashlib
+
+    book_path = Path(path)
+    file_hash = hashlib.md5(book_path.read_bytes()).hexdigest()
+
+    rr = ReadRepository(PATH_READ_DB)
+
+    # Проверяем, есть ли книга в библиотеке
+    book = rr.get_book_by_hash(file_hash)
+    if not book:
+        # Получаем количество абзацев
+        reader_for_count = LazyEpubReader(book_path, saved_index=0)
+        total_paragraphs = sum(1 for _ in epub_paragraph_generator(book_path))
+
+        # Добавляем книгу в библиотеку
+        book_id = rr.add_book(str(book_path), file_hash, total_paragraphs)
+    else:
+        book_id = book["id"]
+
+    # Назначаем книгу пользователю
+    rr.set_current_book(user_id, book_id)
+
+    # Создаем Reader для пользователя
+    reader = Reader(user_id)
+
+    await message.answer(
+        f"Книга {reader.book_title} установлена.\n"
+        "Сейчас давайте установим время отправки абзаца на каждый день.\n"
+        "Укажите время в формате HH:MM"
+    )
     await state.set_state(UploadBook.waiting_time)
 
 
@@ -290,9 +330,8 @@ async def save_time(message: Message, state: FSMContext, sender: Sender, user_id
 
     # сохраняем время
     UserState.save_time(user_id, time_text)
-    # Кэш чтеца удаляем из памяти
-    ReaderCache.cache.pop(user_id, None)
-    reader = ReaderCache.get_reader(user_id)
+
+    reader = Reader(user_id)
 
     # 🔥 обновляем scheduler
     sender_service = sender
@@ -376,8 +415,7 @@ async def save_index(message: Message, state: FSMContext, user_id, reader: Reade
         return
 
     UserState.save_index(user_id, index)
-    ReaderCache.cache.pop(user_id, None)
-    reader = ReaderCache.get_reader(user_id)
+    reader = Reader(user_id)
 
     await message.answer("✅ Индекс абзаца обновлён!", reply_markup=book_menu(reader))
     await state.clear()

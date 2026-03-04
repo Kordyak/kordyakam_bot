@@ -1,121 +1,121 @@
 import os
 import re
 from pathlib import Path
+from io import BytesIO
 
 from aiogram import Bot
 from aiogram.types import FSInputFile, BufferedInputFile
+from ebooklib import epub
 
 from Services.BookMetadata import BookMetadata
 from Services.Converters import translate_rus_eng, convert_text_audio
-from Services.Library import epub_paragraph_generator, Library, load_books_index
-from Services.UserState import UserState
+from SQL.RR import ReadRepository
 
 from mutagen.mp3 import MP3
 from mutagen.id3 import ID3, APIC, TIT2, TPE1, TALB
-
 from PIL import Image
-from io import BytesIO
+
+PATH_READ_DB = Path("SQL/read.db")
 
 
-# КЭШИРОВАНИЕ reader
-class ReaderCache:
-    cache = {}
-
-    @classmethod
-    def get_reader(cls, user_id):
-        book_path = UserState.get_book_path(user_id)
-
-        if book_path is None:
-            cls.cache.pop(user_id, None)
-            return None
-
-        reader = cls.cache.get(user_id)
-
-        # Если нет в кэше — создаём
-        if reader is None:
-            print("🔥 Creating NEW reader (no cache)")
-            reader = Reader(book_path, user_id)
-            cls.cache[user_id] = reader
-            return reader
-
-        # Если книга изменилась — пересоздаём
-        if reader.book_path != book_path:
-            print("♻ Book changed — recreating reader")
-            reader = Reader(book_path, user_id)
-            cls.cache[user_id] = reader
-            return reader
-
-        return reader
-
-
-# Читатель по сути user (разночтения с КЭШ, надо править)
 class Reader:
     TELEGRAM_LIMIT = 1000
-    start_index = 0
 
-    def __init__(self, book_path, user_id):
-        self.book_path = Path(book_path)
+    def __init__(self, user_id: int, username: str | None = None):
         self.user_id = user_id
+        self.rr = ReadRepository(PATH_READ_DB)
 
-        book_metadata = BookMetadata.get_cache(book_path)
-        self.book_title = book_metadata["book_title"]
-        self.book_creator = book_metadata["book_creator"]
-        self.description = book_metadata["description"]
-        self.cover_image = book_metadata["cover_image"]
+        # Создаём пользователя, если нет
+        self.rr.get_or_create_user(user_id, username)
 
-        self.index = UserState.get_index(self.user_id)
-        self.time = UserState.get_time(self.user_id)
+        # Загружаем состояние пользователя
+        state = self.rr.get_user_state(user_id)
 
-        # Получаем hash книги и суммарный индекс книги
-        file_hash = Library.calculate_hash(book_path)
-        books_index = load_books_index()
-        book_entry = books_index.get(file_hash, {})
-        self.index_all = book_entry.get("total_paragraphs", 0)
+        if not state or state[2] is None:
+            raise ValueError("У пользователя нет текущей книги")
 
-        self.reader = LazyEpubReader(book_path, self.index)
+        self.index = state[0] or 0  # chunk_index
+        self.daily_time = state[1]  # можно использовать
+        filename = state[2]
+        self.index_all = state[3] or 0  # total_paragraphs
 
-    # PROGRESS
+        self.book_path = Path(f"Books/{filename}")
+        metadata = BookMetadata.get_cache(self.book_path)
+        self.book_title = metadata.get("book_title", "")
+        self.book_creator = metadata.get("book_creator", "")
+        self.description = metadata.get("description", "")
+        self.cover_image = metadata.get("cover_image")
+
+        # Ленивое чтение epub
+        self.reader = LazyEpubReader(self.book_path, self.index)
+
     @property
     def progress(self):
         if self.index_all == 0:
             return 0
         return round((self.index / self.index_all) * 100, 1)
 
-    # MAX SPEED CHUNK BUILDER
     def get_next_chunk(self, min_len=300):
-
-        self.start_index = self.index + 1
-
         if self.index >= self.index_all:
             return None
 
         buffer = []
-        current_len = 0  # ⭐ ключевой speed upgrade
+        current_len = 0
 
-        # Набираем абзацы
         while self.index < self.index_all:
             paragraph = self.reader.get_next_paragraph()
             if paragraph is None:
                 break
-
             buffer.append(paragraph)
             current_len += len(paragraph)
             self.index += 1
-
             if current_len >= min_len:
                 break
 
-        UserState.save_index(self.user_id, self.index)
+        # Сохраняем прогресс
+        self.rr.save_i_chunk(self.user_id, self.index)
 
         return "\n".join(buffer).strip()
 
+    def set_book(self, book_id: int, reset_progress: bool = True):
+        """
+        Назначает пользователю книгу по id.
+        reset_progress=True сбрасывает chunk_index
+        """
+        self.rr.set_current_book(self.user_id, book_id)
+        state = self.rr.get_user_state(self.user_id)
 
-# Ленивое чтение книги, без кэша всей книги
+        self.index = state[0] or 0
+        filename = state[2]
+        self.index_all = state[3] or 0
+
+        self.book_path = Path(filename)
+        metadata = BookMetadata.get_cache(self.book_path)
+        self.book_title = metadata.get("book_title", "")
+        self.book_creator = metadata.get("book_creator", "")
+        self.description = metadata.get("description", "")
+        self.cover_image = metadata.get("cover_image")
+
+        self.reader = LazyEpubReader(self.book_path, self.index)
+
+    def increment_chunk(self, step: int = 1) -> bool:
+        """
+        Увеличивает прогресс пользователя на step.
+        Возвращает True, если книга полностью прочитана.
+        """
+        new_index, is_completed = self.rr.increment_progress(self.user_id, step)
+        self.index = new_index
+        self.reader = LazyEpubReader(self.book_path, self.index)
+        return is_completed
+
+
+# -----------------------
+# Ленивое чтение epub
+# -----------------------
 class LazyEpubReader:
-    def __init__(self, path, saved_index):
-        self.path = path
+    def __init__(self, path: Path, saved_index: int):
         self.generator = epub_paragraph_generator(path)
-        # Пропускаем уже прочитанные абзацы один раз
+        # Пропускаем уже прочитанные абзацы
         for _ in range(saved_index):
             try:
                 next(self.generator)
@@ -124,21 +124,20 @@ class LazyEpubReader:
 
     def get_next_paragraph(self):
         try:
-            paragraph = next(self.generator)
-            return paragraph
+            return next(self.generator)
         except StopIteration:
             return None
 
 
-# Отправляет ЧАНКИ книги
+# -----------------------
+# Отправка чанк текста пользователю
+# -----------------------
 class Sender:
-
     def __init__(self, bot: Bot):
         self.bot = bot
 
     async def send_daily_text(self, user_id: int):
-        reader = ReaderCache.get_reader(user_id)
-
+        reader = Reader(user_id)
         chunk = reader.get_next_chunk()
 
         if not chunk:
@@ -146,11 +145,8 @@ class Sender:
             return
 
         name_file = make_title(chunk)
-
         convert_text_audio(chunk, name_file, "en")
-
         rewrite_mp3_tags(name_file, reader)
-
         thumbnail = make_thumbnail(reader.cover_image)
 
         await self.bot.send_audio(
@@ -162,13 +158,14 @@ class Sender:
             caption=(
                 f"{reader.book_creator} / <b>{reader.book_title}</b>\n"
                 f"Прогресс: <b>{reader.progress} %</b>\n"
-                f"Абзац: <b>№№ {reader.start_index} - {reader.index}</b>\n"
+                f"Абзац: <b>№№ {reader.index - len(chunk.splitlines()) + 1} - {reader.index}</b>\n"
                 f"{chunk}"
             ),
             parse_mode="HTML",
         )
         os.remove(name_file)
 
+        # Перевод
         chunk_rus = translate_rus_eng(chunk, "/en_ru")
         await self.bot.send_message(
             chat_id=user_id,
@@ -177,86 +174,56 @@ class Sender:
         )
 
 
-
+# -----------------------
+# MP3 и миниатюра
+# -----------------------
 def rewrite_mp3_tags(file_path: str, reader: Reader):
-    """
-    Полностью очищает ID3 теги MP3
-    и записывает новые (ID3v2.3)
-    """
-
-    # 1️⃣ Удаляем ВСЕ существующие ID3 (v1 и v2)
     try:
         ID3(file_path).delete(file_path)
     except Exception:
-        pass  # если тегов не было — игнорируем
+        pass
 
-    # 2️⃣ Создаём новый объект тегов
     tags = ID3()
-
-    # 3️⃣ Добавляем обложку (ТОЛЬКО одну)
-    tags.add(
-        APIC(
-            encoding=3,              # UTF-8
-            mime="image/jpeg",
-            type=3,                  # 3 = Front Cover
-            desc="Cover",
-            data=reader.cover_image,
-        )
-    )
-
-    # 4️⃣ Добавляем основные теги
+    tags.add(APIC(encoding=3, mime="image/jpeg", type=3, desc="Cover", data=reader.cover_image))
     tags.add(TIT2(encoding=3, text=reader.book_title))
     tags.add(TPE1(encoding=3, text=reader.book_creator))
     tags.add(TALB(encoding=3, text=reader.book_title))
-
-    # 5️⃣ Сохраняем строго как ID3v2.3 (Telegram стабильнее читает)
     tags.save(file_path, v2_version=3)
-
-    # 6️⃣ Перепроверяем файл через MP3 (инициализация структуры)
     MP3(file_path)
 
 
-
 def make_thumbnail(image_bytes: bytes) -> BufferedInputFile:
-    """
-    Делает JPEG thumbnail ≤320x320 и ≤200KB
-    Возвращает bytes для BufferedInputFile
-    """
-
     with Image.open(BytesIO(image_bytes)) as img:
-        # Конвертируем в RGB (важно если PNG с прозрачностью)
         img = img.convert("RGB")
-
-        # Делаем thumbnail максимум 320x320
         img.thumbnail((320, 320))
 
         output = BytesIO()
-
-        # Сохраняем с постепенным уменьшением качества,
-        # чтобы уложиться в 200KB
         quality = 85
         while True:
             output.seek(0)
             output.truncate()
-
             img.save(output, format="JPEG", quality=quality, optimize=True)
-
             if output.tell() <= 200 * 1024 or quality <= 40:
                 break
-
             quality -= 5
 
-        return BufferedInputFile(
-            file=output.getvalue(),
-            filename="thumb.jpg"
-        )
+        return BufferedInputFile(file=output.getvalue(), filename="thumb.jpg")
 
 
-# Заголовок из текста
 def make_title(text, words=6, max_len=60):
-    # убираем переносы строк
     clean = re.sub(r'[<>:"/\\|?*]', '', text)
-    # берём первые N слов
     title = " ".join(clean.split()[:words])
-    # ограничиваем длину
     return title[:max_len]
+
+
+def epub_paragraph_generator(path: Path):
+    """
+    Генератор абзацев из EPUB.
+    """
+    book = epub.read_epub(str(path))
+    for item in book.get_items_of_type(epub.EpubHtml):
+        content = item.get_content()
+        text = content.decode("utf-8", errors="ignore")
+        paragraphs = [p.strip() for p in text.split("\n") if p.strip()]
+        for p in paragraphs:
+            yield p

@@ -6,10 +6,11 @@ from aiogram import Dispatcher, Bot
 from aiogram.client.default import DefaultBotProperties
 from aiogram.types import BotCommand
 from argostranslate import package
+from ctranslate2 import library
 
 from Middlewares.Data import DataMiddleware
 from Services.Library import Library
-from Services.Reader import Sender
+from Services.Reader import Sender, PATH_READ_DB
 from Services.Scheduler import scheduler, Scheduler
 
 from Handlers.Universal import universal_router
@@ -62,8 +63,9 @@ async def set_bot_commands():
 
 
 # Загружаем модель для распознавания РЕЧИ (по умолчанию используется GPU, если доступен)
-model = whisper.load_model("base")
-dispatcher["model"] = model
+async def set_whisper():
+    model = whisper.load_model("base")
+    dispatcher["model"] = model
 
 
 # Устанавливаем АРГО транслятор
@@ -100,10 +102,12 @@ async def set_reader():
 
 async def main():
     await set_bot_commands()
-    await set_argostranslate()
-    await set_reader()
+    # await set_argostranslate()
+    # await set_whisper
 
-    Library.sync_library()
+    await set_reader()
+    library1 = Library(PATH_READ_DB)
+    library1.sync_library()
 
     logger.info("Bot polling started")
     await dispatcher.start_polling(bot)

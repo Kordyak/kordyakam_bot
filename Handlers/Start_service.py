@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 from aiogram import Router, F
 from aiogram.fsm.context import FSMContext
@@ -6,6 +7,7 @@ from aiogram.types import Message
 from aiogram.filters import Command
 
 from Keyboards.Universal import confirm_kb
+from SQL.RR import ReadRepository
 
 start_router = Router(name='start')
 
@@ -27,7 +29,7 @@ async def run_rdp(message: Message, state: FSMContext):
         "• Читать книги в формате <b>EPUB</b> на английском по заданному времени — команда /book\n"
         "• Переводить (RU / EN) и обратно\n"
         "• Конвертировать текст в аудио (RU / EN)\n"
-        "• Конвертировать аудиосообщения в текст (RU)\n"
+        "• Конвертировать аудио в текст\n"
     )
 
     await message.answer(text, parse_mode="HTML")
@@ -49,3 +51,14 @@ async def stop_bot(message: Message, user_id: int):
 async def stop_bot(message: Message, user_id: int):
     if user_id == 995657021:
         await message.answer('Вы уверены?', reply_markup=confirm_kb('exit'))
+
+
+@start_router.message(Command("migrate"))
+async def migration(message: Message, user_id: int):
+    if user_id == 995657021:
+        await message.answer('Сервисный режим SQL')
+        rr = ReadRepository(Path("SQL/read.db"))
+        # repo.migrate_books_index(Path("Books/books_index.json"))
+        # repo.migrate_states(Path("Users"))
+        user = rr.get_user_state(user_id)
+        print("")

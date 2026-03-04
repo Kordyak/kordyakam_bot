@@ -1,32 +1,17 @@
-import json
 import hashlib
 from pathlib import Path
-
-from bs4 import BeautifulSoup
-from ebooklib import epub, ITEM_DOCUMENT
-
 import zipfile
+
+from SQL.RR import ReadRepository
+from Services.Reader import epub_paragraph_generator
 
 BOOK_DIR = Path("Books")
 BOOK_DIR.mkdir(exist_ok=True)
 
-INDEX_FILE = BOOK_DIR / "books_index.json"
-
-
-def load_books_index() -> dict:
-    if not INDEX_FILE.exists():
-        return {}
-
-    with open(INDEX_FILE, "r", encoding="utf-8") as f:
-        return json.load(f)
-
-
-def save_books_index(data: dict):
-    with open(INDEX_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=4)
-
 
 class Library:
+    def __init__(self, db_path: Path):
+        self.db = ReadRepository(db_path)
 
     @staticmethod
     def calculate_hash(path: Path) -> str:
@@ -36,77 +21,50 @@ class Library:
                 sha256.update(chunk)
         return sha256.hexdigest()
 
-    @classmethod
-    def is_duplicate(cls, file_path: Path) -> bool:
-        file_hash = cls.calculate_hash(file_path)
-        index = load_books_index()
-        return file_hash in index
+    def list_books(self) -> dict[str, dict]:
+        """
+        Возвращает словарь: {hash: {filename, total_paragraphs}}
+        """
+        books = self.db.list_books()
+        return {b["hash"]: {"filename": b["filename"], "total_paragraphs": b["total_paragraphs"]} for b in books}
 
-    @classmethod
-    def add_book(cls, book_path: Path):
-        file_hash = cls.calculate_hash(book_path)
-        index = load_books_index()
-        if file_hash not in index:
-            # Считаем количество абзацев один раз
-            total_paragraphs = sum(1 for _ in epub_paragraph_generator(book_path))
-            index[file_hash] = {
-                "filename": book_path.name,
-                "total_paragraphs": total_paragraphs,
-            }
-            save_books_index(index)
+    def add_book(self, book_path: Path):
+        """
+        Добавляет книгу в библиотеку, если её там ещё нет.
+        """
+        file_hash = self.calculate_hash(book_path)
+        existing = self.db.get_book_by_hash(file_hash)
+        if existing:
+            return file_hash  # Уже есть
+
+        # Считаем количество абзацев
+        total_paragraphs = sum(1 for _ in epub_paragraph_generator(book_path))
+
+        # Добавляем в базу
+        self.db.insert_book(str(book_path.name), str(book_path), file_hash, total_paragraphs)
         return file_hash
 
-    # 🔥 НОВЫЙ МЕТОД
-    @classmethod
-    def sync_library(cls):
+    def sync_library(self):
         """
-        Проверяет папку Books и добавляет отсутствующие книги в индекс.
+        Проверяет папку Books и добавляет отсутствующие книги в SQL.
         """
-        index = load_books_index()
-        updated = False
-
         for book_path in BOOK_DIR.glob("*.epub"):
 
-
             if not zipfile.is_zipfile(book_path):
-                print(f"\nФайл {book_path.name} поврежден или не EPUB")
-                print(f"Удаляю поврежденный файл: {book_path.name}")
+                print(f"⚠ Файл {book_path.name} поврежден или не EPUB — удаляем")
                 book_path.unlink(missing_ok=True)
                 continue
 
-            file_hash = cls.calculate_hash(book_path)
+            file_hash = self.calculate_hash(book_path)
 
-            if file_hash not in index:
-                print(f"Добавляю книгу в индекс: {book_path.name}")
+            if not self.db.get_book_by_hash(file_hash):
 
-                total_paragraphs = sum(
-                    1 for _ in epub_paragraph_generator(book_path)
-                )
+                print(f"Добавляю книгу в базу: {book_path.name}")
 
-                index[file_hash] = {
-                    "filename": book_path.name,
-                    "total_paragraphs": total_paragraphs,
-                }
+                total_paragraphs = sum(1 for _ in epub_paragraph_generator(book_path))
 
-                updated = True
-
-        if updated:
-            save_books_index(index)
+                self.db.add_book(str(book_path.name), file_hash, total_paragraphs)
 
 
 
-# Получаем все параграфы книги в массиве
-def epub_paragraph_generator(epub_path):
-    try:
-        book = epub.read_epub(str(epub_path))
-    except Exception as e:
-        print(f"Ошибка чтения EPUB {epub_path.name}: {e}")
-        return  # просто пропускаем файл
-
-    for item in book.get_items_of_type(ITEM_DOCUMENT):
-        soup = BeautifulSoup(item.get_content(), "html.parser")
-        for p in soup.find_all("p"):
-            text = p.get_text(strip=True)
-            if text:
-                yield text
 

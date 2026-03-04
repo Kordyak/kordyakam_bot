@@ -1,29 +1,29 @@
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from Services.UserState import UserState
 
 scheduler = AsyncIOScheduler()
 
 
 class Scheduler:
+    """
+    Планировщик ежедневных задач пользователей через ReadRepository.
+    Все взаимодействия с БД идут через методы ReadRepository.
+    """
 
     @classmethod
-    def restore_all_jobs(cls, sender_service):
-        users = UserState.get_all_users()
-
+    def restore_all_jobs(cls, sender_service, rr):
+        """Восстанавливает все задачи для пользователей из ReadRepository"""
+        users = rr.list_users_with_time()
         if not users:
             print("No users to restore")
             return
 
-        for user_id in users:
-            time_str = UserState.get_time(user_id)
-            if not time_str:
-                continue
-
-            cls.create_user_job(sender_service, user_id, time_str)
+        for user in users:
+            cls.create_user_job(sender_service, user["user_id"], user["daily_time"])
 
     @classmethod
-    def create_user_job(cls, sender_service, user_id, time):
-        hour, minute = map(int, time.split(":"))
+    def create_user_job(cls, sender_service, user_id: int, time_str: str):
+        """Создаёт или обновляет задачу APScheduler для пользователя"""
+        hour, minute = map(int, time_str.split(":"))
         job_id = f"user_{user_id}"
 
         if scheduler.get_job(job_id):
@@ -39,4 +39,25 @@ class Scheduler:
             replace_existing=True,
         )
 
+    @classmethod
+    def add_user_job(cls, sender_service, rr, user_id: int, time_str: str):
+        """
+        Добавляет или обновляет задачу для пользователя и сохраняет время в БД
+        """
+        # Сохраняем/обновляем время в базе
+        rr.save_time(user_id, time_str)
+        # Создаём задачу в APScheduler
+        cls.create_user_job(sender_service, user_id, time_str)
 
+    @classmethod
+    def remove_user_job(cls, user_id: int, rr=None):
+        """
+        Удаляет задачу пользователя из APScheduler.
+        Если передан rr, можно также очистить daily_time в базе.
+        """
+        job_id = f"user_{user_id}"
+        if scheduler.get_job(job_id):
+            scheduler.remove_job(job_id)
+
+        if rr:
+            rr.save_time(user_id, None)

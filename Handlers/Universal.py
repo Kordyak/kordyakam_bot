@@ -5,17 +5,15 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery
 
 from FSM.states import UploadBook
-from Services.Reader import ReaderCache
+from Services.Library import Library
 from Services.Scheduler import scheduler
-from Services.UserState import UserState
 
 universal_router = Router(name='universal')
 
 
 # Универсальный обработчик подтверждения ==========
 @universal_router.callback_query(F.data.startswith("confirm:"))
-async def handle_confirm(callback: CallbackQuery, state: FSMContext, user_id):
-    # user_id = callback.from_user.id
+async def handle_confirm(callback: CallbackQuery, state: FSMContext, user_id, library: Library):
     await callback.answer()
 
     action = callback.data.split(":")[1]
@@ -28,10 +26,6 @@ async def handle_confirm(callback: CallbackQuery, state: FSMContext, user_id):
         await state.set_state(UploadBook.waiting_time)
 
     elif action == "del_book":
-        # Сбрасываем состояния user в файле STATE
-        UserState.reset_state(user_id, "")
-        # Удаляем кэш reader если есть
-        ReaderCache.cache.pop(user_id, None)
         # Удаляем работу из планировщика
         job_id = f"user_{user_id}"
         if scheduler.get_job(job_id):

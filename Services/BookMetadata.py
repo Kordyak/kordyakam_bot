@@ -7,11 +7,8 @@ class BookMetadata:
 
     @classmethod
     def get_cache(cls, book_path):
-        book_Path = Path(book_path)
-
         key = str(book_path)
-
-        book_time = book_Path.stat().st_mtime
+        book_time = book_path.stat().st_mtime
         cached = cls.cache.get(key)
 
         # если нет cache или файл обновился
@@ -26,9 +23,6 @@ class BookMetadata:
                 "cover_image": metadata[3],
             }
         return cls.cache[key]
-
-
-
 
 
 

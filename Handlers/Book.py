@@ -1,4 +1,6 @@
+from html import unescape
 from pathlib import Path
+import re
 
 from aiogram import Router, F, Bot
 from aiogram.fsm.context import FSMContext
@@ -145,7 +147,7 @@ async def book_description(callback: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     book_info = data.get("book_info", {})
 
-    description = book_info['description']
+    description = clean_html(book_info['description'])
     caption = (
         f"<b>Автор</b>: {book_info['book_creator']}\n"
         f"<b>Книга</b>: {book_info['book_title']}\n"
@@ -165,16 +167,14 @@ async def book_description(callback: CallbackQuery, state: FSMContext):
         parse_mode="HTML",
     )
 
-    # kb = InlineKeyboardMarkup(
-    #     inline_keyboard=[
-    #         [InlineKeyboardButton(text=f"ℹ️ Загружаем '{book_info['book_title']}' для чтения?",
-    #                               callback_data=f"upload_library_book:{book_info['path']}")],
-    #         [InlineKeyboardButton(text="🔙 Назад в библиотеку", callback_data="library")],
-    #     ]
-    # )
-    # await message.answer('Что надумал?', reply_markup=kb)
-    # await message.delete()
     await state.clear()  # очищаем состояние
+
+
+def clean_html(text: str) -> str:
+    text = text.replace("</p>", "\n").replace("<p>", "")
+    text = re.sub(r"<[^>]+>", "", text)
+    return unescape(text).strip()
+
 
 
 # Загрузка своей книги КОЛБЭК

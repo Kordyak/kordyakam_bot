@@ -13,7 +13,7 @@ universal_router = Router(name='universal')
 
 # Универсальный обработчик подтверждения ==========
 @universal_router.callback_query(F.data.startswith("confirm:"))
-async def handle_confirm(callback: CallbackQuery, state: FSMContext, user_id, library: Library):
+async def handle_confirm(callback: CallbackQuery, state: FSMContext, user_id):
     await callback.answer()
 
     action = callback.data.split(":")[1]

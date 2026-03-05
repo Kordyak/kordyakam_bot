@@ -319,8 +319,6 @@ async def save_time(message: Message, state: FSMContext, sender: Sender, user_id
         )
         return
 
-    # user_id = message.from_user.id
-
     # сохраняем время
     rr.save_time(user_id, time_text)
 

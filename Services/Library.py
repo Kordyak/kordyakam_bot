@@ -2,16 +2,17 @@ import hashlib
 from pathlib import Path
 import zipfile
 
-from SQL.RR import ReadRepository
-from Services.Reader import epub_paragraph_generator
+from bs4 import BeautifulSoup
+from ebooklib import epub, ITEM_DOCUMENT
 
-BOOK_DIR = Path("Books")
-BOOK_DIR.mkdir(exist_ok=True)
+from SQL.RR import ReadRepository
+
+PATH_BOOKS = Path("Books")
 
 
 class Library:
-    def __init__(self, db_path: Path):
-        self.db = ReadRepository(db_path)
+    def __init__(self):
+        self.db = ReadRepository()
 
     @staticmethod
     def calculate_hash(path: Path) -> str:
@@ -46,9 +47,22 @@ class Library:
 
     def sync_library(self):
         """
-        Проверяет папку Books и добавляет отсутствующие книги в SQL.
+        Проверяет папку Books и синхронизирует её с SQL.
         """
-        for book_path in BOOK_DIR.glob("*.epub"):
+
+        # 1. Удаляем из базы книги, файлы которых отсутствуют
+        books = self.db.get_all_books()  # [(id, filename, hash, ...)]
+
+        for book in books:
+            filename = book[1]
+            book_path = PATH_BOOKS / filename
+
+            if not book_path.exists():
+                print(f"⚠ Файл {filename} отсутствует — удаляем из базы")
+                self.db.delete_book(book[0])  # удаление по id
+
+        # 2. Добавляем новые книги
+        for book_path in PATH_BOOKS.glob("*.epub"):
 
             if not zipfile.is_zipfile(book_path):
                 print(f"⚠ Файл {book_path.name} поврежден или не EPUB — удаляем")
@@ -58,7 +72,6 @@ class Library:
             file_hash = self.calculate_hash(book_path)
 
             if not self.db.get_book_by_hash(file_hash):
-
                 print(f"Добавляю книгу в базу: {book_path.name}")
 
                 total_paragraphs = sum(1 for _ in epub_paragraph_generator(book_path))
@@ -67,4 +80,17 @@ class Library:
 
 
 
+# Получаем все параграфы книги в массиве
+def epub_paragraph_generator(epub_path):
+    try:
+        book = epub.read_epub(str(epub_path))
+    except Exception as e:
+        print(f"Ошибка чтения EPUB {epub_path.name}: {e}")
+        return  # просто пропускаем файл
 
+    for item in book.get_items_of_type(ITEM_DOCUMENT):
+        soup = BeautifulSoup(item.get_content(), "html.parser")
+        for p in soup.find_all("p"):
+            text = p.get_text(strip=True)
+            if text:
+                yield text

@@ -1,9 +1,12 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
+from Services.Reader import Reader
+
 
 # Главная клавиатура
-def book_menu(reader):
-    if not reader:
+def book_menu(reader: Reader):
+
+    if not reader.book_title:
         return InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="📖 Загрузить свою книгу (.epub)", callback_data="upload_book")],
             [InlineKeyboardButton(text="📚 Библиотека", callback_data="library")],

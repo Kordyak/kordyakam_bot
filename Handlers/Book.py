@@ -1,22 +1,20 @@
-import asyncio
 from pathlib import Path
 
 from aiogram import Router, F, Bot
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, BufferedInputFile
 from aiogram.filters import Command
-from aiogram.enums import ChatAction
 
 from FSM.states import UploadBook
 from Keyboards.Book import book_menu
-from Keyboards.Universal import confirm_kb, cancel_kb, send_typing
-from SQL.RR import ReadRepository
+from Keyboards.Universal import confirm_kb, cancel_kb
+from SQL.RR import ReadRepository, PATH_READ_DB
 from Services.BookMetadata import BookMetadata
 from Services.Converters import translate_rus_eng
-from Services.Library import Library, BOOK_DIR
+from Services.Library import Library, PATH_BOOKS, epub_paragraph_generator
 
-from Services.Reader import Sender, Reader, PATH_READ_DB, LazyEpubReader, epub_paragraph_generator
-from Services.Scheduler import Scheduler, scheduler
+from Services.Reader import Sender, Reader
+from Services.Scheduler import Scheduler
 
 
 book_router = Router(name='book')
@@ -25,7 +23,7 @@ book_router = Router(name='book')
 @book_router.message(Command('book'))
 async def book_handler(message: Message, state: FSMContext, reader: Reader):
     await state.clear()
-    if not reader:
+    if not reader.book_title:
         text = (
             f"Я @KordyakBot:\n\n"
             "Умею читать книги на английском языке абзацами "
@@ -45,7 +43,7 @@ async def book_handler(message: Message, state: FSMContext, reader: Reader):
 @book_router.callback_query(F.data == "library")
 async def show_library(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
-    library = Library(PATH_READ_DB)
+    library = Library()
     books_index = library.list_books()  # {hash: {filename, total_paragraphs}}
 
     if not books_index:
@@ -57,7 +55,7 @@ async def show_library(callback: CallbackQuery, state: FSMContext):
     book_map = {}  # номер → данные книги
 
     for i, (file_hash, info) in enumerate(books_index.items(), start=1):
-        book_path = BOOK_DIR / info["filename"]
+        book_path = PATH_BOOKS / info["filename"]
 
         # Получаем метаданные книги (кешируется внутри BookMetadata)
         metadata = BookMetadata.get_cache(book_path)
@@ -74,7 +72,7 @@ async def show_library(callback: CallbackQuery, state: FSMContext):
             "book_creator": creator,
             "description": description,
             "cover_image": cover_image,
-            "path": book_path,
+            "path": info["filename"],
             "hash": file_hash,
             "total_paragraphs": info.get("total_paragraphs", 0),
         }
@@ -189,7 +187,7 @@ async def upload_book_start(callback: CallbackQuery, state: FSMContext):
 
 # Загрузка своей книги waiting_epub
 @book_router.message(UploadBook.waiting_epub, F.document)
-async def upload_book_wait(message: Message, bot: Bot, state: FSMContext, user_id, library: Library):
+async def upload_book_wait(message: Message, bot: Bot, state: FSMContext, user_id, rr: ReadRepository):
     if not message.document.file_name.endswith(".epub"):
         await message.answer(
             'Это не epub 😅',
@@ -200,7 +198,7 @@ async def upload_book_wait(message: Message, bot: Bot, state: FSMContext, user_i
     await state.clear()
 
     original_name = message.document.file_name
-    temp_path = BOOK_DIR / f"temp_{user_id}.epub"
+    temp_path = PATH_BOOKS / f"temp_{user_id}.epub"
 
     file = await bot.get_file(message.document.file_id)
 
@@ -211,40 +209,40 @@ async def upload_book_wait(message: Message, bot: Bot, state: FSMContext, user_i
         return
 
     # Вычисляем hash загруженной книги
+    library = Library(PATH_READ_DB)
     file_hash = library.calculate_hash(temp_path)
     books_index = library.list_books()  # возвращает {hash: {filename, total_paragraphs}}
 
     # 🔎 Если уже есть по хэшу
     if file_hash in books_index:
-        existing_name = Path(books_index[file_hash]["filename"])
-        final_path = BOOK_DIR / existing_name
+        final_path = Path(books_index[file_hash]["filename"])
         temp_path.unlink()
         await message.answer("Такая книга уже есть в моей базе 📚")
 
     else:  # 📥 Если новая книга
-        final_path = BOOK_DIR / original_name
+        final_path = PATH_BOOKS / original_name
         counter = 1
         while final_path.exists():
-            final_path = BOOK_DIR / f"{Path(original_name).stem}_{counter}.epub"
+            final_path = PATH_BOOKS / f"{Path(original_name).stem}_{counter}.epub"
             counter += 1
         temp_path.rename(final_path)
         # сохраняем книгу в books_index
         library.add_book(final_path)
 
-    await upload_book_end(message, user_id, final_path, state)
+    await upload_book_end(message, user_id, final_path, state, rr)
 
 
 # Загрузка книги из библиотек (КОЛБЭК)
 @book_router.callback_query(F.data.startswith("upload_library_book:"))
-async def upload_library_book(callback: CallbackQuery, state: FSMContext, user_id):
+async def upload_library_book(callback: CallbackQuery, state: FSMContext, user_id, rr: ReadRepository):
     await callback.answer()
     # await callback.message.delete()
-    path = callback.data.split(":")[1]
-    await upload_book_end(callback.message, user_id, path, state)
+    name_file = callback.data.split(":")[1]
+    await upload_book_end(callback.message, user_id, name_file, state, rr)
 
 
 # Загрузка книги КОНЕЦ // ФУНКЦИЯ из библ / или своя загруженная
-async def upload_book_end(message, user_id, path, state):
+async def upload_book_end(message, user_id, name_file, state, rr: ReadRepository):
     """
     Завершение загрузки книги:
     - Проверяем, есть ли книга в библиотеке по хэшу
@@ -254,20 +252,16 @@ async def upload_book_end(message, user_id, path, state):
     from pathlib import Path
     import hashlib
 
-    book_path = Path(path)
-    file_hash = hashlib.md5(book_path.read_bytes()).hexdigest()
-
-    rr = ReadRepository(PATH_READ_DB)
+    book_path = Path(PATH_BOOKS / name_file)
+    file_hash = Library.calculate_hash(book_path)
 
     # Проверяем, есть ли книга в библиотеке
     book = rr.get_book_by_hash(file_hash)
     if not book:
         # Получаем количество абзацев
-        reader_for_count = LazyEpubReader(book_path, saved_index=0)
         total_paragraphs = sum(1 for _ in epub_paragraph_generator(book_path))
-
         # Добавляем книгу в библиотеку
-        book_id = rr.add_book(str(book_path), file_hash, total_paragraphs)
+        book_id = rr.add_book(str(name_file), file_hash, total_paragraphs)
     else:
         book_id = book["id"]
 
@@ -416,4 +410,5 @@ async def save_index(message: Message, state: FSMContext, user_id, reader: Reade
 @book_router.callback_query(F.data == 'del_book')
 async def del_book(callback: CallbackQuery):
     await callback.answer()
+    await callback.message.delete()
     await callback.message.answer('Вы уверены?', reply_markup=confirm_kb('del_book'))

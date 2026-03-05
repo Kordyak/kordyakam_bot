@@ -6,10 +6,10 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.types import BotCommand
 from argostranslate import package
 
-from Middlewares.Data import Middleware_typing
+from Middlewares.mv1 import Middleware_typing
 from SQL.RR import ReadRepository
 from Services.Library import Library
-from Services.Reader import Sender, PATH_READ_DB
+from Services.Reader import Sender
 from Services.Scheduler import scheduler, Scheduler
 
 from Handlers.Book_universal import universal_router
@@ -22,6 +22,8 @@ from config import Config, load_config
 import whisper
 import argostranslate.package
 import argostranslate.translate
+
+
 
 # Конфигурация и логирование
 config: Config = load_config()
@@ -96,7 +98,7 @@ async def set_reader():
     sender_service = Sender(bot)
     dispatcher["sender"] = sender_service
 
-    rr = ReadRepository(PATH_READ_DB)
+    rr = ReadRepository()
     Scheduler.restore_all_jobs(sender_service, rr)
     scheduler.start()
 
@@ -107,8 +109,8 @@ async def main():
     await set_whisper()
 
     await set_reader()
-    library1 = Library(PATH_READ_DB)
-    library1.sync_library()
+    library1 = Library()
+    library1.sync_library() # Проверяет папку Books и добавляет отсутствующие книги в SQL
 
     logger.info("Bot polling started")
     await dispatcher.start_polling(bot)

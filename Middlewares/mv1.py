@@ -3,8 +3,8 @@ from aiogram import BaseMiddleware
 from aiogram.enums import ChatAction
 from aiogram.types import TelegramObject
 
-from SQL.RR import ReadRepository
-from Services.Reader import Reader, PATH_READ_DB
+from SQL.RR import ReadRepository, PATH_READ_DB
+from Services.Reader import Reader
 
 
 class Middleware_typing(BaseMiddleware):
@@ -22,9 +22,10 @@ class Middleware_typing(BaseMiddleware):
             data["user_id"] = user_id
 
             reader = Reader(user_id)
+
             data["reader"] = reader
 
-        rr = ReadRepository(PATH_READ_DB)
+        rr = ReadRepository()
         data["rr"] = rr
 
         if event.message:

@@ -57,8 +57,8 @@ async def stop_bot(message: Message, user_id: int):
 async def migration(message: Message, user_id: int):
     if user_id == 995657021:
         await message.answer('Сервисный режим SQL')
-        rr = ReadRepository(Path("SQL/read.db"))
+        # rr = ReadRepository(Path("SQL/read.db"))
         # repo.migrate_books_index(Path("Books/books_index.json"))
         # repo.migrate_states(Path("Users"))
-        user = rr.get_user_state(user_id)
-        print("")
+        # user = rr.get_user_state(user_id)
+        # print("")

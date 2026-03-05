@@ -2,11 +2,12 @@ import json
 import sqlite3
 from pathlib import Path
 
+PATH_READ_DB = Path("SQL/read.db")
 
 class ReadRepository:
 
-    def __init__(self, db_path: Path):
-        self.db_path = db_path
+    def __init__(self):
+        self.db_path = PATH_READ_DB
         self._init_db()
 
     # CONNECTION
@@ -123,6 +124,16 @@ class ReadRepository:
             for r in rows
         ]
 
+    def remove_current_book(self, telegram_id: int):
+        """Удаляет текущую книгу у пользователя и сбрасывает прогресс"""
+        with self._get_connection() as conn:
+            conn.execute("""
+                UPDATE users
+                SET current_book_id = NULL,
+                    chunk_index = 0
+                WHERE user_id = ?
+            """, (telegram_id,))
+
     # INCREMENT PROGRESS
     def increment_progress(self, telegram_id: int, step: int = 1) -> tuple[int, bool]:
 
@@ -186,6 +197,16 @@ class ReadRepository:
             ).fetchone()[0]
         return book_id
 
+    def get_all_books(self):
+        with self._get_connection() as conn:
+            return conn.execute("SELECT id, filename FROM books").fetchall()
+
+    def delete_book(self, book_id):
+        with self._get_connection() as conn:
+            conn.execute("DELETE FROM books WHERE id = ?", (book_id,))
+
+
+
     # Получить книгу по hash
     def get_book_by_hash(self, file_hash: str) -> dict | None:
         """
@@ -226,6 +247,11 @@ class ReadRepository:
             """, (telegram_id,))
 
             return cursor.fetchone()
+
+
+
+
+
 
     # Migration BOOKS
     def migrate_books_index(self, books_index_path: Path):

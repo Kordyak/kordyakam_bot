@@ -5,7 +5,6 @@ from io import BytesIO
 
 from aiogram import Bot
 from aiogram.types import FSInputFile, BufferedInputFile
-from ebooklib import epub, ITEM_DOCUMENT
 
 from Services.BookMetadata import BookMetadata
 from Services.Converters import translate_rus_eng, convert_text_audio
@@ -14,18 +13,19 @@ from SQL.RR import ReadRepository
 from mutagen.mp3 import MP3
 from mutagen.id3 import ID3, APIC, TIT2, TPE1, TALB
 from PIL import Image
-
-from bs4 import BeautifulSoup
-
-PATH_READ_DB = Path("SQL/read.db")
+from Services.Library import PATH_BOOKS, epub_paragraph_generator
 
 
 class Reader:
     TELEGRAM_LIMIT = 1000
+    book_title = None
+    book_creator = None
+    description = None
+    cover_image = None
 
     def __init__(self, user_id: int, username: str | None = None):
         self.user_id = user_id
-        self.rr = ReadRepository(PATH_READ_DB)
+        self.rr = ReadRepository()
 
         # Создаём пользователя, если нет
         self.rr.get_or_create_user(user_id, username)
@@ -33,23 +33,22 @@ class Reader:
         # Загружаем состояние пользователя
         state = self.rr.get_user_state(user_id)
 
-        if not state or state[2] is None:
-            raise ValueError("У пользователя нет текущей книги")
-
         self.index = state[0] or 0  # chunk_index
-        self.daily_time = state[1]  # можно использовать
-        filename = state[2]
+        self.daily_time = state[1]
+        self.book_name = Path(str(state[2]))
         self.total_paragraphs = state[3] or 0  # total_paragraphs
 
-        self.book_path = Path(f"Books/{filename}")
-        metadata = BookMetadata.get_cache(self.book_path)
-        self.book_title = metadata.get("book_title", "")
-        self.book_creator = metadata.get("book_creator", "")
-        self.description = metadata.get("description", "")
-        self.cover_image = metadata.get("cover_image")
+        path_file = Path(PATH_BOOKS / self.book_name)
 
-        # Ленивое чтение epub
-        self.lazy_read = LazyEpubReader(self.book_path, self.index)
+        if path_file.exists():
+            metadata = BookMetadata.get_cache(path_file)
+            self.book_title = metadata.get("book_title", "")
+            self.book_creator = metadata.get("book_creator", "")
+            self.description = metadata.get("description", "")
+            self.cover_image = metadata.get("cover_image")
+
+            # Ленивое чтение epub
+            self.lazy_read = LazyEpubReader(path_file, self.index)
 
     @property
     def progress(self):
@@ -80,36 +79,6 @@ class Reader:
 
         return "\n".join(buffer).strip()
 
-    def set_book(self, book_id: int, reset_progress: bool = True):
-        """
-        Назначает пользователю книгу по id.
-        reset_progress=True сбрасывает chunk_index
-        """
-        self.rr.set_current_book(self.user_id, book_id)
-        state = self.rr.get_user_state(self.user_id)
-
-        self.index = state[0] or 0
-        filename = state[2]
-        self.total_paragraphs = state[3] or 0
-
-        self.book_path = Path(filename)
-        metadata = BookMetadata.get_cache(self.book_path)
-        self.book_title = metadata.get("book_title", "")
-        self.book_creator = metadata.get("book_creator", "")
-        self.description = metadata.get("description", "")
-        self.cover_image = metadata.get("cover_image")
-
-        self.lazy_read = LazyEpubReader(self.book_path, self.index)
-
-    def increment_chunk(self, step: int = 1) -> bool:
-        """
-        Увеличивает прогресс пользователя на step.
-        Возвращает True, если книга полностью прочитана.
-        """
-        new_index, is_completed = self.rr.increment_progress(self.user_id, step)
-        self.index = new_index
-        self.lazy_read = LazyEpubReader(self.book_path, self.index)
-        return is_completed
 
 
 # -----------------------
@@ -136,20 +105,7 @@ class LazyEpubReader:
             return None
 
 
-# Получаем все параграфы книги в массиве
-def epub_paragraph_generator(epub_path):
-    try:
-        book = epub.read_epub(str(epub_path))
-    except Exception as e:
-        print(f"Ошибка чтения EPUB {epub_path.name}: {e}")
-        return  # просто пропускаем файл
 
-    for item in book.get_items_of_type(ITEM_DOCUMENT):
-        soup = BeautifulSoup(item.get_content(), "html.parser")
-        for p in soup.find_all("p"):
-            text = p.get_text(strip=True)
-            if text:
-                yield text
 
 
 # -----------------------
@@ -198,7 +154,7 @@ class Sender:
 
 
 # -----------------------
-# MP3 и миниатюра
+# Миниатюра в mp3 файле
 # -----------------------
 def rewrite_mp3_tags(file_path: str, reader: Reader):
     try:

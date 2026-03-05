@@ -23,8 +23,6 @@ import whisper
 import argostranslate.package
 import argostranslate.translate
 
-
-
 # Конфигурация и логирование
 config: Config = load_config()
 
@@ -110,10 +108,11 @@ async def main():
 
     await set_reader()
     library1 = Library()
-    library1.sync_library() # Проверяет папку Books и добавляет отсутствующие книги в SQL
+    library1.sync_library()  # Проверяет папку Books и добавляет отсутствующие книги в SQL
 
     logger.info("Bot polling started")
-    await dispatcher.start_polling(bot)
+    await bot.delete_webhook(drop_pending_updates=True)  # очистка всех старых апдейтов
+    await dispatcher.start_polling(bot, drop_pending_updates=True)
 
 
 if __name__ == "__main__":

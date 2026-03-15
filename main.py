@@ -6,7 +6,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.types import BotCommand
 from argostranslate import package
 
-from Middlewares.mv1 import Middleware_typing
+from Middlewares.mw1 import Middleware_typing
 from SQL.RR import ReadRepository
 from Services.Library import Library
 from Services.Reader import Sender

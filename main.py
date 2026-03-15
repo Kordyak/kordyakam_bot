@@ -23,6 +23,8 @@ import whisper
 import argostranslate.package
 import argostranslate.translate
 
+from aiogram.client.session.aiohttp import AiohttpSession
+
 # Конфигурация и логирование
 config: Config = load_config()
 
@@ -35,19 +37,28 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 logger.info("Start bot!")
 
-bot = Bot(
-    token=config.tg_bot.token,
-    default=DefaultBotProperties(parse_mode='Markdown')
-)
+dispatcher: Dispatcher
+bot: Bot
 
-dispatcher = Dispatcher()
-dispatcher.update.middleware(Middleware_typing())
-# dispatcher.callback_query.middleware(Middleware_callback())
 
-dispatcher.include_router(start_router)
-dispatcher.include_router(convert_router)
-dispatcher.include_router(book_router)
-dispatcher.include_router(universal_router)
+async def set_bot():
+    global dispatcher, bot
+
+    session = AiohttpSession(proxy='socks5://127.0.0.1:12334')
+    bot = Bot(
+        token=config.tg_bot.token,
+        default=DefaultBotProperties(parse_mode='Markdown'),
+        session=session
+    )
+
+    dispatcher = Dispatcher()
+    dispatcher.update.middleware(Middleware_typing())
+    # dispatcher.callback_query.middleware(Middleware_callback())
+
+    dispatcher.include_router(start_router)
+    dispatcher.include_router(convert_router)
+    dispatcher.include_router(book_router)
+    dispatcher.include_router(universal_router)
 
 
 async def set_bot_commands():
@@ -102,6 +113,7 @@ async def set_reader():
 
 
 async def main():
+    await set_bot()
     await set_bot_commands()
     await set_argostranslate()
     await set_whisper()

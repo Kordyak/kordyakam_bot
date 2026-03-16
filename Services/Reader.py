@@ -147,11 +147,7 @@ class Sender:
 
 # Переписать файл с чистыми тегами
 def rewrite_mp3_tags(file_path: str, reader: Reader):
-    try:
-        tags = ID3(file_path)
-        tags.clear()
-    except:
-        tags = ID3()
+    tags = ID3()
 
     tags.add(APIC(
         encoding=3,
@@ -165,7 +161,7 @@ def rewrite_mp3_tags(file_path: str, reader: Reader):
     tags.add(TPE1(encoding=3, text=reader.book_creator))
     tags.add(TALB(encoding=3, text=reader.book_title))
 
-    tags.save(file_path, v2_version=3, padding=lambda info: 4096)
+    tags.save(file_path, v2_version=3)
 
 
 # Миниатюру из аудио файла для сообщения

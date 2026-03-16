@@ -15,7 +15,7 @@ from mutagen.id3 import ID3, APIC, TIT2, TPE1, TALB
 from PIL import Image
 from Services.Library import PATH_BOOKS, epub_paragraph_generator
 
-
+# Чтец
 class Reader:
     TELEGRAM_LIMIT = 1000
     book_title = None
@@ -100,7 +100,7 @@ class LazyEpubReader:
             return None
 
 
-# Отправитель абзаца пользователю
+# Отправитель
 class Sender:
     def __init__(self, bot: Bot):
         self.bot = bot
@@ -115,6 +115,7 @@ class Sender:
 
         title = make_title(chunk)
         audio = convert_text_audio(chunk, title, "en")
+
         rewrite_mp3_tags(title, reader)
         thumbnail = make_thumbnail(reader.cover_image)
 
@@ -164,7 +165,7 @@ def rewrite_mp3_tags(file_path: str, reader: Reader):
     tags.add(TPE1(encoding=3, text=reader.book_creator))
     tags.add(TALB(encoding=3, text=reader.book_title))
 
-    tags.save(file_path, v2_version=3, padding=4096)
+    tags.save(file_path, v2_version=3, padding=lambda info: 4096)
 
 
 # Миниатюру из аудио файла для сообщения

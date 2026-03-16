@@ -341,7 +341,7 @@ async def show_book(callback: CallbackQuery, state: FSMContext, reader: Reader):
         'book_creator': reader.book_creator,
         'description': reader.description,
         'cover_image': reader.cover_image,
-        'path': reader.book_path,
+        'path': reader.book_name,
     }
     await state.update_data(book_info=book_info)
 

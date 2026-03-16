@@ -80,12 +80,7 @@ class Reader:
         return "\n".join(buffer).strip()
 
 
-
-# -----------------------
 # Ленивое чтение epub
-# -----------------------
-
-
 class LazyEpubReader:
     def __init__(self, path, saved_index):
         self.path = path
@@ -105,12 +100,7 @@ class LazyEpubReader:
             return None
 
 
-
-
-
-# -----------------------
-# Отправка чанк текста пользователю
-# -----------------------
+# Отправитель абзаца пользователю
 class Sender:
     def __init__(self, bot: Bot):
         self.bot = bot
@@ -123,17 +113,17 @@ class Sender:
             await self.bot.send_message(user_id, "Книга закончилась 📚")
             return
 
-        name_file = make_title(chunk)
-        convert_text_audio(chunk, name_file, "en")
-        rewrite_mp3_tags(name_file, reader)
+        title = make_title(chunk)
+        audio = convert_text_audio(chunk, title, "en")
+        rewrite_mp3_tags(title, reader)
         thumbnail = make_thumbnail(reader.cover_image)
 
         await self.bot.send_audio(
             chat_id=user_id,
-            audio=FSInputFile(name_file),
+            audio=audio,
             thumbnail=thumbnail,
             performer=reader.book_title,
-            title=name_file,
+            title=title,
             caption=(
                 f"{reader.book_creator} / <b>{reader.book_title}</b>\n"
                 f"Прогресс: <b>{reader.progress} %</b>\n"
@@ -142,7 +132,6 @@ class Sender:
             ),
             parse_mode="HTML",
         )
-        os.remove(name_file)
 
         # Перевод
         chunk_rus = translate_rus_eng(chunk, "/en_ru")
@@ -152,25 +141,33 @@ class Sender:
             parse_mode="HTML",
         )
 
+        os.remove(title)
 
-# -----------------------
-# Миниатюра в mp3 файле
-# -----------------------
+
+# Переписать файл с чистыми тегами
 def rewrite_mp3_tags(file_path: str, reader: Reader):
     try:
-        ID3(file_path).delete(file_path)
-    except Exception:
-        pass
+        tags = ID3(file_path)
+        tags.clear()
+    except:
+        tags = ID3()
 
-    tags = ID3()
-    tags.add(APIC(encoding=3, mime="image/jpeg", type=3, desc="Cover", data=reader.cover_image))
+    tags.add(APIC(
+        encoding=3,
+        mime="image/jpeg",
+        type=3,
+        desc="Cover",
+        data=reader.cover_image
+    ))
+
     tags.add(TIT2(encoding=3, text=reader.book_title))
     tags.add(TPE1(encoding=3, text=reader.book_creator))
     tags.add(TALB(encoding=3, text=reader.book_title))
-    tags.save(file_path, v2_version=3)
-    MP3(file_path)
+
+    tags.save(file_path, v2_version=3, padding=4096)
 
 
+# Миниатюру из аудио файла для сообщения
 def make_thumbnail(image_bytes: bytes) -> BufferedInputFile:
     with Image.open(BytesIO(image_bytes)) as img:
         img = img.convert("RGB")
@@ -189,6 +186,7 @@ def make_thumbnail(image_bytes: bytes) -> BufferedInputFile:
         return BufferedInputFile(file=output.getvalue(), filename="thumb.jpg")
 
 
+# титул из текста
 def make_title(text, words=6, max_len=60):
     clean = re.sub(r'[<>:"/\\|?*]', '', text)
     title = " ".join(clean.split()[:words])

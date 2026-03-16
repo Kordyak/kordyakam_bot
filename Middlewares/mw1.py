@@ -33,18 +33,18 @@ class Middleware_typing(BaseMiddleware):
         elif event.callback_query:
             chat_id = event.callback_query.message.chat.id
 
-        # typing_task = asyncio.create_task(self._typing_loop(bot, chat_id))
+        typing_task = asyncio.create_task(self._typing_loop(bot, chat_id))
 
-        # try:
-        return await handler(event, data)
-        # finally:
-        #     if typing_task:
-        #         typing_task.cancel()
+        try:
+            return await handler(event, data)
+        finally:
+            if typing_task:
+                typing_task.cancel()
 
-    # async def _typing_loop(self, bot, chat_id: int):
-    #     try:
-    #         while True:
-    #             await bot.send_chat_action(chat_id, ChatAction.TYPING)
-    #             await asyncio.sleep(4)
-    #     except asyncio.CancelledError:
-    #         pass
+    async def _typing_loop(self, bot, chat_id: int):
+        try:
+            while True:
+                await bot.send_chat_action(chat_id, ChatAction.TYPING)
+                await asyncio.sleep(4)
+        except asyncio.CancelledError:
+            pass

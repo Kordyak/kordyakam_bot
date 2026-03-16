@@ -91,7 +91,7 @@ async def show_library(callback: CallbackQuery, state: FSMContext):
 
 
 
-
+# если длинное сообщение, делим на 4096
 async def send_long_message(message, text: str):
     MAX_MESSAGE_LENGTH = 4096
     current = ""
@@ -169,7 +169,7 @@ async def book_description(callback: CallbackQuery, state: FSMContext):
 
     await state.clear()  # очищаем состояние
 
-
+# чистим сообщение от HTLM знаков
 def clean_html(text: str) -> str:
     text = text.replace("</p>", "\n").replace("<p>", "")
     text = re.sub(r"<[^>]+>", "", text)
@@ -177,7 +177,7 @@ def clean_html(text: str) -> str:
 
 
 
-# Загрузка своей книги КОЛБЭК
+# *** Загрузка своей книги КОЛБЭК ***
 @book_router.callback_query(F.data == "upload_book")
 async def upload_book_start(callback: CallbackQuery, state: FSMContext):
     await callback.answer()  # 🔴 обязательно
@@ -241,7 +241,7 @@ async def upload_library_book(callback: CallbackQuery, state: FSMContext, user_i
     await upload_book_end(callback.message, user_id, name_file, state, rr)
 
 
-# Загрузка книги КОНЕЦ // ФУНКЦИЯ из библ / или своя загруженная
+# *** Загрузка книги КОНЕЦ // ФУНКЦИЯ из библ / или своя загруженная ***
 async def upload_book_end(message, user_id, name_file, state, rr: ReadRepository):
     """
     Завершение загрузки книги:
@@ -279,7 +279,7 @@ async def upload_book_end(message, user_id, name_file, state, rr: ReadRepository
     await state.set_state(UploadBook.waiting_time)
 
 
-# Задаем Время ================================
+# *** Задаем Время ***
 @book_router.callback_query(F.data == "change_time")
 async def change_time(callback: CallbackQuery, rr: ReadRepository, user_id: int):
     await callback.answer()  # 🔴 обязательно
@@ -297,7 +297,7 @@ async def change_time(callback: CallbackQuery, rr: ReadRepository, user_id: int)
     )
 
 
-# Задаем Время
+# Задаем Время waiting_time
 @book_router.message(UploadBook.waiting_time)
 async def save_time(message: Message, state: FSMContext, sender: Sender, user_id, rr: ReadRepository):
     time_text = message.text.strip()
@@ -348,7 +348,7 @@ async def show_book(callback: CallbackQuery, state: FSMContext, reader: Reader):
     await book_description(callback, state)
 
 
-# Отправить ЧАНК
+# Отправить абзац
 @book_router.callback_query(F.data == "next_chunk")
 async def next_chunk_handler(callback: CallbackQuery, sender: Sender, user_id):
     await callback.answer()
@@ -367,7 +367,7 @@ async def next_chunk_handler(callback: CallbackQuery, sender: Sender, user_id):
         await temp_msg.delete()
 
 
-# установить номер абзаца ================================
+# *** Установить номер абзаца ***
 @book_router.callback_query(F.data == 'set_paragraf_index')
 async def change_index(callback: CallbackQuery, state: FSMContext):
     await callback.answer()

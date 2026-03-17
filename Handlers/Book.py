@@ -18,8 +18,22 @@ from Services.Library import Library, PATH_BOOKS, epub_paragraph_generator
 from Services.Reader import Sender, Reader
 from Services.Scheduler import Scheduler
 
-
 book_router = Router(name='book')
+
+
+@book_router.message(Command('start'))
+async def run_rdp(message: Message, state: FSMContext):
+    await state.clear()
+    text = (
+        f"Привет, друг! Меня зовут <b>{message.bot._me.first_name}</b>.\n\n"
+        "Я умею:\n"
+        "• Читать книги в формате <b>EPUB</b> на английском по заданному времени — команда /book\n"
+        "• Переводить (RU / EN) и обратно\n"
+        "• Конвертировать текст в аудио (RU / EN)\n"
+        "• Конвертировать аудио в текст\n"
+    )
+
+    await message.answer(text, parse_mode="HTML")
 
 
 @book_router.message(Command('book'))
@@ -88,7 +102,6 @@ async def show_library(callback: CallbackQuery, state: FSMContext):
     text = book_list_text + "\nНапишите номер книги, чтобы выбрать её для чтения или просмотра информации."
     await send_long_message(callback.message, text)
     await state.set_state(UploadBook.waiting_book_number)
-
 
 
 # если длинное сообщение, делим на 4096
@@ -169,12 +182,12 @@ async def book_description(callback: CallbackQuery, state: FSMContext):
 
     await state.clear()  # очищаем состояние
 
+
 # чистим сообщение от HTLM знаков
 def clean_html(text: str) -> str:
     text = text.replace("</p>", "\n").replace("<p>", "")
     text = re.sub(r"<[^>]+>", "", text)
     return unescape(text).strip()
-
 
 
 # *** Загрузка своей книги КОЛБЭК ***
@@ -281,7 +294,7 @@ async def upload_book_end(message, user_id, name_file, state, rr: ReadRepository
 
 # *** Задаем Время ***
 @book_router.callback_query(F.data == "change_time")
-async def change_time(callback: CallbackQuery, rr: ReadRepository, user_id: int):
+async def change_time(callback: CallbackQuery, rr: ReadRepository, user_id: int, state: FSMContext):
     await callback.answer()  # 🔴 обязательно
 
     rr.get_or_create_user(user_id, callback.from_user.username)
@@ -291,10 +304,12 @@ async def change_time(callback: CallbackQuery, rr: ReadRepository, user_id: int)
 
     await callback.message.edit_text(
         f"⏰Сейчас время отправки абзаца: <b>{time_text}</b>.\n"
-        f"Изменить время?",
+        "Отправь время в формате <code>HH:MM</code>",
         parse_mode="HTML",
-        reply_markup=confirm_kb('change_time')
+        # reply_markup=confirm_kb('change_time')
     )
+
+    await state.set_state(UploadBook.waiting_time)
 
 
 # Задаем Время waiting_time

@@ -20,11 +20,7 @@ async def handle_confirm(callback: CallbackQuery, state: FSMContext, user_id, rr
     action = callback.data.split(":")[1]
 
     if action == "change_time":
-        await callback.message.edit_text(
-            "Отправь время в формате <code>HH:MM</code>",
-            parse_mode="HTML"
-        )
-        await state.set_state(UploadBook.waiting_time)
+        pass
 
     elif action == "del_book":
         rr.remove_current_book(user_id)

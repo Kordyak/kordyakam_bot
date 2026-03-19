@@ -316,10 +316,10 @@ async def change_time(callback: CallbackQuery, rr: ReadRepository, user_id: int,
 # Задаем Время waiting_time
 @book_router.message(UploadBook.waiting_time)
 async def save_time(message: Message, state: FSMContext, sender: Sender, user_id, rr: ReadRepository):
-    time_text = message.text.strip()
+    time = message.text.strip()
 
     try:
-        hours, minutes = map(int, time_text.split(":"))
+        hours, minutes = map(int, time.split(":"))
         if not (0 <= hours <= 23 and 0 <= minutes <= 59):
             raise ValueError
     except:
@@ -330,15 +330,13 @@ async def save_time(message: Message, state: FSMContext, sender: Sender, user_id
         return
 
     # сохраняем время
-    rr.save_time(user_id, time_text)
-
-    reader = Reader(user_id)
+    rr.save_time(user_id, time)
 
     # 🔥 обновляем scheduler
     sender_service = sender
-    Scheduler.create_user_job(sender_service, user_id, time_text)
+    Scheduler.create_user_job(sender_service, user_id, time)
 
-    await message.answer(f"⏰ Установлено время отправки абзаца: <b>{time_text}</b>\n"
+    await message.answer(f"⏰ Установлено время отправки абзаца: <b>{time}</b>\n"
                          f"Планировщик включен ✅.\n"
                          f"Также вы можете запросить абзац книги вручную через /book")
     await state.clear()

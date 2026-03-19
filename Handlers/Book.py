@@ -303,8 +303,9 @@ async def change_time(callback: CallbackQuery, rr: ReadRepository, user_id: int,
     time_text = current_time if current_time else "не задано"
 
     await callback.message.edit_text(
-        f"⏰Сейчас время отправки абзаца: <b>{time_text}</b>.\n"
-        "Отправь время в формате <code>HH:MM</code>",
+        f"⏰ Сейчас время отправки абзаца: <b>{time_text}</b>.\n"
+        "Чтобы изменить:\n"
+        "отправьте время в формате <code>HH:MM</code>",
         parse_mode="HTML",
         # reply_markup=confirm_kb('change_time')
     )
@@ -323,7 +324,7 @@ async def save_time(message: Message, state: FSMContext, sender: Sender, user_id
             raise ValueError
     except:
         await message.answer(
-            'Некорректное время. Формат HH:MM 😈',
+            'Некорректное время. Формат <code>HH:MM</code> 😈',
             reply_markup=cancel_kb()
         )
         return
@@ -337,8 +338,9 @@ async def save_time(message: Message, state: FSMContext, sender: Sender, user_id
     sender_service = sender
     Scheduler.create_user_job(sender_service, user_id, time_text)
 
-    await message.answer(f"Время: {time_text} установлено, планировщик включен ✅",
-                         reply_markup=book_menu(reader))
+    await message.answer(f"⏰ Установлено время отправки абзаца: <b>{time_text}</b>\n"
+                         f"Планировщик включен ✅.\n"
+                         f"Также вы можете запросить абзац книги вручную через /book")
     await state.clear()
 
 

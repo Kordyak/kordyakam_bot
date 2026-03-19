@@ -339,7 +339,8 @@ async def save_time(message: Message, state: FSMContext, sender: Sender, user_id
 
     await message.answer(f"⏰ Установлено время отправки абзаца: <b>{time}</b>\n"
                          f"Планировщик включен ✅.\n"
-                         f"Также вы можете запросить абзац книги вручную через /book")
+                         f"Также вы можете запросить абзац книги вручную через /book",
+                         parse_mode = "HTML")
     await state.clear()
 
 

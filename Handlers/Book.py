@@ -10,7 +10,7 @@ from aiogram.filters import Command
 from FSM.states import UploadBook
 from Keyboards.Book import book_menu
 from Keyboards.Universal import confirm_kb, cancel_kb
-from SQL.RR import ReadRepository, PATH_READ_DB
+from SQL.RR import ReadRepository
 from Services.BookMetadata import BookMetadata
 from Services.Converters import translate_rus_eng
 from Services.Library import Library, PATH_BOOKS, epub_paragraph_generator
@@ -106,11 +106,11 @@ async def show_library(callback: CallbackQuery, state: FSMContext):
 
 # если длинное сообщение, делим на 4096
 async def send_long_message(message, text: str):
-    MAX_MESSAGE_LENGTH = 4096
+    max_message_length = 4096
     current = ""
 
     for line in text.split("\n"):
-        if len(current) + len(line) + 1 > MAX_MESSAGE_LENGTH:
+        if len(current) + len(line) + 1 > max_message_length:
             await message.answer(current)
             current = line
         else:
@@ -222,7 +222,7 @@ async def upload_book_wait(message: Message, bot: Bot, state: FSMContext, user_i
         return
 
     # Вычисляем hash загруженной книги
-    library = Library(PATH_READ_DB)
+    library = Library()
     file_hash = library.calculate_hash(temp_path)
     books_index = library.list_books()  # возвращает {hash: {filename, total_paragraphs}}
 
@@ -263,7 +263,6 @@ async def upload_book_end(message, user_id, name_file, state, rr: ReadRepository
     - Назначаем пользователю
     """
     from pathlib import Path
-    import hashlib
 
     book_path = Path(PATH_BOOKS / name_file)
     file_hash = Library.calculate_hash(book_path)
@@ -320,9 +319,11 @@ async def save_time(message: Message, state: FSMContext, sender: Sender, user_id
 
     try:
         hours, minutes = map(int, time.split(":"))
-        if not (0 <= hours <= 23 and 0 <= minutes <= 59):
+        if time.count(":") != 1:
             raise ValueError
-    except:
+        elif not (0 <= hours <= 23 and 0 <= minutes <= 59):
+            raise ValueError
+    except ValueError:
         await message.answer(
             'Некорректное время. Формат <code>HH:MM</code> 😈',
             reply_markup=cancel_kb()

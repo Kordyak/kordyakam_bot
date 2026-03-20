@@ -7,7 +7,7 @@ from aiogram.types import Message
 from aiogram.filters import Command
 
 from Keyboards.Universal import confirm_kb
-from SQL.RR import ReadRepository
+from SQL.RR_sql import ReadRepository
 
 start_router = Router(name='start')
 

@@ -8,7 +8,7 @@ from aiogram.types import FSInputFile, BufferedInputFile
 
 from Services.BookMetadata import BookMetadata
 from Services.Converters import translate_rus_eng, convert_text_audio
-from SQL.RR import ReadRepository
+from SQL.RR_sql import ReadRepository
 
 from mutagen.mp3 import MP3
 from mutagen.id3 import ID3, APIC, TIT2, TPE1, TALB

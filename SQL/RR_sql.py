@@ -4,6 +4,7 @@ from pathlib import Path
 
 PATH_READ_DB = Path("SQL/read.db")
 
+
 class ReadRepository:
 
     def __init__(self):
@@ -170,19 +171,24 @@ class ReadRepository:
             return new_index, is_completed
 
     # LIBRARY METHODS
-    def list_books(self) -> list[dict]:
+    def list_books(self) -> dict[str, dict]:
         """Возвращает список всех книг в библиотеке"""
         with self._get_connection() as conn:
             rows = conn.execute("""
                 SELECT * FROM books
             """).fetchall()
+        # сначала сортируем по filename (r[1])
+        rows = sorted(rows, key=lambda r: r[1])
 
-        return [{
-            "id": r[0],
-            "filename": r[1],
-            "hash": r[2],
-            "total_paragraphs": r[3]
-             } for r in rows]
+        # затем формируем dict по hash
+        return {
+            r[2]: {
+                "id": r[0],
+                "filename": r[1],
+                "total_paragraphs": r[3]
+            }
+            for r in rows
+        }
 
     def add_book(self, filename: str, file_hash: str, total_paragraphs: int) -> int:
         """Добавляет книгу в библиотеку, возвращает её id"""
@@ -204,8 +210,6 @@ class ReadRepository:
     def delete_book(self, book_id):
         with self._get_connection() as conn:
             conn.execute("DELETE FROM books WHERE id = ?", (book_id,))
-
-
 
     # Получить книгу по hash
     def get_book_by_hash(self, file_hash: str) -> dict | None:
@@ -247,11 +251,6 @@ class ReadRepository:
             """, (telegram_id,))
 
             return cursor.fetchone()
-
-
-
-
-
 
     # Migration BOOKS
     def migrate_books_index(self, books_index_path: Path):

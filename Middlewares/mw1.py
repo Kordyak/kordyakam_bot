@@ -3,7 +3,7 @@ from aiogram import BaseMiddleware
 from aiogram.enums import ChatAction
 from aiogram.types import TelegramObject
 
-from SQL.RR import ReadRepository, PATH_READ_DB
+from SQL.RR_sql import ReadRepository, PATH_READ_DB
 from Services.Reader import Reader
 
 

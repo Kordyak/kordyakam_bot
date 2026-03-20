@@ -1,6 +1,6 @@
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-from SQL.RR import ReadRepository
+from SQL.RR_sql import ReadRepository
 
 scheduler = AsyncIOScheduler()
 

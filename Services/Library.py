@@ -5,7 +5,7 @@ import zipfile
 from bs4 import BeautifulSoup
 from ebooklib import epub, ITEM_DOCUMENT
 
-from SQL.RR import ReadRepository
+from SQL.RR_sql import ReadRepository
 
 PATH_BOOKS = Path("Books")
 
@@ -22,13 +22,6 @@ class Library:
                 sha256.update(chunk)
         return sha256.hexdigest()
 
-    def list_books(self) -> dict[str, dict]:
-        """
-        Возвращает словарь: {hash: {filename, total_paragraphs}}
-        """
-        books = self.db.list_books()
-        return {b["hash"]: {"filename": b["filename"], "total_paragraphs": b["total_paragraphs"]} for b in books}
-
     def add_book(self, book_path: Path):
         """
         Добавляет книгу в библиотеку, если её там ещё нет.
@@ -42,7 +35,7 @@ class Library:
         total_paragraphs = sum(1 for _ in epub_paragraph_generator(book_path))
 
         # Добавляем в базу
-        self.db.insert_book(str(book_path.name), str(book_path), file_hash, total_paragraphs)
+        self.db.add_book(str(book_path.name), file_hash, total_paragraphs)
         return file_hash
 
     def sync_library(self):

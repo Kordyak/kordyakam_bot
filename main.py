@@ -7,7 +7,7 @@ from aiogram.types import BotCommand
 from argostranslate import package
 
 from Middlewares.mw1 import Middleware_typing
-from SQL.RR import ReadRepository
+from SQL.RR_sql import ReadRepository
 from Services.Library import Library
 from Services.Reader import Sender
 from Services.Scheduler import scheduler, Scheduler

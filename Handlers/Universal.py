@@ -5,7 +5,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery
 
 from FSM.states import UploadBook
-from SQL.RR import ReadRepository
+from SQL.RR_sql import ReadRepository
 from Services.Library import Library
 from Services.Scheduler import scheduler
 

@@ -10,7 +10,7 @@ from aiogram.filters import Command
 from FSM.states import UploadBook
 from Keyboards.Book import book_menu
 from Keyboards.Universal import confirm_kb, cancel_kb
-from SQL.RR import ReadRepository
+from SQL.RR_sql import ReadRepository
 from Services.BookMetadata import BookMetadata
 from Services.Converters import translate_rus_eng
 from Services.Library import Library, PATH_BOOKS, epub_paragraph_generator
@@ -59,8 +59,7 @@ async def book_handler(message: Message, state: FSMContext, reader: Reader):
 @book_router.callback_query(F.data == "library")
 async def show_library(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
-    library = Library()
-    books_index = library.list_books()  # {hash: {filename, total_paragraphs}}
+    books_index = ReadRepository().list_books()  # {hash: {filename, total_paragraphs}}
 
     if not books_index:
         await callback.message.answer("В библиотеке пока нет книг 📚")
@@ -146,7 +145,7 @@ async def choose_book_from_library(message: Message, state: FSMContext):
         ]
     )
     await message.answer(
-        f"Что надумал?",
+        f"Далее...",
         reply_markup=kb
     )
     # await state.clear()  # очищаем состояние
@@ -224,7 +223,7 @@ async def upload_book_wait(message: Message, bot: Bot, state: FSMContext, user_i
     # Вычисляем hash загруженной книги
     library = Library()
     file_hash = library.calculate_hash(temp_path)
-    books_index = library.list_books()  # возвращает {hash: {filename, total_paragraphs}}
+    books_index = ReadRepository().list_books() # возвращает {hash: {filename, total_paragraphs}}
 
     # 🔎 Если уже есть по хэшу
     if file_hash in books_index:

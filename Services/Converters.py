@@ -34,7 +34,8 @@ def convert_text_audio(in_text: str, name_file: str, lang: str) -> FSInputFile:
     text = re.sub('https.*', '', string=in_text)
 
     text = re.sub(r'\.\.\.+', '.', text)          # ... → .
-    text = text.replace("'", "")                  # убрать '
+    # text = text.replace(" '", "")                  # убрать '
+    # text = text.replace("' ", "")                  # убрать '
 
     if lang == "en":
         audio = gTTS(text=text, lang=lang, slow=True)

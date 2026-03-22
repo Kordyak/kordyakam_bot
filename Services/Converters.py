@@ -1,4 +1,6 @@
 import os
+import subprocess
+
 from aiogram.types import FSInputFile
 import logging
 import re
@@ -32,18 +34,19 @@ def Clean_text(text: str) -> str:
 
 def convert_text_audio(in_text: str, name_file: str, lang: str) -> FSInputFile:
     text = re.sub('https.*', '', string=in_text)
+    text = re.sub(r'\.\.\.+', '.', text)
 
-    text = re.sub(r'\.\.\.+', '.', text)          # ... → .
-    # text = text.replace(" '", "")                  # убрать '
-    # text = text.replace("' ", "")                  # убрать '
+    mp3_path = name_file + ".mp3"
 
+    # 1. Генерация mp3
     if lang == "en":
         audio = gTTS(text=text, lang=lang, slow=True)
     else:
         audio = gTTS(text=text, lang=lang)
 
-    audio.save(name_file)
-    return FSInputFile(path=os.path.join(name_file))
+    audio.save(mp3_path)
+
+    return FSInputFile(path=mp3_path)
 
 
 def check_word(news: str, words: list) -> str:  # парсинг новостей на слово

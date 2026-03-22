@@ -104,11 +104,11 @@ async def set_argostranslate():
 
 # Reader / Scheduler
 async def set_reader():
-    sender_service = Sender(bot)
-    dispatcher["sender"] = sender_service
+    sender1 = Sender(bot)
+    dispatcher["sender"] = sender1
 
     rr = ReadRepository()
-    Scheduler.restore_all_jobs(sender_service, rr)
+    Scheduler.restore_all_jobs(sender1, rr)
     scheduler.start()
 
 

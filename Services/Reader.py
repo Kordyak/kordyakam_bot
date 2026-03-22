@@ -5,13 +5,14 @@ from io import BytesIO
 
 from aiogram import Bot
 from aiogram.types import FSInputFile, BufferedInputFile
+from mutagen.mp4 import MP4
 
 from Services.BookMetadata import BookMetadata
 from Services.Converters import translate_rus_eng, convert_text_audio
 from SQL.RR_sql import ReadRepository
 
 from mutagen.mp3 import MP3
-from mutagen.id3 import ID3, APIC, TIT2, TPE1, TALB
+from mutagen.id3 import ID3, APIC, TIT2, TPE1, TALB, CHAP, CTOC
 from PIL import Image
 from Services.Library import PATH_BOOKS, epub_paragraph_generator
 
@@ -116,8 +117,14 @@ class Sender:
         title = make_title(chunk)
         audio = convert_text_audio(chunk, title, "en")
 
-        rewrite_mp3_tags(title, reader)
+        rewrite_mp3_tags(audio.filename, reader)
         thumbnail = make_thumbnail(reader.cover_image)
+
+        # Для тайминга аудио
+        duration = get_duration(audio.filename)
+        sentences = split_sentences(chunk)
+        timestamps = build_timestamps(sentences, duration)
+        caption = build_caption(timestamps)
 
         await self.bot.send_audio(
             chat_id=user_id,
@@ -125,11 +132,12 @@ class Sender:
             thumbnail=thumbnail,
             performer=reader.book_title,
             title=title,
+            duration=duration,
             caption=(
                 f"{reader.book_creator} / <b>{reader.book_title}</b>\n"
                 f"Прогресс: <b>{reader.progress} %</b>\n"
                 f"Абзац: <b>№№ {reader.index - len(chunk.splitlines()) + 1} - {reader.index}</b>\n"
-                f"{chunk}"
+                f"{caption}"
             ),
             parse_mode="HTML",
         )
@@ -142,7 +150,70 @@ class Sender:
             parse_mode="HTML",
         )
 
-        os.remove(title)
+        os.remove(audio.filename)
+
+
+
+def split_sentences(text: str) -> list[str]:
+    sentences = re.split(r'(?<=[.!?])\s+', text.strip())
+    return [s.strip() for s in sentences if s.strip()]
+
+
+def build_timestamps(sentences, total_duration):
+    WORD_WEIGHT = 1.0
+    SPACE_WEIGHT = 0.1   # пауза между словами
+    SENTENCE_WEIGHT = 0.1 # пауза между предложениями
+
+    weights = []
+
+    # считаем вес каждого предложения
+    for s in sentences:
+        words = s.split()
+
+        # вес = длина слов + паузы между словами
+        weight = 0
+        for i, w in enumerate(words):
+            weight += len(w) * WORD_WEIGHT
+            if i < len(words) - 1:
+                weight += SPACE_WEIGHT
+
+        weights.append(weight + SENTENCE_WEIGHT)
+
+    total_weight = sum(weights)
+
+    timestamps = []
+    current_time = 0.0
+
+    for i, s in enumerate(sentences):
+        duration = weights[i] / total_weight * total_duration
+
+        timestamps.append((current_time, s))
+
+        current_time += duration
+
+    return timestamps
+
+
+def format_time(seconds: float) -> str:
+    seconds = int(seconds)
+    m = seconds // 60
+    s = seconds % 60
+    return f"{m}:{s:02d}"
+
+
+
+def build_caption(timestamps):
+    lines = []
+    for t, sentence in timestamps:
+        lines.append(f"{format_time(t)} {sentence}")
+    return "\n".join(lines)
+
+
+
+def get_duration(path: str) -> int:
+    audio = MP3(path)
+    return int(audio.info.length)
+
 
 
 # Переписать файл с чистыми тегами

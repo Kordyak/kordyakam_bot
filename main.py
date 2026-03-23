@@ -128,7 +128,7 @@ async def set_argostranslate():
 
 
 # Scheduler
-async def set_reader():
+async def set_scheduler():
     sender = Sender(bot)
     dispatcher["sender"] = sender
 
@@ -142,7 +142,8 @@ async def main():
     await set_argostranslate()
     # await set_whisper()
 
-    await set_reader()
+    await set_scheduler()
+
     library1 = Library()
     library1.sync_library()  # Проверяет папку Books и добавляет отсутствующие книги в SQL
 

@@ -160,9 +160,9 @@ def split_sentences(text: str) -> list[str]:
 
 
 def build_timestamps(sentences, total_duration):
-    WORD_WEIGHT = 1.5
-    SPACE_WEIGHT = 0.5  # пауза между словами
-    SENTENCE_WEIGHT = 1 # пауза между предложениями
+    WORD_WEIGHT = 1
+    SPACE_WEIGHT = 0.2  # пауза между словами
+    SENTENCE_WEIGHT = 0.4 # пауза между предложениями
 
     weights = []
 

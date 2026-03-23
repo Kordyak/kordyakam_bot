@@ -12,7 +12,7 @@ convert_router = Router(name='converter')
 
 
 # Конверт аудио в текст с помощью Whisper
-@convert_router.message(F.voice)
+# @convert_router.message(F.voice)
 async def voice_message_handler(message: Message, model):
     """Обрабатывает голосовые сообщения и переводит их в текст с помощью Whisper."""
     if not model:

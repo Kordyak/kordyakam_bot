@@ -1,6 +1,7 @@
 import json
 import sqlite3
 from pathlib import Path
+from datetime import datetime, timedelta
 
 PATH_READ_DB = Path("SQL/read.db")
 
@@ -49,7 +50,7 @@ class ReadRepository:
 
             """)
 
-    # USER
+    # ============================ USER ============================================
     def get_or_create_user(self, telegram_id: int, username: str | None = None):
 
         with self._get_connection() as conn:
@@ -116,6 +117,25 @@ class ReadRepository:
                 WHERE daily_time IS NOT NULL
             """).fetchall()
 
+        return [
+            {
+                "user_id": r[0],
+                "username": r[1],
+                "daily_time": r[2],
+            }
+            for r in rows
+        ]
+
+
+    def get_users_to_send(self, now: datetime):
+        now_str = now.strftime("%H:%M")
+
+        with self._get_connection() as conn:
+            rows = conn.execute("""
+                SELECT user_id, username, daily_time
+                FROM users
+                WHERE daily_time = ?
+            """, (now_str,)).fetchall()
         return [
             {
                 "user_id": r[0],

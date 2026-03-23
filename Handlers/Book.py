@@ -16,7 +16,7 @@ from Services.Converters import translate_rus_eng
 from Services.Library import Library, PATH_BOOKS, epub_paragraph_generator
 
 from Services.Reader import Sender, Reader
-from Services.Scheduler import Scheduler
+
 
 book_router = Router(name='book')
 
@@ -333,8 +333,8 @@ async def save_time(message: Message, state: FSMContext, sender: Sender, user_id
     rr.save_time(user_id, time)
 
     # 🔥 обновляем scheduler
-    sender_service = sender
-    Scheduler.create_user_job(sender_service, user_id, time)
+    # sender_service = sender
+    # Scheduler.create_user_job(sender_service, user_id, time)
 
     await message.answer(f"⏰ Установлено время отправки абзаца: <b>{time}</b>\n"
                          f"Планировщик включен ✅.\n"

@@ -7,7 +7,6 @@ from aiogram.types import BotCommand
 from argostranslate import package
 
 from Middlewares.mw1 import Middleware_typing
-from SQL.RR_sql import ReadRepository
 from Services.Library import Library
 from Services.Reader import Sender
 from Services.Scheduler import scheduler, Scheduler
@@ -81,6 +80,32 @@ async def set_whisper():
 
 # Устанавливаем АРГО транслятор
 async def set_argostranslate():
+
+    installed_languages = argostranslate.translate.get_installed_languages()
+
+    def is_installed(from_code, to_code):
+        try:
+            from_lang = next(l for l in installed_languages if l.code == from_code)
+            to_lang = next(l for l in installed_languages if l.code == to_code)
+            from_lang.get_translation(to_lang)
+            return True
+        except Exception:
+            return False
+
+    codes = {lang.code for lang in installed_languages}
+
+    # если одного из языков нет — точно нужно ставить
+    if not ("ru" in codes and "en" in codes):
+        need_ru_en = True
+        need_en_ru = True
+    else:
+        need_ru_en = not is_installed("ru", "en")
+        need_en_ru = not is_installed("en", "ru")
+
+    if not (need_ru_en or need_en_ru):
+        print("Все пакеты уже установлены")
+        return
+
     # Обновляем индекс пакетов
     argostranslate.package.update_package_index()
     available_packages = argostranslate.package.get_available_packages()
@@ -102,13 +127,12 @@ async def set_argostranslate():
         print("Пакет en->ru не найден")
 
 
-# Reader / Scheduler
+# Scheduler
 async def set_reader():
-    sender1 = Sender(bot)
-    dispatcher["sender"] = sender1
+    sender = Sender(bot)
+    dispatcher["sender"] = sender
 
-    rr = ReadRepository()
-    Scheduler.restore_all_jobs(sender1, rr)
+    Scheduler(sender)
     scheduler.start()
 
 
@@ -116,7 +140,7 @@ async def main():
     await set_bot()
     await set_bot_commands()
     await set_argostranslate()
-    await set_whisper()
+    # await set_whisper()
 
     await set_reader()
     library1 = Library()

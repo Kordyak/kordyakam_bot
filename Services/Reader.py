@@ -161,8 +161,8 @@ def split_sentences(text: str) -> list[str]:
 
 # ========================= ТАЙМИНГИ ============================
 def build_timestamps(sentences, total_duration):
-    MIN_SENTENCE_DURATION = 0.6
-    SENTENCE_PAUSE = 0.3
+    MIN_SENTENCE_DURATION = 0.9
+    SENTENCE_PAUSE = 0.1
 
     # 1. считаем веса предложений
     weights = []

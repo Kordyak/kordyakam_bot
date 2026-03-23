@@ -2,10 +2,10 @@ import os
 import re
 from pathlib import Path
 from io import BytesIO
+import random
 
 from aiogram import Bot
 from aiogram.types import FSInputFile, BufferedInputFile
-from mutagen.mp4 import MP4
 
 from Services.BookMetadata import BookMetadata
 from Services.Converters import translate_rus_eng, convert_text_audio
@@ -15,6 +15,7 @@ from mutagen.mp3 import MP3
 from mutagen.id3 import ID3, APIC, TIT2, TPE1, TALB, CHAP, CTOC
 from PIL import Image
 from Services.Library import PATH_BOOKS, epub_paragraph_generator
+
 
 # Чтец
 class Reader:
@@ -153,42 +154,63 @@ class Sender:
         os.remove(audio.filename)
 
 
-
 def split_sentences(text: str) -> list[str]:
     sentences = re.split(r'(?<=[.!?])\s+', text.strip())
     return [s.strip() for s in sentences if s.strip()]
 
 
+# ========================= ТАЙМИНГИ ============================
 def build_timestamps(sentences, total_duration):
-    WORD_WEIGHT = 1
-    SPACE_WEIGHT = 0.2  # пауза между словами
-    SENTENCE_WEIGHT = 0.4 # пауза между предложениями
+    MIN_SENTENCE_DURATION = 0.6
+    SENTENCE_PAUSE = 0.3
 
+    # 1. считаем веса предложений
     weights = []
-
-    # считаем вес каждого предложения
     for s in sentences:
         words = s.split()
+        weight = sum(estimate_duration(w) for w in words)
+        weights.append(weight)
 
-        # вес = длина слов + паузы между словами
-        weight = 0
-        for i, w in enumerate(words):
-            weight += len(w) * WORD_WEIGHT
-            if i < len(words) - 1:
-                weight += SPACE_WEIGHT
-        weights.append(weight + SENTENCE_WEIGHT)
+    # 2. добавляем jitter В ВЕСА
+    jittered_weights = [w * random.uniform(0.9, 1.1) for w in weights]
 
-    total_weight = sum(weights)
+    total_weight = sum(jittered_weights)
+
+    # 3. считаем минимальное время (без пауз!)
+    min_total = MIN_SENTENCE_DURATION * len(sentences)
+
+    remaining_time = total_duration - min_total
+
+    if remaining_time < 0:
+        remaining_time = 0
 
     timestamps = []
     current_time = 0.0
 
+    # 4. распределение
     for i, s in enumerate(sentences):
         timestamps.append((current_time, s))
-        duration = weights[i] / total_weight * total_duration
+
+        base = MIN_SENTENCE_DURATION
+
+        dynamic = 0.0
+        if total_weight > 0:
+            dynamic = (jittered_weights[i] / total_weight) * remaining_time
+
+        duration = base + dynamic
+
         current_time += duration
 
+        # пауза только между предложениями
+        if i < len(sentences) - 1:
+            current_time += SENTENCE_PAUSE
+
     return timestamps
+
+
+def estimate_duration(word):
+    vowels = len(re.findall(r'[aeiouаеёиоуыэюя]', word.lower()))
+    return len(word) * 0.6 + vowels * 0.4
 
 
 def format_time(seconds: float) -> str:
@@ -198,7 +220,6 @@ def format_time(seconds: float) -> str:
     return f"{m}:{s:02d}"
 
 
-
 def build_caption(timestamps):
     lines = []
     for t, sentence in timestamps:
@@ -206,11 +227,9 @@ def build_caption(timestamps):
     return "\n".join(lines)
 
 
-
 def get_duration(path: str) -> int:
     audio = MP3(path)
     return int(audio.info.length)
-
 
 
 # Переписать файл с чистыми тегами

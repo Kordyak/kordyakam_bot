@@ -18,10 +18,10 @@ from Services.Library import Library, PATH_BOOKS, epub_paragraph_generator
 from Services.Reader import Sender, Reader
 
 
-book_router = Router(name='book')
+router_book = Router(name='book')
 
 
-@book_router.message(Command('start'))
+@router_book.message(Command('start'))
 async def run_rdp(message: Message, state: FSMContext):
     await state.clear()
     text = (
@@ -36,7 +36,7 @@ async def run_rdp(message: Message, state: FSMContext):
     await message.answer(text, parse_mode="HTML")
 
 
-@book_router.message(Command('book'))
+@router_book.message(Command('book'))
 async def book_handler(message: Message, state: FSMContext, reader: Reader):
     await state.clear()
     if not reader.book_title:
@@ -56,7 +56,7 @@ async def book_handler(message: Message, state: FSMContext, reader: Reader):
 
 
 # 📚 Показать библиотеку ================================
-@book_router.callback_query(F.data == "library")
+@router_book.callback_query(F.data == "library")
 async def show_library(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
     books_index = ReadRepository().list_books()  # {hash: {filename, total_paragraphs}}
@@ -120,7 +120,7 @@ async def send_long_message(message, text: str):
 
 
 # Выбора номера книги из библиотеки
-@book_router.message(UploadBook.waiting_book_number)
+@router_book.message(UploadBook.waiting_book_number)
 async def choose_book_from_library(message: Message, state: FSMContext):
     data = await state.get_data()
     book_map = data.get("book_map", {})
@@ -152,7 +152,7 @@ async def choose_book_from_library(message: Message, state: FSMContext):
 
 
 # Описание книги
-@book_router.callback_query(F.data == "book_description")
+@router_book.callback_query(F.data == "book_description")
 async def book_description(callback: CallbackQuery, state: FSMContext):
     message = callback.message
 
@@ -190,7 +190,7 @@ def clean_html(text: str) -> str:
 
 
 # *** Загрузка своей книги КОЛБЭК ***
-@book_router.callback_query(F.data == "upload_book")
+@router_book.callback_query(F.data == "upload_book")
 async def upload_book_start(callback: CallbackQuery, state: FSMContext):
     await callback.answer()  # 🔴 обязательно
     await callback.message.answer("Отправь свой EPUB файл 📚 для загрузки")
@@ -198,7 +198,7 @@ async def upload_book_start(callback: CallbackQuery, state: FSMContext):
 
 
 # Загрузка своей книги waiting_epub
-@book_router.message(UploadBook.waiting_epub, F.document)
+@router_book.message(UploadBook.waiting_epub, F.document)
 async def upload_book_wait(message: Message, bot: Bot, state: FSMContext, user_id, rr: ReadRepository):
     if not message.document.file_name.endswith(".epub"):
         await message.answer(
@@ -245,7 +245,7 @@ async def upload_book_wait(message: Message, bot: Bot, state: FSMContext, user_i
 
 
 # Загрузка книги из библиотек (КОЛБЭК)
-@book_router.callback_query(F.data.startswith("upload_library_book:"))
+@router_book.callback_query(F.data.startswith("upload_library_book:"))
 async def upload_library_book(callback: CallbackQuery, state: FSMContext, user_id, rr: ReadRepository):
     await callback.answer()
     # await callback.message.delete()
@@ -291,11 +291,11 @@ async def upload_book_end(message, user_id, name_file, state, rr: ReadRepository
 
 
 # *** Задаем Время ***
-@book_router.callback_query(F.data == "change_time")
+@router_book.callback_query(F.data == "change_time")
 async def change_time(callback: CallbackQuery, rr: ReadRepository, user_id: int, state: FSMContext):
     await callback.answer()  # 🔴 обязательно
 
-    rr.get_or_create_user(user_id, callback.from_user.username)
+    rr.get_or_create_user(user_id)
     current_time = rr.get_time(user_id)
 
     time_text = current_time if current_time else "не задано"
@@ -312,7 +312,7 @@ async def change_time(callback: CallbackQuery, rr: ReadRepository, user_id: int,
 
 
 # Задаем Время waiting_time
-@book_router.message(UploadBook.waiting_time)
+@router_book.message(UploadBook.waiting_time)
 async def save_time(message: Message, state: FSMContext, sender: Sender, user_id, rr: ReadRepository):
     time = message.text.strip()
 
@@ -344,7 +344,7 @@ async def save_time(message: Message, state: FSMContext, sender: Sender, user_id
 
 
 # Информация о текущей книги
-@book_router.callback_query(F.data == "current_book")
+@router_book.callback_query(F.data == "current_book")
 async def show_book(callback: CallbackQuery, state: FSMContext, reader: Reader):
     await callback.answer()
 
@@ -365,7 +365,7 @@ async def show_book(callback: CallbackQuery, state: FSMContext, reader: Reader):
 
 
 # Отправить абзац
-@book_router.callback_query(F.data == "next_chunk")
+@router_book.callback_query(F.data == "next_chunk")
 async def next_chunk_handler(callback: CallbackQuery, sender: Sender, user_id):
     await callback.answer()
     temp_msg = await callback.message.edit_text("Готовим абзац книги...")
@@ -384,7 +384,7 @@ async def next_chunk_handler(callback: CallbackQuery, sender: Sender, user_id):
 
 
 # *** Установить номер абзаца ***
-@book_router.callback_query(F.data == 'set_paragraf_index')
+@router_book.callback_query(F.data == 'set_paragraf_index')
 async def change_index(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
     await callback.message.delete()
@@ -393,7 +393,7 @@ async def change_index(callback: CallbackQuery, state: FSMContext):
 
 
 # установить номер абзаца
-@book_router.message(UploadBook.waiting_index)
+@router_book.message(UploadBook.waiting_index)
 async def save_index(message: Message, state: FSMContext, user_id, reader: Reader, rr: ReadRepository):
     if not reader:
         await message.answer("Книга не найдена!")
@@ -423,7 +423,7 @@ async def save_index(message: Message, state: FSMContext, user_id, reader: Reade
 
 
 # Удалить книгу
-@book_router.callback_query(F.data == 'del_book')
+@router_book.callback_query(F.data == 'del_book')
 async def del_book(callback: CallbackQuery):
     await callback.answer()
     await callback.message.delete()

@@ -6,15 +6,15 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.types import BotCommand
 from argostranslate import package
 
-from Middlewares.mw1 import Middleware_typing
+from Middlewares.mw1 import Middleware_typing, Middleware_access_maintenenace
 from Services.Library import Library
 from Services.Reader import Sender
 from Services.Scheduler import scheduler, Scheduler
 
-from Handlers.Universal import universal_router
-from Handlers.Maintenance import start_router
+from Handlers.Universal import router_universal
+from Handlers.Maintenance import router_maintenance
 from Handlers.Converters import convert_router
-from Handlers.Book import book_router
+from Handlers.Book import router_book
 
 from config import Config, load_config
 
@@ -51,13 +51,16 @@ async def set_bot():
     )
 
     dispatcher = Dispatcher()
-    dispatcher.update.middleware(Middleware_typing())
-    # dispatcher.callback_query.middleware(Middleware_callback())
 
-    dispatcher.include_router(start_router)
+    dispatcher.message.middleware(Middleware_typing())
+    dispatcher.callback_query.middleware(Middleware_typing())
+    router_maintenance.message.middleware(Middleware_access_maintenenace())
+    router_maintenance.callback_query.middleware(Middleware_access_maintenenace())
+
+    dispatcher.include_router(router_maintenance)
     dispatcher.include_router(convert_router)
-    dispatcher.include_router(book_router)
-    dispatcher.include_router(universal_router)
+    dispatcher.include_router(router_book)
+    dispatcher.include_router(router_universal)
 
 
 async def set_bot_commands():

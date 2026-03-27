@@ -55,10 +55,20 @@ class ReadRepository:
 
         with self._get_connection() as conn:
             cursor = conn.execute(
-                "SELECT user_id FROM users WHERE user_id=?",
+                "SELECT username FROM users WHERE user_id=?",
                 (telegram_id,)
             )
             row = cursor.fetchone()
+
+            if row:
+                # пользователь есть
+                existing_username = row[0]
+                # если username передан и в базе его нет → обновляем
+                if username != existing_username:
+                    conn.execute(
+                        "UPDATE users SET username = ? WHERE user_id = ?",
+                        (username, telegram_id)
+                    )
 
             if row:
                 return telegram_id
@@ -70,19 +80,21 @@ class ReadRepository:
 
             return telegram_id
 
-    def get_i_chunk(self, user_id: int) -> int:
-        with self._get_connection() as conn:
-            cur = conn.execute("SELECT chunk_index FROM users WHERE user_id = ?", (user_id,))
-            row = cur.fetchone()
-            return row[0] if row else 0
+    # def get_i_chunk(self, user_id: int) -> int:
+    #     with self._get_connection() as conn:
+    #         cur = conn.execute("SELECT chunk_index FROM users WHERE user_id = ?", (user_id,))
+    #         row = cur.fetchone()
+    #         return row[0] if row else 0
 
     def save_i_chunk(self, telegram_id: int, idx: int):
         with self._get_connection() as conn:
-            conn.execute("""
+            conn.execute(
+                """
                 UPDATE users
                 SET chunk_index=?
                 WHERE user_id=?
-            """, (idx, telegram_id))
+            """, (idx, telegram_id)
+            )
 
     def set_current_book(self, telegram_id: int, book_id: int):
         """Назначает пользователю книгу по id, сбрасывает прогресс"""
@@ -126,7 +138,6 @@ class ReadRepository:
             for r in rows
         ]
 
-
     def get_users_to_send(self, now: datetime):
         now_str = now.strftime("%H:%M")
 
@@ -155,42 +166,58 @@ class ReadRepository:
                 WHERE user_id = ?
             """, (telegram_id,))
 
-    # INCREMENT PROGRESS
-    def increment_progress(self, telegram_id: int, step: int = 1) -> tuple[int, bool]:
+    # # INCREMENT PROGRESS
+    # def increment_progress(self, telegram_id: int, step: int = 1) -> tuple[int, bool]:
+    #
+    #     with self._get_connection() as conn:
+    #
+    #         cursor = conn.execute("""
+    #             SELECT u.chunk_index, b.total_paragraphs
+    #             FROM users u
+    #             JOIN books b ON u.current_book_id = b.id
+    #             WHERE u.user_id = ?
+    #         """, (telegram_id,))
+    #
+    #         row = cursor.fetchone()
+    #
+    #         if not row:
+    #             return 0, False  # книги нет
+    #
+    #         chunk_index, total_paragraphs = row
+    #
+    #         new_index = chunk_index + step
+    #
+    #         if new_index >= total_paragraphs:
+    #             new_index = total_paragraphs
+    #             is_completed = True
+    #         else:
+    #             is_completed = False
+    #
+    #         conn.execute("""
+    #             UPDATE users
+    #             SET chunk_index = ?
+    #             WHERE user_id = ?
+    #         """, (new_index, telegram_id))
+    #
+    #         return new_index, is_completed
 
+    # GET user STATE
+    def get_user_state(self, telegram_id: int):
         with self._get_connection() as conn:
-
             cursor = conn.execute("""
-                SELECT u.chunk_index, b.total_paragraphs
+                SELECT 
+                    u.chunk_index,
+                    u.daily_time,
+                    b.filename,
+                    b.total_paragraphs
                 FROM users u
-                JOIN books b ON u.current_book_id = b.id
+                LEFT JOIN books b ON u.current_book_id = b.id
                 WHERE u.user_id = ?
             """, (telegram_id,))
 
-            row = cursor.fetchone()
+            return cursor.fetchone()
 
-            if not row:
-                return 0, False  # книги нет
-
-            chunk_index, total_paragraphs = row
-
-            new_index = chunk_index + step
-
-            if new_index >= total_paragraphs:
-                new_index = total_paragraphs
-                is_completed = True
-            else:
-                is_completed = False
-
-            conn.execute("""
-                UPDATE users
-                SET chunk_index = ?
-                WHERE user_id = ?
-            """, (new_index, telegram_id))
-
-            return new_index, is_completed
-
-    # LIBRARY METHODS
+    # ======================== BOOK =======================================
     def list_books(self) -> dict[str, dict]:
         """Возвращает список всех книг в библиотеке"""
         with self._get_connection() as conn:
@@ -256,21 +283,29 @@ class ReadRepository:
                 }
         return None
 
-    # GET user STATE
-    def get_user_state(self, telegram_id: int):
-        with self._get_connection() as conn:
-            cursor = conn.execute("""
-                SELECT 
-                    u.chunk_index,
-                    u.daily_time,
-                    b.filename,
-                    b.total_paragraphs
-                FROM users u
-                LEFT JOIN books b ON u.current_book_id = b.id
-                WHERE u.user_id = ?
-            """, (telegram_id,))
+    #============================== SERVICE ============================
 
-            return cursor.fetchone()
+    def get_users_progress(self):
+        query = """
+        SELECT 
+            u.user_id,
+            u.username,
+            b.filename,
+            u.chunk_index,
+            b.total_paragraphs,
+            ROUND(
+                CASE 
+                    WHEN b.total_paragraphs > 0 
+                    THEN u.chunk_index * 100.0 / b.total_paragraphs
+                    ELSE 0
+                END, 2
+            ) AS progress_percent
+        FROM users u
+        LEFT JOIN books b ON b.id = u.current_book_id
+        """
+
+        with self._get_connection() as conn:
+            return conn.execute(query).fetchall()
 
     # Migration BOOKS
     def migrate_books_index(self, books_index_path: Path):

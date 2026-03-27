@@ -25,12 +25,12 @@ class Reader:
     description = None
     cover_image = None
 
-    def __init__(self, user_id: int, username: str | None = None):
+    def __init__(self, user_id: int):
         self.user_id = user_id
         self.rr = ReadRepository()
 
         # Создаём пользователя, если нет
-        self.rr.get_or_create_user(user_id, username)
+        self.rr.get_or_create_user(user_id)
 
         # Загружаем состояние пользователя
         state = self.rr.get_user_state(user_id)

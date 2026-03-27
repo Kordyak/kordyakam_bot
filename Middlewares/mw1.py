@@ -1,37 +1,26 @@
 import asyncio
 from aiogram import BaseMiddleware
 from aiogram.enums import ChatAction
-from aiogram.types import TelegramObject
+from aiogram.types import TelegramObject, Message, CallbackQuery
 
 from SQL.RR_sql import ReadRepository, PATH_READ_DB
 from Services.Reader import Reader
+from typing import Callable, Awaitable, Dict, Any
 
 
 class Middleware_typing(BaseMiddleware):
     async def __call__(self, handler, event: TelegramObject, data: dict):
         bot = data.get("bot")
-        chat_id = None
-        user_id = None
+        chat_id = event.chat.id
+        user_id = event.from_user.id
+        user_name = event.from_user.full_name
 
-        if event.message:
-            user_id = event.message.from_user.id
-        elif event.callback_query:
-            user_id = event.callback_query.from_user.id
-
-        if user_id:
-            data["user_id"] = user_id
-
-            reader = Reader(user_id)
-
-            data["reader"] = reader
-
-        rr = ReadRepository()
+        data["user_id"] = user_id
+        data["user_name"] = user_name
+        reader = Reader(user_id)
+        data["reader"] = reader
+        rr = ReadRepository().get_or_create_user(user_id,user_name)
         data["rr"] = rr
-
-        if event.message:
-            chat_id = event.message.chat.id
-        elif event.callback_query:
-            chat_id = event.callback_query.message.chat.id
 
         typing_task = asyncio.create_task(self._typing_loop(bot, chat_id))
 
@@ -48,3 +37,23 @@ class Middleware_typing(BaseMiddleware):
                 await asyncio.sleep(4)
         except asyncio.CancelledError:
             pass
+
+
+
+ADMIN_ID = 995657021
+
+class Middleware_access_maintenenace(BaseMiddleware):
+    async def __call__(
+            self,
+            handler: Callable[[TelegramObject, Dict[str, Any]], Awaitable[Any]],
+            event: TelegramObject,
+            data: dict
+    )->Any:
+        user_id = event.from_user.id
+
+        # если не админ — просто не пускаем дальше
+        if user_id != ADMIN_ID:
+            return  # блокируем обработку
+
+        # если админ — прокидываем дальше
+        return await handler(event, data)

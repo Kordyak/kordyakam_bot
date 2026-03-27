@@ -9,11 +9,11 @@ from SQL.RR_sql import ReadRepository
 from Services.Library import Library
 from Services.Scheduler import scheduler
 
-universal_router = Router(name='universal')
+router_universal = Router(name='universal')
 
 
 # Универсальный обработчик подтверждения ==========
-@universal_router.callback_query(F.data.startswith("confirm:"))
+@router_universal.callback_query(F.data.startswith("confirm:"))
 async def handle_confirm(callback: CallbackQuery, state: FSMContext, user_id, rr: ReadRepository):
     await callback.answer()
 
@@ -44,7 +44,7 @@ async def handle_confirm(callback: CallbackQuery, state: FSMContext, user_id, rr
 
 
 # Кнопка отмена
-@universal_router.callback_query(F.data.startswith("cancel:"))
+@router_universal.callback_query(F.data.startswith("cancel:"))
 async def handle_cancel(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
     await state.clear()
@@ -53,7 +53,7 @@ async def handle_cancel(callback: CallbackQuery, state: FSMContext):
 
 
 # Сброс состояния
-@universal_router.callback_query(F.data == "cancel_index")
+@router_universal.callback_query(F.data == "cancel_index")
 async def cancel_index(callback: CallbackQuery, state: FSMContext):
     await callback.answer('Запрос отменен!')
     await state.clear()

@@ -11,7 +11,6 @@ from typing import Callable, Awaitable, Dict, Any
 class Middleware_typing(BaseMiddleware):
     async def __call__(self, handler, event: TelegramObject, data: dict):
         bot = data.get("bot")
-        chat_id = event.chat.id
         user_id = event.from_user.id
         user_name = event.from_user.full_name
 
@@ -22,6 +21,10 @@ class Middleware_typing(BaseMiddleware):
         rr = ReadRepository().get_or_create_user(user_id,user_name)
         data["rr"] = rr
 
+        if isinstance(event, CallbackQuery):
+            chat_id = event.message.chat.id
+        else:
+            chat_id = event.chat.id
         typing_task = asyncio.create_task(self._typing_loop(bot, chat_id))
 
         try:

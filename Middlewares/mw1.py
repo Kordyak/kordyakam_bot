@@ -18,7 +18,8 @@ class Middleware_typing(BaseMiddleware):
         data["user_name"] = user_name
         reader = Reader(user_id)
         data["reader"] = reader
-        rr = ReadRepository().get_or_create_user(user_id,user_name)
+        rr = ReadRepository()
+        rr.get_or_create_user(user_id,user_name)
         data["rr"] = rr
 
         if isinstance(event, CallbackQuery):

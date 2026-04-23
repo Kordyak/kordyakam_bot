@@ -51,15 +51,18 @@ async def whatsup(message: Message):
     for r in rows:
         id = r[0]
         username = r[1]
-        filename = r[2].replace('.epub','')
+        filename = r[2]
         percent = r[5] or 0
 
         if filename:
-            line = (f"👤{username}:{id} 📖{filename}: {percent}%")
+            line = (f"👤 {username}, id: {id}"
+                    f"\n📖 <code>{filename}</code>"
+                    f"\nprogress: {percent}%\n")
         else:
-            line = (f"👤{username}:{id} 📖not read")
+            line = (f"👤 {username}:{id} 📖not read\n")
+
         lines.append(line)
 
-    await message.answer("\n".join(lines))
+    await message.answer("\n".join(lines), parse_mode="HTML")
 
 

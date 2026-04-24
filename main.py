@@ -155,7 +155,7 @@ async def main():
         await bot.delete_webhook(drop_pending_updates=True)
         await dispatcher.start_polling(bot, drop_pending_updates=True)
     finally:
-        logger.info("Bot session close")
+        logger.error("Bot session close")
         await bot.session.close()
 
 

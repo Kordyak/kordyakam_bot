@@ -27,10 +27,9 @@ async def run_rdp(message: Message, state: FSMContext):
     text = (
         f"Привет, друг! Меня зовут <b>{message.bot._me.first_name}</b>.\n\n"
         "Я умею:\n"
-        "• Читать книги в формате <b>EPUB</b> на английском по заданному времени — команда /book\n"
-        "• Переводить (RU / EN) и обратно\n"
-        "• Конвертировать текст в аудио (RU / EN)\n"
-        "• Конвертировать аудио в текст\n"
+        "• Читать книги в формате <b>EPUB</b> на английском по расписанию /book\n"
+        "• Переводить (RU/EN) и обратно\n"
+        "• Конвертировать текст в аудио (RU,EN)\n"
     )
 
     await message.answer(text, parse_mode="HTML")

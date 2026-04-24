@@ -151,8 +151,12 @@ async def main():
     library1.sync_library()  # Проверяет папку Books и добавляет отсутствующие книги в SQL
 
     logger.info("Bot polling started")
-    await bot.delete_webhook(drop_pending_updates=True)  # очистка всех старых апдейтов
-    await dispatcher.start_polling(bot, drop_pending_updates=True)
+    try:
+        await bot.delete_webhook(drop_pending_updates=True)
+        await dispatcher.start_polling(bot, drop_pending_updates=True)
+    finally:
+        logger.info("Bot session close")
+        await bot.session.close()
 
 
 if __name__ == "__main__":

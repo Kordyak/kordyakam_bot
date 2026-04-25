@@ -37,7 +37,8 @@ def convert_text_audio(in_text: str, name_file: str, lang: str) -> FSInputFile:
     text = re.sub(r'\.\.\.+', '.', text)
 
     # убирает ' в начале и конце каждого предложения.
-    text = re.sub(r"(?:(?<=^)|(?<=[.!?]\s))'|'(?=[.!?])", "", text)
+    text = re.sub(r"(?<!\w)'|'(?!\w)", "", text)
+    #text = re.sub(r"(?:[,.!?\s])'|'(?=[.!?])|^'|'$", "", text)
 
     mp3_path = name_file + ".mp3"
 

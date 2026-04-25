@@ -35,8 +35,9 @@ def Clean_text(text: str) -> str:
 def convert_text_audio(in_text: str, name_file: str, lang: str) -> FSInputFile:
     text = re.sub('https.*', '', string=in_text)
     text = re.sub(r'\.\.\.+', '.', text)
-    # убирает ' перед концом предложения (., !, ?, или конец строки)
-    text = re.sub(r"'(?=[.!?]|$)", "", text)
+
+    # убирает ' в начале и конце каждого предложения.
+    text = re.sub(r"(?:(?<=^)|(?<=[.!?]\s))'|'(?=[.!?])", "", text)
 
     mp3_path = name_file + ".mp3"
 

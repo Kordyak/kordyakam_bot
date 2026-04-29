@@ -139,24 +139,25 @@ async def set_scheduler():
     scheduler.start()
 
 
+
+
+
+
 async def main():
     await set_bot()
     await set_bot_commands()
     await set_argostranslate()
-    # await set_whisper()
-
     await set_scheduler()
 
     library1 = Library()
-    library1.sync_library()  # Проверяет папку Books и добавляет отсутствующие книги в SQL
+    library1.sync_library()
 
     logger.info("Bot polling started")
-    try:
+
+    async with bot:
         await bot.delete_webhook(drop_pending_updates=True)
         await dispatcher.start_polling(bot, drop_pending_updates=True)
-    finally:
-        logger.error("Bot session close")
-        await bot.session.close()
+
 
 
 if __name__ == "__main__":

@@ -1,9 +1,10 @@
 import io
+import os
 
 from aiogram import Router, F
 from aiogram.filters import Command
 from aiogram.filters.command import CommandObject
-from aiogram.types import Message
+from aiogram.types import Message, FSInputFile
 
 from Services.Converters import *
 from Services.Reader import make_title
@@ -111,12 +112,16 @@ async def handler(message: Message, command: CommandObject):
     if text:
 
         name_file = make_title(text)
-        audio_file: FSInputFile = convert_text_audio(text, name_file, lang)
-        await message.reply_audio(audio_file,
-                                  performer=message.bot._me.first_name,
-                                  title=name_file,
-                                  )
+        await convert_text_audio(text, name_file + ".mp3", lang)
+        audio_file: FSInputFile = FSInputFile(name_file + ".mp3")
+
+        await message.reply_audio(
+            audio=audio_file,
+            performer=message.bot._me.first_name,
+            title=name_file,
+        )
         os.remove(audio_file.filename)
+
     else:
         await message.answer('Текст не обнаружен, вставьте его после команды!')
 

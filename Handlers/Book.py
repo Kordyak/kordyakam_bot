@@ -375,7 +375,7 @@ async def next_chunk_handler(callback: CallbackQuery, sender: Sender, user_id):
     # )
 
     try:
-        await sender.send_daily_text(user_id)
+        await sender.send_chunk(user_id)
     finally:
         # typing_task.cancel()  # остановить typing
         # Удалится даже если будет ошибка

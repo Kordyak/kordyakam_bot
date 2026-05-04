@@ -1,10 +1,6 @@
-import os
-import subprocess
-
-from aiogram.types import FSInputFile
 import logging
 import re
-from gtts import gTTS
+import edge_tts
 import argostranslate.translate
 
 import requests
@@ -25,32 +21,73 @@ def translate_rus_eng(in_text: str, how_translate: str) -> str:
         return argostranslate.translate.translate(text, "ru", "en")
 
 
-def Clean_text(text: str) -> str:
+def clean_text(text: str) -> str:
     text = re.sub(r'[^\w\s.,!?;:()\-–—\"\']', '', text)  # Удаляет эмодзи и специальные символы
     text = re.sub(r"[\*\[\]_]", "", text)  # удаляем символы
     text = re.sub(r"\(https.*?\)", "", text).strip()  # удаляем ссылки из текста
     return text
 
 
-def convert_text_audio(in_text: str, name_file: str, lang: str) -> FSInputFile:
-    text = re.sub('https.*', '', string=in_text)
-    text = re.sub(r'\.\.\.+', '.', text)
+def tokenize(text: str) -> list[str]:
+    return re.findall(r"\w+", text.lower())
 
-    # убирает ' в начале и конце каждого предложения.
-    text = re.sub(r"(?<!\w)'|'(?!\w)", "", text)
-    #text = re.sub(r"(?:[,.!?\s])'|'(?=[.!?])|^'|'$", "", text)
 
-    mp3_path = name_file + ".mp3"
+async def convert_text_audio(text: str, mp3_path: str, lang: str, rate = "-12%") -> str:
+    text = re.sub('https.*', '', string=text)
+    # text = re.sub(r'\.\.\.+', '.', text)
+    # text = re.sub(r"(?<!\w)'|'(?!\w)", "", text)  # убирает ' в начале и конце каждого предложения.
 
-    # 1. Генерация mp3
+    # voice = "ru-RU-DmitryNeural"  # Самый популярный мужской RU голос. Спокойный и очень разборчивый.
+    # voice = "ru-RU-PavelNeural"  # Чуть более живой и эмоциональный.
+    # voice = "en-US-GuyNeural"  # Очень чистый американский голос.
+    # voice = "en-US-AndrewNeural"  # Более спокойный и "дикторский".
+    # voice = "en-US-BrianNeural"  # Хорошо подходит для книг и long-text.
+
+    # Генерация mp3
     if lang == "en":
-        audio = gTTS(text=text, lang=lang, slow=True)
+        communicate = edge_tts.Communicate(text=text, voice="en-US-BrianNeural",rate=rate)
     else:
-        audio = gTTS(text=text, lang=lang)
+        communicate = edge_tts.Communicate(text=text, voice="ru-RU-PavelNeural")
 
-    audio.save(mp3_path)
+    timestamps = []
 
-    return FSInputFile(path=mp3_path)
+    # сразу открываем mp3
+    with open(mp3_path, "wb") as f:
+        async for chunk in communicate.stream():
+            if chunk["type"] == "audio":
+                f.write(chunk["data"])
+            elif chunk["type"] == "SentenceBoundary":
+                timestamps.append((
+                    chunk["offset"] / 10_000_000,
+                    chunk["text"].strip()
+                ))
+
+    caption = build_caption(timestamps)
+    return caption
+
+
+
+
+def format_time(seconds: float) -> str:
+    seconds = int(seconds)
+    m = seconds // 60
+    s = seconds % 60
+    return f"{m}:{s:02d}"
+
+
+def build_caption(timestamps) -> str:
+    lines = []
+    for t, sentence in timestamps:
+        lines.append(f"{format_time(t)} {sentence}")
+    return "\n".join(lines)
+
+
+
+
+
+
+
+
 
 
 def check_word(news: str, words: list) -> str:  # парсинг новостей на слово

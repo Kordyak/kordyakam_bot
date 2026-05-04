@@ -27,7 +27,7 @@ class Scheduler:
         now = datetime.now()
         users = rr.get_users_to_send(now)
         for user in users:
-            await self.sender.send_daily_text(user["user_id"])
+            await self.sender.send_chunk(user["user_id"])
 
 
     # @classmethod

@@ -154,11 +154,19 @@ async def main():
 
     logger.info("Bot polling started")
 
-    async with bot:
-        await bot.delete_webhook(drop_pending_updates=True)
-        await dispatcher.start_polling(bot, drop_pending_updates=True)
+    try:
+        async with bot:
+            await bot.delete_webhook(drop_pending_updates=True)
+            await dispatcher.start_polling(bot, drop_pending_updates=True)
+    except Exception as e:
+        await bot.session.close()
+        logger.error(f"❌ Ошибка подключения: {e}", exc_info=True)
+        input("Нажми Enter чтобы не закрывать консоль...")
+
 
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+
+        asyncio.run(main())
+

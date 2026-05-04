@@ -82,6 +82,9 @@ class Reader:
         return "\n".join(buffer).strip()
 
 
+
+
+
 # Ленивое чтение epub
 class LazyEpubReader:
     def __init__(self, path, saved_index):
@@ -102,12 +105,15 @@ class LazyEpubReader:
             return None
 
 
+
+
+
 # Отправитель
 class Sender:
     def __init__(self, bot: Bot):
         self.bot = bot
 
-    async def send_daily_text(self, user_id: int):
+    async def send_chunk(self, user_id: int):
         reader = Reader(user_id)
         chunk = reader.get_next_chunk()
 
@@ -116,24 +122,22 @@ class Sender:
             return
 
         title = make_title(chunk)
-        audio = convert_text_audio(chunk, title, "en")
+        caption = await convert_text_audio(chunk, title + ".mp3", "en")
 
-        rewrite_mp3_tags(audio.filename, reader)
-        thumbnail = make_thumbnail(reader.cover_image)
+        audio = FSInputFile(title + ".mp3")
 
-        # Для тайминга аудио
-        duration = get_duration(audio.filename)
-        sentences = split_sentences(chunk)
-        timestamps = build_timestamps(sentences, duration)
-        caption = build_caption(timestamps)
+        rewrite_mp3_tags(audio.filename, reader) # К файлу привязываем ТЭГИ заголовок, создатель
 
+        thumbnail = make_thumbnail(reader.cover_image) # Миниатюра картинки для бота
+
+        # Отправляем аудио
         await self.bot.send_audio(
             chat_id=user_id,
             audio=audio,
             thumbnail=thumbnail,
             performer=reader.book_title,
             title=title,
-            duration=duration,
+            duration=int(MP3(audio.filename).info.length),
             caption=(
                 f"{reader.book_creator} / <b>{reader.book_title}</b>\n"
                 f"Прогресс: <b>{reader.progress} %</b>\n"
@@ -142,100 +146,19 @@ class Sender:
             ),
             parse_mode="HTML",
         )
-
-        # Перевод
+        # Отправляем скрытый перевод
         chunk_rus = translate_rus_eng(chunk, "/en_ru")
         await self.bot.send_message(
             chat_id=user_id,
             text=f"<tg-spoiler>{chunk_rus}</tg-spoiler>",
             parse_mode="HTML",
         )
-
-        os.remove(audio.filename)
-
-
-def split_sentences(text: str) -> list[str]:
-    sentences = re.split(r'(?<=[.!?])\s+', text.strip())
-    return [s.strip() for s in sentences if s.strip()]
+        os.remove(audio.filename) # удаляем аудио
 
 
-# ========================= ТАЙМИНГИ ============================
-def build_timestamps(sentences, total_duration):
-    MIN_SENTENCE_DURATION = 0.9
-    SENTENCE_PAUSE = 0.1
-
-    # 1. считаем веса предложений
-    weights = []
-    for s in sentences:
-        words = s.split()
-        weight = sum(estimate_duration(w) for w in words)
-        weights.append(weight)
-
-    # 2. добавляем jitter В ВЕСА
-    jittered_weights = [w * random.uniform(0.9, 1.1) for w in weights]
-
-    total_weight = sum(jittered_weights)
-
-    # 3. считаем минимальное время (без пауз!)
-    min_total = MIN_SENTENCE_DURATION * len(sentences)
-
-    remaining_time = total_duration - min_total
-
-    if remaining_time < 0:
-        remaining_time = 0
-
-    timestamps = []
-    current_time = 0.0
-
-    # 4. распределение
-    for i, s in enumerate(sentences):
-        timestamps.append((current_time, s))
-
-        base = MIN_SENTENCE_DURATION
-
-        dynamic = 0.0
-        if total_weight > 0:
-            dynamic = (jittered_weights[i] / total_weight) * remaining_time
-
-        duration = base + dynamic
-
-        current_time += duration
-
-        # пауза только между предложениями
-        if i < len(sentences) - 1:
-            current_time += SENTENCE_PAUSE
-
-    return timestamps
-
-
-def estimate_duration(word):
-    vowels = len(re.findall(r'[aeiouаеёиоуыэюя]', word.lower()))
-    return len(word) * 0.6 + vowels * 0.4
-
-
-def format_time(seconds: float) -> str:
-    seconds = int(seconds)
-    m = seconds // 60
-    s = seconds % 60
-    return f"{m}:{s:02d}"
-
-
-def build_caption(timestamps):
-    lines = []
-    for t, sentence in timestamps:
-        lines.append(f"{format_time(t)} {sentence}")
-    return "\n".join(lines)
-
-
-def get_duration(path: str) -> int:
-    audio = MP3(path)
-    return int(audio.info.length)
-
-
-# Переписать файл с чистыми тегами
+# К файлу привязываем ТЭГИ заголовок, создатель
 def rewrite_mp3_tags(file_path: str, reader: Reader):
     tags = ID3()
-
     tags.add(APIC(
         encoding=3,
         mime="image/jpeg",
@@ -243,11 +166,9 @@ def rewrite_mp3_tags(file_path: str, reader: Reader):
         desc="Cover",
         data=reader.cover_image
     ))
-
     tags.add(TIT2(encoding=3, text=reader.book_title))
     tags.add(TPE1(encoding=3, text=reader.book_creator))
     tags.add(TALB(encoding=3, text=reader.book_title))
-
     tags.save(file_path, v2_version=3)
 
 

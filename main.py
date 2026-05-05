@@ -147,7 +147,7 @@ async def set_scheduler():
 async def main():
     await set_bot()
     await set_bot_commands()
-    await set_argostranslate()
+    # await set_argostranslate()
     await set_scheduler()
 
     library1 = Library()

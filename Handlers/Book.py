@@ -219,7 +219,7 @@ async def upload_book_start(callback: CallbackQuery, state: FSMContext):
 
 # Загрузка своей книги waiting_epub
 @router_book.message(UploadBook.waiting_epub, F.document)
-async def upload_book_wait(message: Message, bot: Bot, state: FSMContext, user_id, rr: DB_library):
+async def upload_book_wait(message: Message, bot: Bot, state: FSMContext, user_id, db: DB_library):
     if not message.document.file_name.endswith(".epub"):
         await message.answer(
             'Это не epub 😅',
@@ -261,20 +261,20 @@ async def upload_book_wait(message: Message, bot: Bot, state: FSMContext, user_i
         # сохраняем книгу в books_index
         library.add_book(final_path)
 
-    await upload_book_end(message, user_id, final_path, state, rr)
+    await upload_book_end(message, user_id, final_path, state, db)
 
 
 # Загрузка книги из библиотек (КОЛБЭК)
 @router_book.callback_query(F.data.startswith("upload_library_book:"))
-async def upload_library_book(callback: CallbackQuery, state: FSMContext, user_id, rr: DB_library):
+async def upload_library_book(callback: CallbackQuery, state: FSMContext, user_id, db: DB_library):
     await callback.answer()
     # await callback.message.delete()
     name_file = callback.data.split(":")[1]
-    await upload_book_end(callback.message, user_id, name_file, state, rr)
+    await upload_book_end(callback.message, user_id, name_file, state, db)
 
 
 # *** Загрузка книги КОНЕЦ // ФУНКЦИЯ из библ / или своя загруженная ***
-async def upload_book_end(message, user_id, name_file, state, rr: DB_library):
+async def upload_book_end(message, user_id, name_file, state, db: DB_library):
     """
     Завершение загрузки книги:
     - Проверяем, есть ли книга в библиотеке по хэшу
@@ -287,17 +287,17 @@ async def upload_book_end(message, user_id, name_file, state, rr: DB_library):
     file_hash = Library.calculate_hash(book_path)
 
     # Проверяем, есть ли книга в библиотеке
-    book = rr.get_book_by_hash(file_hash)
+    book = db.get_book_by_hash(file_hash)
     if not book:
         # Получаем количество абзацев
         total_paragraphs = sum(1 for _ in epub_paragraph_generator(book_path))
         # Добавляем книгу в библиотеку
-        book_id = rr.add_book(str(name_file), file_hash, total_paragraphs)
+        book_id = db.add_book(str(name_file), file_hash, total_paragraphs)
     else:
         book_id = book["id"]
 
     # Назначаем книгу пользователю
-    rr.set_current_book(user_id, book_id)
+    db.set_current_book(user_id, book_id)
 
     # Создаем Reader для пользователя
     reader = Reader(user_id)
@@ -390,7 +390,7 @@ async def next_chunk_handler(callback: CallbackQuery, sender: Sender, user_id):
         await temp_msg.delete()
 
 
-# *** Установить номер абзаца ***
+# Задаем номер абзаца ***
 @router_book.callback_query(F.data == 'set_paragraf_index')
 async def change_index(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
@@ -398,22 +398,18 @@ async def change_index(callback: CallbackQuery, state: FSMContext):
     await callback.message.answer('Укажите № абзаца от которого начнем читать')
     await state.set_state(UploadBook.waiting_paragraph)
 
-
-# установить номер абзаца
 @router_book.message(UploadBook.waiting_paragraph)
-async def save_index(message: Message, state: FSMContext, user_id, reader: Reader, rr: DB_library):
+async def save_index(message: Message, state: FSMContext, user_id, reader: Reader, db: DB_library):
     if not reader:
         await message.answer("Книга не найдена!")
         await state.clear()
         return
-
     if not message.text.isdigit():
         await message.answer(
             'Укажите № абзаца от которого начнем читать',
             reply_markup=cancel_kb()
         )
         return
-
     index = int(message.text)
     if index < 0 or index > reader.total_paragraphs:
         await message.answer(
@@ -422,7 +418,7 @@ async def save_index(message: Message, state: FSMContext, user_id, reader: Reade
         )
         return
 
-    rr.save_i_chunk(user_id, index)
+    db.save_i_chunk(user_id, index)
     reader = Reader(user_id)
 
     await message.answer("✅ Индекс абзаца обновлён!", reply_markup=book_menu(reader))

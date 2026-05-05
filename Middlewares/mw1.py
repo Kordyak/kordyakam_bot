@@ -18,9 +18,9 @@ class Middleware_typing(BaseMiddleware):
         data["user_name"] = user_name
         reader = Reader(user_id)
         data["reader"] = reader
-        rr = DB_library()
-        rr.get_or_create_user(user_id,user_name)
-        data["db"] = rr
+        db = DB_library()
+        db.get_or_create_user(user_id,user_name)
+        data["db"] = db
 
         if isinstance(event, CallbackQuery):
             chat_id = event.message.chat.id

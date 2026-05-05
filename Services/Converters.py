@@ -1,7 +1,8 @@
 import logging
 import re
 import edge_tts
-import argostranslate.translate
+
+from deep_translator import GoogleTranslator
 
 import requests
 import asyncio
@@ -16,9 +17,11 @@ def translate_rus_eng(in_text: str, how_translate: str) -> str:
     else:
         text = in_text
     if re.match('/en_ru', how_translate):
-        return argostranslate.translate.translate(text, "en", "ru")
+        # return argostranslate.translate.translate(text, "en", "ru")
+        return GoogleTranslator(source='en', target='ru').translate(text)
     elif re.match('/ru_en', how_translate):
-        return argostranslate.translate.translate(text, "ru", "en")
+        # return argostranslate.translate.translate(text, "ru", "en")
+        return GoogleTranslator(source='en', target='ru').translate(text)
 
 
 def clean_text(text: str) -> str:

@@ -5,7 +5,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery
 
 from FSM.states import UploadBook
-from SQL.RR_sql import ReadRepository
+from SQL.DB_library import DB_library
 from Services.Library import Library
 from Services.Scheduler import scheduler
 
@@ -14,7 +14,7 @@ router_universal = Router(name='universal')
 
 # Универсальный обработчик подтверждения ==========
 @router_universal.callback_query(F.data.startswith("confirm:"))
-async def handle_confirm(callback: CallbackQuery, state: FSMContext, user_id, rr: ReadRepository):
+async def handle_confirm(callback: CallbackQuery, state: FSMContext, user_id, rr: DB_library):
     await callback.answer()
 
     action = callback.data.split(":")[1]

@@ -32,7 +32,7 @@ def tokenize(text: str) -> list[str]:
     return re.findall(r"\w+", text.lower())
 
 
-async def convert_text_audio(text: str, mp3_path: str, lang: str, rate = "-12%") -> str:
+async def convert_text_audio(text: str, mp3_path: str, lang: str, reading_speed = 100) -> str:
     text = re.sub('https.*', '', string=text)
     # text = re.sub(r'\.\.\.+', '.', text)
     # text = re.sub(r"(?<!\w)'|'(?!\w)", "", text)  # убирает ' в начале и конце каждого предложения.
@@ -45,6 +45,7 @@ async def convert_text_audio(text: str, mp3_path: str, lang: str, rate = "-12%")
 
     # Генерация mp3
     if lang == "en":
+        rate = str(reading_speed - 100) + "%"
         communicate = edge_tts.Communicate(text=text, voice="en-US-BrianNeural",rate=rate)
     else:
         communicate = edge_tts.Communicate(text=text, voice="ru-RU-PavelNeural")

@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 PATH_READ_DB = Path("SQL/read.db")
 
 
-class ReadRepository:
+class DB_library:
 
     def __init__(self):
         self.db_path = PATH_READ_DB
@@ -49,6 +49,15 @@ class ReadRepository:
             CREATE INDEX IF NOT EXISTS idx_books_hash ON books(hash);
 
             """)
+
+            # # migration
+            # columns = [row[1] for row in conn.execute("PRAGMA table_info(users)")]
+            #
+            # if "reading_speed" not in columns:
+            #     conn.execute("""
+            #         ALTER TABLE users
+            #         ADD COLUMN reading_speed INTEGER DEFAULT 88
+            #     """)
 
     # ============================ USER ============================================
     def get_or_create_user(self, telegram_id: int, username: str | None = None):
@@ -97,9 +106,10 @@ class ReadRepository:
             """, (book_id, telegram_id))
 
     def get_time(self, telegram_id: int) -> str | None:
-        with self._get_connection() as conn:
-            row = conn.execute(
-                "SELECT daily_time FROM users WHERE user_id=?", (telegram_id,)
+        with self._get_connection() as connection:
+            row = connection.execute(
+                "SELECT daily_time FROM users WHERE user_id=?",
+                (telegram_id,)
             ).fetchone()
             return row[0] if row else None
 
@@ -110,6 +120,22 @@ class ReadRepository:
                 SET daily_time=?
                 WHERE user_id=?
             """, (time, telegram_id))
+
+    def get_reading_speed(self, telegram_id: int) -> str | None:
+        with self._get_connection() as conn:
+            row = conn.execute(
+                "SELECT reading_speed FROM users WHERE user_id=?",
+                (telegram_id,)
+            ).fetchone()
+            return row[0] if row else None
+
+    def save_reading_speed(self, telegram_id: int, speed: int):
+        with self._get_connection() as conn:
+            conn.execute("""
+                UPDATE users
+                SET reading_speed=?
+                WHERE user_id=?
+            """, (speed, telegram_id))
 
     def list_users_with_time(self) -> list[dict]:
         with self._get_connection() as conn:
@@ -164,7 +190,8 @@ class ReadRepository:
                     u.chunk_index,
                     u.daily_time,
                     b.filename,
-                    b.total_paragraphs
+                    b.total_paragraphs,
+                    u.reading_speed
                 FROM users u
                 LEFT JOIN books b ON u.current_book_id = b.id
                 WHERE u.user_id = ?

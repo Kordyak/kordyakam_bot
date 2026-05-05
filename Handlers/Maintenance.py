@@ -8,9 +8,9 @@ from aiogram.filters import Command
 from tokenizers.decoders import Replace
 
 from Keyboards.Universal import confirm_kb
-from SQL.RR_sql import ReadRepository
+from SQL.DB_library import DB_library
 
-router_maintenance = Router(name='start')
+router_maintenance = Router(name='maintenance')
 
 
 # start call_process_by_time
@@ -38,16 +38,16 @@ async def stop_bot(message: Message):
 @router_maintenance.message(Command("sql"))
 async def migration(message: Message):
     await message.answer('Сервисный режим SQL')
-    # rr = ReadRepository(Path("SQL/read.db"))
+    # db = DB_library(Path("SQL/read.db"))
     # repo.migrate_books_index(Path("Books/books_index.json"))
     # repo.migrate_states(Path("Users"))
-    # user = rr.get_user_state(user_id)
+    # user = db.get_user_state(user_id)
     # print("")
 
 @router_maintenance.message(Command('whatsup'))
 async def whatsup(message: Message):
     lines = []
-    rows = ReadRepository().get_users_progress()
+    rows = DB_library().get_users_progress()
     for r in rows:
         id = r[0]
         username = r[1]

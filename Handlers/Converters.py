@@ -9,11 +9,11 @@ from aiogram.types import Message, FSInputFile
 from Services.Converters import *
 from Services.Reader import make_title
 
-convert_router = Router(name='converter')
+router_converter = Router(name='converter')
 
 
 # Конверт аудио в текст с помощью Whisper
-# @convert_router.message(F.voice)
+# @router_converter.message(F.voice)
 async def voice_message_handler(message: Message, model):
     """Обрабатывает голосовые сообщения и переводит их в текст с помощью Whisper."""
     if not model:
@@ -69,7 +69,7 @@ async def voice_message_handler(message: Message, model):
         await temp_msg.delete()
 
 
-@convert_router.message(Command('ru_en', 'en_ru'))
+@router_converter.message(Command('ru_en', 'en_ru'))
 async def handler(message: Message):
     how_translate = message.text.split(' ')[0]
     if message.reply_to_message:
@@ -85,7 +85,7 @@ async def handler(message: Message):
         await message.answer('Текст не обнаружен, вставьте его после команды!')
 
 
-@convert_router.message(Command('audio_eng', 'audio_ru'))
+@router_converter.message(Command('audio_eng', 'audio_ru'))
 async def handler(message: Message, command: CommandObject):
     temp_msg = await message.answer('Подготавливаю аудио!')
 

@@ -20,6 +20,7 @@ def book_menu(reader: Reader):
         [InlineKeyboardButton(text=f'Прогресс {reader.progress}%, Абзац: №{reader.index}',
                               callback_data='set_paragraf_index')],
         [InlineKeyboardButton(text=f"⏰ График отправки абзаца: {reader.daily_time}", callback_data="change_time")],
+        [InlineKeyboardButton(text=f"🏃🏻 Скорость чтения: {reader.reading_speed}%", callback_data="reading_speed")],
         [InlineKeyboardButton(text=f'❌ Удалить "{reader.book_title}"', callback_data="del_book")],
     ])
 

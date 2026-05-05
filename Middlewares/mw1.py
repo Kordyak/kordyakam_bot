@@ -3,7 +3,7 @@ from aiogram import BaseMiddleware
 from aiogram.enums import ChatAction
 from aiogram.types import TelegramObject, Message, CallbackQuery
 
-from SQL.RR_sql import ReadRepository, PATH_READ_DB
+from SQL.DB_library import DB_library, PATH_READ_DB
 from Services.Reader import Reader
 from typing import Callable, Awaitable, Dict, Any
 
@@ -18,9 +18,9 @@ class Middleware_typing(BaseMiddleware):
         data["user_name"] = user_name
         reader = Reader(user_id)
         data["reader"] = reader
-        rr = ReadRepository()
+        rr = DB_library()
         rr.get_or_create_user(user_id,user_name)
-        data["rr"] = rr
+        data["db"] = rr
 
         if isinstance(event, CallbackQuery):
             chat_id = event.message.chat.id

@@ -5,14 +5,14 @@ import zipfile
 from bs4 import BeautifulSoup
 from ebooklib import epub, ITEM_DOCUMENT
 
-from SQL.RR_sql import ReadRepository
+from SQL.DB_library import DB_library
 
 PATH_BOOKS = Path("Books")
 
 
 class Library:
     def __init__(self):
-        self.db = ReadRepository()
+        self.db = DB_library()
 
     @staticmethod
     def calculate_hash(path: Path) -> str:

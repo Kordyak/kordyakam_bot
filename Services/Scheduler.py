@@ -3,7 +3,7 @@ from datetime import datetime
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from sympy.physics.units import minutes
 
-from SQL.RR_sql import ReadRepository
+from SQL.DB_library import DB_library
 from Services.Reader import Sender
 
 scheduler = AsyncIOScheduler()
@@ -11,8 +11,8 @@ scheduler = AsyncIOScheduler()
 
 class Scheduler:
     """
-    Планировщик ежедневных задач пользователей через ReadRepository.
-    Все взаимодействия с БД идут через методы ReadRepository.
+    Планировщик ежедневных задач пользователей через DB_library.
+    Все взаимодействия с БД идут через методы DB_library.
     """
     def __init__(self, sender: Sender):
         self.sender = sender
@@ -23,7 +23,7 @@ class Scheduler:
         )
 
     async def send_all_users(self):
-        rr = ReadRepository()
+        rr = DB_library()
         now = datetime.now()
         users = rr.get_users_to_send(now)
         for user in users:
@@ -31,9 +31,9 @@ class Scheduler:
 
 
     # @classmethod
-    # def restore_all_jobs(cls, sender_service, rr: ReadRepository):
-    #     """Восстанавливает все задачи для пользователей из ReadRepository"""
-    #     users = rr.list_users_with_time()
+    # def restore_all_jobs(cls, sender_service, db: DB_library):
+    #     """Восстанавливает все задачи для пользователей из DB_library"""
+    #     users = db.list_users_with_time()
     #     if not users:
     #         print("No users to restore")
     #         return

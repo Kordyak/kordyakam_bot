@@ -6,10 +6,11 @@ import random
 
 from aiogram import Bot
 from aiogram.types import FSInputFile, BufferedInputFile
+from sympy.physics.units import speed
 
 from Services.BookMetadata import BookMetadata
 from Services.Converters import translate_rus_eng, convert_text_audio
-from SQL.RR_sql import ReadRepository
+from SQL.DB_library import DB_library
 
 from mutagen.mp3 import MP3
 from mutagen.id3 import ID3, APIC, TIT2, TPE1, TALB, CHAP, CTOC
@@ -27,18 +28,19 @@ class Reader:
 
     def __init__(self, user_id: int):
         self.user_id = user_id
-        self.rr = ReadRepository()
+        self.db = DB_library()
 
         # Создаём пользователя, если нет
-        self.rr.get_or_create_user(user_id)
+        self.db.get_or_create_user(user_id)
 
         # Загружаем состояние пользователя
-        state = self.rr.get_user_state(user_id)
+        state = self.db.get_user_state(user_id)
 
         self.index = state[0] or 0  # chunk_index
         self.daily_time = state[1]
         self.book_name = Path(str(state[2]))
         self.total_paragraphs = state[3] or 0  # total_paragraphs
+        self.reading_speed = state[4] or 0  # reading_speed
 
         path_file = Path(PATH_BOOKS / self.book_name)
 
@@ -77,7 +79,7 @@ class Reader:
                 break
 
         # Сохраняем прогресс
-        self.rr.save_i_chunk(self.user_id, self.index)
+        self.db.save_i_chunk(self.user_id, self.index)
 
         return "\n".join(buffer).strip()
 
@@ -116,13 +118,14 @@ class Sender:
     async def send_chunk(self, user_id: int):
         reader = Reader(user_id)
         chunk = reader.get_next_chunk()
+        reading_speed = reader.reading_speed
 
         if not chunk:
             await self.bot.send_message(user_id, "Книга закончилась 📚")
             return
 
         title = make_title(chunk)
-        caption = await convert_text_audio(chunk, title + ".mp3", "en")
+        caption = await convert_text_audio(chunk, title + ".mp3", "en", reading_speed)
 
         audio = FSInputFile(title + ".mp3")
 
@@ -139,9 +142,9 @@ class Sender:
             title=title,
             duration=int(MP3(audio.filename).info.length),
             caption=(
-                f"{reader.book_creator} / <b>{reader.book_title}</b>\n"
-                f"Прогресс: <b>{reader.progress} %</b>\n"
-                f"Абзац: <b>№№ {reader.index - len(chunk.splitlines()) + 1} - {reader.index}</b>\n"
+                f"{reader.book_creator}, <b>{reader.book_title}</b>\n"
+                f"Progress: <b>{reader.progress} %</b>\n"
+                f"Paragraph: <b>№№ {reader.index - len(chunk.splitlines()) + 1} - {reader.index}</b>\n"
                 f"{caption}"
             ),
             parse_mode="HTML",

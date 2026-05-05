@@ -60,7 +60,7 @@ def tokenize(text: str) -> list[str]:
     return re.findall(r"\w+", text.lower())
 
 
-async def convert_text_audio(text: str, mp3_path: str, lang: str, reading_speed = 100) -> str:
+async def convert_text_audio(text: str, path_mp3: str, lang: str, reading_speed = 100) -> str:
     text = re.sub('https.*', '', string=text)
     # text = re.sub(r'\.\.\.+', '.', text)
     # text = re.sub(r"(?<!\w)'|'(?!\w)", "", text)  # убирает ' в начале и конце каждого предложения.
@@ -80,8 +80,8 @@ async def convert_text_audio(text: str, mp3_path: str, lang: str, reading_speed 
 
     timestamps = []
 
-    # сразу открываем mp3
-    with open(mp3_path, "wb") as f:
+    # СОхраняем mp3 и создаем тайминги одновременно, т.к. поток, второй раз не обратиться
+    with open(path_mp3, "wb") as f:
         async for chunk in communicate.stream():
             if chunk["type"] == "audio":
                 f.write(chunk["data"])

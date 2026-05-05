@@ -172,7 +172,7 @@ async def book_description(callback: CallbackQuery, state: FSMContext):
         await message.answer(caption)
 
     # Описание на русском
-    description_ru = translate_rus_eng(description, "/en_ru")
+    description_ru = await translate_rus_eng(description, "/en_ru")
     await message.answer(
         text=f"<tg-spoiler>{description_ru}</tg-spoiler>",
         parse_mode="HTML",

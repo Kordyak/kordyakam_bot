@@ -10,18 +10,43 @@ import asyncio
 logger = logging.getLogger(__name__)
 
 
-def translate_rus_eng(in_text: str, how_translate: str) -> str:
-    if re.match(r"/en_ru", in_text) or re.match(r"/ru_en", in_text):
-        arr = in_text.split(' ')[1:]
-        text = " ".join(arr)
+# singleton translators
+translator_en_ru = GoogleTranslator(source='en', target='ru')
+translator_ru_en = GoogleTranslator(source='ru', target='en')
+async def translate_rus_eng(in_text: str, how_translate: str) -> str:
+
+    # если текст начинается с команды
+    if re.match(r"^/(en_ru|ru_en)", in_text):
+        text = " ".join(in_text.split()[1:])
     else:
         text = in_text
-    if re.match('/en_ru', how_translate):
-        # return argostranslate.translate.translate(text, "en", "ru")
-        return GoogleTranslator(source='en', target='ru').translate(text)
-    elif re.match('/ru_en', how_translate):
-        # return argostranslate.translate.translate(text, "ru", "en")
-        return GoogleTranslator(source='en', target='ru').translate(text)
+
+    text = text.strip()
+
+    if not text:
+        return ""
+
+    if how_translate == "/en_ru":
+        translator = translator_en_ru
+
+    elif how_translate == "/ru_en":
+        translator = translator_ru_en
+
+    else:
+        return text
+
+    try:
+        # deep-translator sync -> выносим в отдельный поток
+        result = await asyncio.to_thread(
+            translator.translate,
+            text
+        )
+
+        return result
+
+    except Exception as e:
+        print(f"Ошибка перевода: {e}")
+        return "Ошибка перевода 😢"
 
 
 def clean_text(text: str) -> str:

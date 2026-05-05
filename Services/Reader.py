@@ -150,7 +150,7 @@ class Sender:
             parse_mode="HTML",
         )
         # Отправляем скрытый перевод
-        chunk_rus = translate_rus_eng(chunk, "/en_ru")
+        chunk_rus = await translate_rus_eng(chunk, "/en_ru")
         await self.bot.send_message(
             chat_id=user_id,
             text=f"<tg-spoiler>{chunk_rus}</tg-spoiler>",

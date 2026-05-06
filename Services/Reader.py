@@ -37,7 +37,7 @@ class Reader:
         # Загружаем состояние пользователя
         state = self.db.get_user_state(user_id)
 
-        self.index = state[0] or 0  # chunk_index
+        self.paragraph = state[0] or 0  # paragraph
         self.daily_time = state[1]
         self.book_name = Path(str(state[2]))
         self.total_paragraphs = state[3] or 0  # total_paragraphs
@@ -53,34 +53,34 @@ class Reader:
             self.cover_image = metadata.get("cover_image")
 
             # Ленивое чтение epub
-            self.lazy_read = LazyEpubReader(path_file, self.index)
+            self.lazy_read = LazyEpubReader(path_file, self.paragraph)
 
     @property
     def progress(self):
         if self.total_paragraphs == 0:
             return 0
-        return round((self.index / self.total_paragraphs) * 100, 1)
+        return round((self.paragraph / self.total_paragraphs) * 100, 1)
 
     def get_next_chunk(self, min_len=300):
-        if self.index >= self.total_paragraphs:
+        if self.paragraph >= self.total_paragraphs:
             return None
 
         buffer = []
         current_len = 0
 
-        while self.index < self.total_paragraphs:
+        while self.paragraph < self.total_paragraphs:
             paragraph = self.lazy_read.get_next_paragraph()
 
             if paragraph is None:
                 break
             buffer.append(paragraph)
             current_len += len(paragraph)
-            self.index += 1
+            self.paragraph += 1
             if current_len >= min_len:
                 break
 
         # Сохраняем прогресс
-        self.db.save_i_chunk(self.user_id, self.index)
+        self.db.save_i_chunk(self.user_id, self.paragraph)
 
         return "\n".join(buffer).strip()
 
@@ -145,7 +145,7 @@ class Sender:
             caption=(
                 f"{reader.book_creator}, <b>{reader.book_title}</b>\n"
                 f"Progress: <b>{reader.progress} %</b>\n"
-                f"Paragraph: <b>№№ {reader.index - len(chunk.splitlines()) + 1} - {reader.index}</b>\n"
+                f"Paragraph: <b>№№ {reader.paragraph - len(chunk.splitlines()) + 1} - {reader.paragraph}</b>\n"
                 f"{caption}"
             ),
             parse_mode="HTML",

@@ -145,17 +145,17 @@ async def set_scheduler():
 
 
 async def main():
-    await set_bot()
-    await set_bot_commands()
-    # await set_argostranslate()
-    await set_scheduler()
-
-    library1 = Library()
-    library1.sync_library()
-
-    logger.info("Bot polling started")
-
     try:
+        await set_bot()
+        await set_bot_commands()
+        # await set_argostranslate()
+        await set_scheduler()
+
+        library1 = Library()
+        library1.sync_library()
+
+        logger.info("Bot polling started")
+
         async with bot:
             await bot.delete_webhook(drop_pending_updates=True)
             await dispatcher.start_polling(bot, drop_pending_updates=True)

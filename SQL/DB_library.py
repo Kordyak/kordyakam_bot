@@ -335,7 +335,7 @@ class DB_library:
                 with open(state_file, "r", encoding="utf-8") as f:
                     state = json.load(f)
 
-                index = state.get("index", 0)
+                index = state.get("paragraph", 0)
                 daily_time = state.get("time", "08:00")
                 book_path = state.get("book_path")
 

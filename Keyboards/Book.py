@@ -17,10 +17,9 @@ def book_menu(reader: Reader):
         [InlineKeyboardButton(text=f'📖 Описание "{reader.book_title}"', callback_data="current_book")],
         # [InlineKeyboardButton(text=f"🔄 Загрузить свою книгу (.epub)", callback_data="upload_book")],
         [InlineKeyboardButton(text="📚 Библиотека", callback_data="library")],
-        [InlineKeyboardButton(text=f'🔖 Задать № абзаца, текущий {reader.index}',
-                              callback_data='set_paragraf_index')],
-        [InlineKeyboardButton(text=f"⏰ Время получения абзаца: {reader.daily_time}", callback_data="change_time")],
-        [InlineKeyboardButton(text=f"🏃‍➡️ Задать скорость чтения, текущая {reader.reading_speed}%", callback_data="reading_speed")],
+        [InlineKeyboardButton(text=f"⏰ Задать время чтения, текущее: {reader.daily_time}", callback_data="change_time")],
+        [InlineKeyboardButton(text=f"🏃‍➡️ Задать скорость чтения, текущая: {reader.reading_speed}%", callback_data="reading_speed")],
+        [InlineKeyboardButton(text=f'🔖 Задать № абзаца, текущий: {reader.paragraph}', callback_data='set_paragraf_index')],
         [InlineKeyboardButton(text=f'❌ Удалить "{reader.book_title}"', callback_data="del_book")],
     ])
 

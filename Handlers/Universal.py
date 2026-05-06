@@ -43,17 +43,10 @@ async def handle_confirm(callback: CallbackQuery, state: FSMContext, user_id, rr
         exit()
 
 
+
 # Кнопка отмена
-@router_universal.callback_query(F.data.startswith("cancel:"))
-async def handle_cancel(callback: CallbackQuery, state: FSMContext):
-    await callback.answer()
-    await state.clear()
-    action = callback.data.split(":")[1]
-    await callback.message.edit_text("👌Оставляем без изменений")
-
-
-# Сброс состояния
-@router_universal.callback_query(F.data == "cancel_index")
+@router_universal.callback_query(F.data == "cancel")
 async def cancel_index(callback: CallbackQuery, state: FSMContext):
     await callback.answer('Запрос отменен!')
+    await callback.message.delete()
     await state.clear()

@@ -392,10 +392,11 @@ async def next_chunk_handler(callback: CallbackQuery, sender: Sender, user_id):
 
 # Задаем номер абзаца ***
 @router_book.callback_query(F.data == 'set_paragraf_index')
-async def change_index(callback: CallbackQuery, state: FSMContext):
+async def change_index(callback: CallbackQuery, state: FSMContext, reader: Reader):
     await callback.answer()
     await callback.message.delete()
-    await callback.message.answer('Укажите № абзаца от которого начнем читать')
+    await callback.message.answer("Укажите № абзаца c которого начнем читать\n"
+                                  f"Введите число от 1 до {reader.total_paragraphs}")
     await state.set_state(UploadBook.waiting_paragraph)
 
 @router_book.message(UploadBook.waiting_paragraph)
@@ -404,17 +405,19 @@ async def save_index(message: Message, state: FSMContext, user_id, reader: Reade
         await message.answer("Книга не найдена!")
         await state.clear()
         return
+
     if not message.text.isdigit():
         await message.answer(
-            "Укажите № абзаца c которого начнем читать\n"
-            f"Введите число от 1 до {reader.total_paragraphs}",
+            f"Укажите число, без текста",
             reply_markup=cancel_kb()
         )
         return
-    index = int(message.text)-1
+
+    index = int(message.text) - 1
+
     if index < 0 or index > reader.total_paragraphs:
         await message.answer(
-            f"Введите число от 0 до {reader.total_paragraphs}",
+            f"Введите число в диапазоне от 1 до {reader.total_paragraphs}",
             reply_markup=cancel_kb()
         )
         return

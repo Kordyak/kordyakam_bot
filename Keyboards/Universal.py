@@ -20,7 +20,7 @@ def confirm_kb(action: str) -> InlineKeyboardMarkup:
 def cancel_kb() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="❌ Отмена", callback_data="cancel_index")]
+            [InlineKeyboardButton(text="❌ Отмена", callback_data="cancel")]
         ]
     )
 

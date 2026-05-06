@@ -1,3 +1,4 @@
+import math
 import os
 import re
 from pathlib import Path
@@ -140,7 +141,7 @@ class Sender:
             thumbnail=thumbnail,
             performer=reader.book_title,
             title=title,
-            duration=int(MP3(audio.filename).info.length),
+            duration=math.ceil(MP3(audio.filename).info.length),
             caption=(
                 f"{reader.book_creator}, <b>{reader.book_title}</b>\n"
                 f"Progress: <b>{reader.progress} %</b>\n"

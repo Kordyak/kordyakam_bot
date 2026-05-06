@@ -353,7 +353,7 @@ async def change_reading_speed(callback: CallbackQuery, db: DB_library, user_id:
     await callback.answer()
     reading_speed = db.get_reading_speed(user_id)
     await callback.message.edit_text(
-        f"🏃🏻 Сейчас для вас установлена скорость чтения <code>{reading_speed}</code>\n"
+        f"🏃‍➡️ Сейчас для вас установлена скорость чтения <code>{reading_speed}</code>\n"
         f"Вы можете уменьшить либо увеличить скорость от 50 до 150 (диапазон разборчивости)",
         parse_mode="HTML"
     )
@@ -375,7 +375,7 @@ async def save_reading_speed(message: Message, state: FSMContext, user_id: int, 
         return
     db.save_reading_speed(user_id, speed)
     await message.answer(
-        f"🏃🏻Скорость чтения обновлена, {speed}%"
+        f"🏃‍➡️ Скорость чтения обновлена, {speed}%"
     )
     await state.clear()
 
@@ -406,11 +406,12 @@ async def save_index(message: Message, state: FSMContext, user_id, reader: Reade
         return
     if not message.text.isdigit():
         await message.answer(
-            'Укажите № абзаца от которого начнем читать',
+            "Укажите № абзаца c которого начнем читать\n"
+            f"Введите число от 1 до {reader.total_paragraphs}",
             reply_markup=cancel_kb()
         )
         return
-    index = int(message.text)
+    index = int(message.text)-1
     if index < 0 or index > reader.total_paragraphs:
         await message.answer(
             f"Введите число от 0 до {reader.total_paragraphs}",

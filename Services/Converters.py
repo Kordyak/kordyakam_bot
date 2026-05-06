@@ -60,11 +60,10 @@ def tokenize(text: str) -> list[str]:
     return re.findall(r"\w+", text.lower())
 
 
-async def convert_text_audio(text: str, path_mp3: str, lang: str, reading_speed = 100) -> str:
+async def convert_text_audio(text: str, path_mp3: str, lang: str, speed = 100) -> str:
     text = re.sub('https.*', '', string=text)
     # text = re.sub(r'\.\.\.+', '.', text)
     # text = re.sub(r"(?<!\w)'|'(?!\w)", "", text)  # убирает ' в начале и конце каждого предложения.
-
     # voice = "ru-RU-DmitryNeural"  # Самый популярный мужской RU голос. Спокойный и очень разборчивый.
     # voice = "ru-RU-PavelNeural"  # Чуть более живой и эмоциональный.
     # voice = "en-US-GuyNeural"  # Очень чистый американский голос.
@@ -73,14 +72,13 @@ async def convert_text_audio(text: str, path_mp3: str, lang: str, reading_speed 
 
     # Генерация mp3
     if lang == "en":
-        rate = str(reading_speed - 100) + "%"
-        communicate = edge_tts.Communicate(text=text, voice="en-US-BrianNeural",rate=rate)
+        rate = f"{speed-100:+d}%"
+        communicate = edge_tts.Communicate(text=text,voice="en-US-BrianNeural",rate=rate)
     else:
-        communicate = edge_tts.Communicate(text=text, voice="ru-RU-PavelNeural")
-
-    timestamps = []
+        communicate = edge_tts.Communicate(text=text, voice="ru-RU-SvetlanaNeural")
 
     # СОхраняем mp3 и создаем тайминги одновременно, т.к. поток, второй раз не обратиться
+    timestamps = []
     with open(path_mp3, "wb") as f:
         async for chunk in communicate.stream():
             if chunk["type"] == "audio":
@@ -90,9 +88,10 @@ async def convert_text_audio(text: str, path_mp3: str, lang: str, reading_speed 
                     chunk["offset"] / 10_000_000,
                     chunk["text"].strip()
                 ))
-
     caption = build_caption(timestamps)
     return caption
+
+
 
 
 

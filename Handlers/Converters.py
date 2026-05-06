@@ -101,20 +101,15 @@ async def handler(message: Message, command: CommandObject):
             else:
                 text = message.reply_to_message.caption
 
-    if not check_english_content(text):  # Проверяет, является ли текст преимущественно английским
-        await message.reply("Текст преимущественно (70%) не на английском!!!")
-
     if command.command == "audio_ru":
         lang = "ru"
     else:
         lang = "en"
 
     if text:
-
         name_file = make_title(text)
         await convert_text_audio(text, name_file + ".mp3", lang)
         audio_file: FSInputFile = FSInputFile(name_file + ".mp3")
-
         await message.reply_audio(
             audio=audio_file,
             performer=message.bot._me.first_name,

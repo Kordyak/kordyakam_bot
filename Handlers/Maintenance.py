@@ -53,13 +53,17 @@ async def whatsup(message: Message):
         username = r[1]
         filename = r[2]
         percent = r[5] or 0
+        last_access = r[6]
 
         if filename:
             line = (f"👤 {username}, id: {id}"
                     f"\n📖 <code>{filename}</code>"
-                    f"\nprogress: {percent}%\n")
+                    f"\nprogress: {percent}%"
+                    f"\nlast access: {last_access}\n")
         else:
-            line = (f"👤 {username}:{id} 📖not read\n")
+            line = (f"👤 {username}, {id} "
+                    f"not read\n"
+                    f"\nlast access: {last_access}\n")
 
         lines.append(line)
 

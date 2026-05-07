@@ -20,6 +20,7 @@ class Middleware_typing(BaseMiddleware):
         data["reader"] = reader
         db = DB_library()
         db.get_or_create_user(user_id,user_name)
+        db.set_last_access(user_id)
         data["db"] = db
 
         if isinstance(event, CallbackQuery):

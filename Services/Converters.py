@@ -10,11 +10,8 @@ import asyncio
 logger = logging.getLogger(__name__)
 
 
-# singleton translators
-translator_en_ru = GoogleTranslator(source='en', target='ru')
-translator_ru_en = GoogleTranslator(source='ru', target='en')
-async def translate_rus_eng(in_text: str, how_translate: str) -> str:
 
+async def translate_rus_eng(in_text: str, how_translate: str) -> str:
     # если текст начинается с команды
     if re.match(r"^/(en_ru|ru_en)", in_text):
         text = " ".join(in_text.split()[1:])
@@ -27,10 +24,10 @@ async def translate_rus_eng(in_text: str, how_translate: str) -> str:
         return ""
 
     if how_translate == "/en_ru":
-        translator = translator_en_ru
+        translator = GoogleTranslator(source='en', target='ru')
 
     elif how_translate == "/ru_en":
-        translator = translator_ru_en
+        translator = GoogleTranslator(source='ru', target='en')
 
     else:
         return text
@@ -41,23 +38,13 @@ async def translate_rus_eng(in_text: str, how_translate: str) -> str:
             translator.translate,
             text
         )
-
         return result
 
     except Exception as e:
-        print(f"Ошибка перевода: {e}")
-        return "Ошибка перевода 😢"
+        msg = f"😢 Ошибка перевода: {e}"
+        print(msg)
+        return msg
 
-
-def clean_text(text: str) -> str:
-    text = re.sub(r'[^\w\s.,!?;:()\-–—\"\']', '', text)  # Удаляет эмодзи и специальные символы
-    text = re.sub(r"[\*\[\]_]", "", text)  # удаляем символы
-    text = re.sub(r"\(https.*?\)", "", text).strip()  # удаляем ссылки из текста
-    return text
-
-
-def tokenize(text: str) -> list[str]:
-    return re.findall(r"\w+", text.lower())
 
 
 async def convert_text_audio(text: str, path_mp3: str, lang: str, speed = 100) -> str:
@@ -118,10 +105,8 @@ def build_caption(timestamps) -> str:
 
 
 
-def check_word(news: str, words: list) -> str:  # парсинг новостей на слово
-    for key in words:
-        if re.search(key.lower(), news.lower()):
-            return key
+
+
 
 
 # Function to check internet connectivity

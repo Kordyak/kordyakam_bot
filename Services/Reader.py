@@ -1,3 +1,4 @@
+import asyncio
 import math
 import os
 import re
@@ -126,12 +127,14 @@ class Sender:
             return
 
         title = make_title(chunk)
-        caption = await convert_text_audio(chunk, title + ".mp3", "en", reading_speed)
+
+        caption, translate_chunk = await asyncio.gather(
+            convert_text_audio(chunk, title + ".mp3", "en", reading_speed),
+            translate_rus_eng(chunk, "/en_ru")
+        )
 
         audio = FSInputFile(title + ".mp3")
-
         rewrite_mp3_tags(audio.filename, reader) # К файлу привязываем ТЭГИ заголовок, создатель
-
         thumbnail = make_thumbnail(reader.cover_image) # Миниатюра картинки для бота
 
         # Отправляем аудио
@@ -150,13 +153,14 @@ class Sender:
             ),
             parse_mode="HTML",
         )
+
         # Отправляем скрытый перевод
-        chunk_rus = await translate_rus_eng(chunk, "/en_ru")
         await self.bot.send_message(
             chat_id=user_id,
-            text=f"<tg-spoiler>{chunk_rus}</tg-spoiler>",
+            text=f"<tg-spoiler>{translate_chunk}</tg-spoiler>",
             parse_mode="HTML",
         )
+
         os.remove(audio.filename) # удаляем аудио
 
 

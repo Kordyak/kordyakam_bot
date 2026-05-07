@@ -53,10 +53,10 @@ class DB_library:
             # # migration
             # columns = [row[1] for row in conn.execute("PRAGMA table_info(users)")]
             #
-            # if "reading_speed" not in columns:
+            # if "last_access" not in columns:
             #     conn.execute("""
             #         ALTER TABLE users
-            #         ADD COLUMN reading_speed INTEGER DEFAULT 88
+            #         ADD COLUMN last_access TIMESTAMP
             #     """)
 
     # ============================ USER ============================================
@@ -104,6 +104,15 @@ class DB_library:
                     chunk_index=0
                 WHERE user_id=?
             """, (book_id, telegram_id))
+
+    def set_last_access(self, telegram_id: int):
+        """Назначает пользователю книгу по id, сбрасывает прогресс"""
+        with self._get_connection() as conn:
+            conn.execute("""
+                UPDATE users
+                SET last_access=?
+                WHERE user_id=?
+            """, (datetime.now().date(), telegram_id))
 
     def get_time(self, telegram_id: int) -> str | None:
         with self._get_connection() as connection:
@@ -281,7 +290,8 @@ class DB_library:
                     THEN u.chunk_index * 100.0 / b.total_paragraphs
                     ELSE 0
                 END, 2
-            ) AS progress_percent
+            ) AS progress_percent,
+            u.last_access
         FROM users u
         LEFT JOIN books b ON b.id = u.current_book_id
         """

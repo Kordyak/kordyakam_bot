@@ -52,8 +52,8 @@ async def set_bot():
 
     dispatcher = Dispatcher()
 
-    dispatcher.message.middleware(Middleware_typing())
-    dispatcher.callback_query.middleware(Middleware_typing())
+    dispatcher.message.outer_middleware(Middleware_typing())
+    dispatcher.callback_query.outer_middleware(Middleware_typing())
 
     router_maintenance.message.middleware(Middleware_access_maintenenace())
     router_maintenance.callback_query.middleware(Middleware_access_maintenenace())

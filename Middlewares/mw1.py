@@ -13,6 +13,7 @@ class Middleware_typing(BaseMiddleware):
         bot = data.get("bot")
         user_id = event.from_user.id
         username = event.from_user.username
+        username = f"@{username}" if username else None
 
         data["user_id"] = user_id
 
@@ -20,7 +21,7 @@ class Middleware_typing(BaseMiddleware):
         data["reader"] = reader
 
         db = DB_library()
-        db.get_or_create_user(user_id, "@" + username)
+        db.get_or_create_user(user_id, username)
         db.set_last_access(user_id)
         data["db"] = db
 

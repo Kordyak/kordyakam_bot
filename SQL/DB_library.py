@@ -294,6 +294,7 @@ class DB_library:
             u.last_access
         FROM users u
         LEFT JOIN books b ON b.id = u.current_book_id
+        ORDER BY u.last_access DESC
         """
 
         with self._get_connection() as conn:

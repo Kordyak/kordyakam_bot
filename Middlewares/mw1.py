@@ -12,14 +12,15 @@ class Middleware_typing(BaseMiddleware):
     async def __call__(self, handler, event: TelegramObject, data: dict):
         bot = data.get("bot")
         user_id = event.from_user.id
-        user_name = event.from_user.full_name
+        username = event.from_user.username
 
         data["user_id"] = user_id
-        data["user_name"] = user_name
+
         reader = Reader(user_id)
         data["reader"] = reader
+
         db = DB_library()
-        db.get_or_create_user(user_id,user_name)
+        db.get_or_create_user(user_id, "@" + username)
         db.set_last_access(user_id)
         data["db"] = db
 

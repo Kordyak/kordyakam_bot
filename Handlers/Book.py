@@ -11,7 +11,7 @@ from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, C
 from aiogram.filters import Command
 
 from FSM.states import UploadBook, StateUser
-from Keyboards.Book import book_menu
+from Keyboards.Book import book_menu, const_menu
 from Keyboards.Universal import confirm_kb, cancel_kb
 from SQL.DB_library import DB_library
 from Services.BookMetadata import BookMetadata
@@ -34,27 +34,29 @@ async def run_rdp(message: Message, state: FSMContext):
         "• Переводить (RU/EN) и обратно\n"
         "• Конвертировать текст в аудио (RU,EN)\n"
     )
-
-    await message.answer(text, parse_mode="HTML")
-
+    await message.answer(
+        text,
+        parse_mode="HTML",
+        reply_markup=const_menu(),
+    )
 
 @router_book.message(Command('book'))
 async def book_handler(message: Message, reader: Reader):
     # await state.clear()
     if not reader.book_title:
         text = (
-            f"Я @KordyakBot:\n\n"
-            "Умею читать книги на английском языке абзацами "
-            "по установленному времени или по запросу в формате .epub.\n"
-            "Отправляю вам аудио, текст на англ. и скрытый текст на русском.\n\n"
-            "Вам необходимо загрузить книгу на англ. в формате .epub.\n"
+            f"Похоже у тебя не выбрана книга из библиотеки или можешь загрузить свою в формате .epub"
         )
+        await message.answer(
+                            text,
+                            reply_markup=const_menu()
+                            )
     else:
         text = f'Привет, мой друг. Продолжаем читать "{reader.book_title}"?'
-
-    await message.answer(text,
-                         reply_markup=book_menu(reader)
-                         )
+        await message.answer(
+                            text,
+                            reply_markup=book_menu(reader)
+                            )
 
 
 # 📚 Показать библиотеку ================================
@@ -405,7 +407,7 @@ async def next_chunk(message: Message, sender: Sender, user_id: int,  reader: Re
                 await message.delete()
 
 
-# Задаем номер абзаца ***
+# Задаем абзац
 @router_book.callback_query(F.data == 'set_paragraf_index')
 async def change_index(callback: CallbackQuery, state: FSMContext, reader: Reader):
     await callback.answer()

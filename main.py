@@ -77,62 +77,6 @@ async def set_bot_commands():
     await bot.set_my_commands(commands)
 
 
-# Загружаем модель для распознавания РЕЧИ (по умолчанию используется GPU, если доступен)
-async def set_whisper():
-    model = whisper.load_model("base")
-    dispatcher["model"] = model
-
-
-# Устанавливаем АРГО транслятор
-async def set_argostranslate():
-
-    installed_languages = argostranslate.translate.get_installed_languages()
-
-    def is_installed(from_code, to_code):
-        try:
-            from_lang = next(l for l in installed_languages if l.code == from_code)
-            to_lang = next(l for l in installed_languages if l.code == to_code)
-            from_lang.get_translation(to_lang)
-            return True
-        except Exception:
-            return False
-
-    codes = {lang.code for lang in installed_languages}
-
-    # если одного из языков нет — точно нужно ставить
-    if not ("ru" in codes and "en" in codes):
-        need_ru_en = True
-        need_en_ru = True
-    else:
-        need_ru_en = not is_installed("ru", "en")
-        need_en_ru = not is_installed("en", "ru")
-
-    if not (need_ru_en or need_en_ru):
-        print("Все пакеты уже установлены")
-        return
-
-    # Обновляем индекс пакетов
-    argostranslate.package.update_package_index()
-    available_packages = argostranslate.package.get_available_packages()
-
-    # Пакет ru->en
-    package_ru_en = next((p for p in available_packages if p.from_code == "ru" and p.to_code == "en"), None)
-    if package_ru_en:
-        argostranslate.package.install_from_path(package_ru_en.download())
-        print("Пакет ru->en установлен")
-    else:
-        print("Пакет ru->en не найден")
-
-    # Пакет en->ru
-    package_en_ru = next((p for p in available_packages if p.from_code == "en" and p.to_code == "ru"), None)
-    if package_en_ru:
-        argostranslate.package.install_from_path(package_en_ru.download())
-        print("Пакет en->ru установлен")
-    else:
-        print("Пакет en->ru не найден")
-
-
-# Scheduler
 async def set_scheduler():
     sender = Sender(bot)
     dispatcher["sender"] = sender
@@ -141,34 +85,25 @@ async def set_scheduler():
     scheduler.start()
 
 
-
-
-
-
 async def main():
     try:
         await set_bot()
         await set_bot_commands()
-        # await set_argostranslate()
         await set_scheduler()
 
         library1 = Library()
         library1.sync_library()
 
-        logger.info("Bot polling started")
-
         async with bot:
             await bot.delete_webhook(drop_pending_updates=True)
             await dispatcher.start_polling(bot, drop_pending_updates=True)
+            logger.info("Bot polling started")
+
     except Exception as e:
         await bot.session.close()
-        logger.error(f"❌ Ошибка подключения: {e}", exc_info=True)
-        input("Нажми Enter чтобы не закрывать консоль...")
-
-
+        input("Нажми Enter чтобы закрыть консоль...")
 
 
 if __name__ == "__main__":
-
         asyncio.run(main())
 

@@ -123,12 +123,13 @@ async def send_long_message(message, text: str):
 # Выбора номера книги из библиотеки
 @router_book.message(UploadBook.waiting_book_number)
 async def choose_book_from_library(message: Message, state: FSMContext):
+    await state.clear()
+
     data = await state.get_data()
     book_map = data.get("book_map", {})
 
     if message.text not in book_map:
         await message.answer("Некорректный номер. Вышли из библиотеки")
-        await state.clear()
         return
 
     book_info = book_map[message.text]
@@ -221,6 +222,7 @@ async def upload_my_book(message: Message, state: FSMContext):
 
 @router_book.message(UploadBook.waiting_epub, F.document)
 async def upload_my_book_waiting(message: Message, bot: Bot, state: FSMContext, user_id, db: DB_library):
+
     if not message.document.file_name.endswith(".epub"):
         await message.answer(
             'Это не epub 😅',
@@ -250,6 +252,7 @@ async def upload_my_book_waiting(message: Message, bot: Bot, state: FSMContext, 
         final_path = Path(books_index[file_hash]["filename"])
         temp_path.unlink()
         await message.answer("Такая книга уже есть в моей базе 📚")
+
     else:  # 📥 Если новая книга
         final_path = PATH_BOOKS / original_name
         counter = 1

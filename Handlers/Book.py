@@ -121,7 +121,6 @@ async def send_long_message(message, text: str):
 # Выбора номера книги из библиотеки
 @router_book.message(UploadBook.waiting_book_number)
 async def choose_book_from_library(message: Message, state: FSMContext):
-
     data = await state.get_data()
     book_map = data.get("book_map", {})
 
@@ -135,15 +134,10 @@ async def choose_book_from_library(message: Message, state: FSMContext):
     book_info = book_map[message.text]
     await state.update_data(book_info=book_info)
 
-    # await book_description(message, book_info)
-
-    # Предлагаем действия
     kb = InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text=f"Описание книги '{book_info['book_title']}'",
-                                  callback_data="book_description")],
-            [InlineKeyboardButton(text=f"ℹ️ Загружаем '{book_info['book_title']}' для чтения?",
-                                  callback_data=f"upload_library_book:{book_info['path']}")],
+            [InlineKeyboardButton(text=f"Описание книги '{book_info['book_title']}'",callback_data="book_description")],
+            [InlineKeyboardButton(text=f"ℹ️ Загружаем '{book_info['book_title']}' для чтения?",callback_data=f"upload_library_book:{book_info['path']}")],
             [InlineKeyboardButton(text="🔙 Назад в библиотеку", callback_data="library")],
         ]
     )
@@ -151,7 +145,6 @@ async def choose_book_from_library(message: Message, state: FSMContext):
         f"Далее...",
         reply_markup=kb
     )
-    await state.clear()  # очищаем состояние
 
 
 # Описание книги
@@ -271,7 +264,6 @@ async def upload_library_book(callback: CallbackQuery, state: FSMContext, user_i
 
 # Загрузка книги
 async def upload_book(message, user_id, name_file, state: FSMContext, db: DB_library):
-
     book_path = Path(PATH_BOOKS / name_file)
     file_hash = Library.calculate_hash(book_path)
 
@@ -331,7 +323,7 @@ async def save_time(message: Message, state: FSMContext, user_id, db: DB_library
     db.save_time(user_id, time)
     await message.answer(f"⏰ Установлено время отправки абзаца: <b>{time}</b>\n"
                          f"Планировщик включен ✅.\n"
-                         f"Также вы можете запросить абзац книги через меню",
+                         f"Также вы можете запросить абзац книги через пользовательскую клавиатуру",
                          parse_mode = "HTML")
     await state.set_state(None)
 

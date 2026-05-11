@@ -22,10 +22,10 @@ def reader_menu(reader: Reader):
 
 def main_menu():
     buttons = [
-        [KeyboardButton(text="▶️ Читаем абзац")],
-        [KeyboardButton(text="⚙️ Меню читателя")],
         [KeyboardButton(text="📚 Библиотека")],
         [KeyboardButton(text="📖 Загрузить свою книгу")],
+        [KeyboardButton(text="⚙️ Меню читателя")],
+        [KeyboardButton(text="▶️ Читаем абзац")],
     ]
     return ReplyKeyboardMarkup(
         keyboard=buttons,

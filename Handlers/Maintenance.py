@@ -44,7 +44,7 @@ async def migration(message: Message):
     # user = db.get_user_state(user_id)
     # print("")
 
-@router_maintenance.message(Command('u'))
+@router_maintenance.message(Command('users'))
 async def whatsup(message: Message):
     lines = []
     rows = DB_library().get_users_progress()

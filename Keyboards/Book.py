@@ -8,7 +8,7 @@ from Services.Reader import Reader
 
 
 # Главная клавиатура
-def book_menu(reader: Reader):
+def reader_menu(reader: Reader):
     return InlineKeyboardMarkup(
         inline_keyboard=[
         [InlineKeyboardButton(text=f'📖 Описание "{reader.book_title}"', callback_data="current_book")],
@@ -20,7 +20,7 @@ def book_menu(reader: Reader):
     )
 
 
-def const_menu():
+def main_menu():
     buttons = [
         [KeyboardButton(text="▶️ Читаем абзац")],
         [KeyboardButton(text="⚙️ Меню читателя")],

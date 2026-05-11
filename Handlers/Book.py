@@ -10,7 +10,7 @@ from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, C
 from aiogram.filters import Command
 
 from FSM.states import UploadBook, StateUser
-from Keyboards.Book import book_menu, const_menu
+from Keyboards.Book import reader_menu, main_menu
 from Keyboards.Universal import confirm_kb, cancel_kb
 from SQL.DB_library import DB_library
 from Services.BookMetadata import BookMetadata
@@ -36,7 +36,7 @@ async def run_rdp(message: Message, state: FSMContext):
     await message.answer(
         text,
         parse_mode="HTML",
-        reply_markup=const_menu(),
+        reply_markup=main_menu(),
     )
 
 @router_book.message(F.text == "⚙️ Меню читателя")
@@ -48,13 +48,13 @@ async def book_handler(message: Message, reader: Reader, state: FSMContext):
         )
         await message.answer(
                             text,
-                            reply_markup=const_menu()
+                            reply_markup=main_menu()
                             )
     else:
         text = f'Привет, мой друг. Здесь настройки чтения твоей книги "{reader.book_title}"'
         await message.answer(
                             text,
-                            reply_markup=book_menu(reader)
+                            reply_markup=reader_menu(reader)
                             )
 
 
@@ -425,7 +425,7 @@ async def save_index(message: Message, state: FSMContext, user_id, reader: Reade
     db.save_i_chunk(user_id, index)
     reader = Reader(user_id)
 
-    await message.answer("✅ Индекс абзаца обновлён!", reply_markup=book_menu(reader))
+    await message.answer("✅ Индекс абзаца обновлён!", reply_markup=reader_menu(reader))
     await state.clear()
 
 

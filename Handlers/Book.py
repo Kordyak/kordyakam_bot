@@ -39,7 +39,7 @@ async def run_rdp(message: Message, state: FSMContext):
         reply_markup=const_menu(),
     )
 
-@router_book.message(Command('menu'))
+@router_book.message(F.text == "⚙️ Меню читателя")
 async def book_handler(message: Message, reader: Reader, state: FSMContext):
     await state.clear()
     if not reader.book_title:
@@ -58,7 +58,7 @@ async def book_handler(message: Message, reader: Reader, state: FSMContext):
                             )
 
 
-# 📚 Показать библиотеку ================================
+# 📚 Библиотека
 @router_book.message(F.text =="📚 Библиотека")
 async def show_library(message: Message, state: FSMContext):
     await state.clear()

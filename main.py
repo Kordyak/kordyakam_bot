@@ -67,8 +67,7 @@ async def set_bot():
 async def set_bot_commands():
     commands = [
         BotCommand(command="/start", description="Немного обо мне"),
-        BotCommand(command="/book", description="Меню читателя"),
-        BotCommand(command="/read", description="Читать следующий абзац"),
+        BotCommand(command="/menu", description="Меню читателя"),
         BotCommand(command="/ru_en", description="Перевод (RU/EN)"),
         BotCommand(command="/en_ru", description="Перевод (EN/RU)"),
         BotCommand(command="/audio_eng", description="Текст -> аудио (EN)"),

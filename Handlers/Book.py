@@ -3,7 +3,6 @@ from html import unescape
 from pathlib import Path
 import re
 
-from Cython.Shadow import returns
 from aiogram import Router, F, Bot
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
@@ -30,7 +29,7 @@ async def run_rdp(message: Message, state: FSMContext):
     text = (
         f"Привет, Дружище! Меня зовут '<b>{message.bot._me.first_name}</b>'.\n\n"
         "Я умею:\n"
-        "• Читать книги в формате <b>EPUB</b> на английском по расписанию или в любое время по вашему запросу /book\n"
+        "• Читать книги в формате <b>EPUB</b> на английском по расписанию или в любое время по вашему запросу\n"
         "• Переводить (RU/EN) и обратно\n"
         "• Конвертировать текст в аудио (RU,EN)\n"
     )
@@ -40,9 +39,9 @@ async def run_rdp(message: Message, state: FSMContext):
         reply_markup=const_menu(),
     )
 
-@router_book.message(Command('book'))
-async def book_handler(message: Message, reader: Reader):
-    # await state.clear()
+@router_book.message(Command('menu'))
+async def book_handler(message: Message, reader: Reader, state: FSMContext):
+    await state.clear()
     if not reader.book_title:
         text = (
             f"Похоже у тебя не выбрана книга из библиотеки или можешь загрузить свою в формате .epub"
@@ -52,7 +51,7 @@ async def book_handler(message: Message, reader: Reader):
                             reply_markup=const_menu()
                             )
     else:
-        text = f'Привет, мой друг. Продолжаем читать "{reader.book_title}"?'
+        text = f'Привет, мой друг. Здесь настройки чтения твоей книги "{reader.book_title}"'
         await message.answer(
                             text,
                             reply_markup=book_menu(reader)
@@ -60,13 +59,13 @@ async def book_handler(message: Message, reader: Reader):
 
 
 # 📚 Показать библиотеку ================================
-@router_book.callback_query(F.data == "library")
-async def show_library(callback: CallbackQuery, state: FSMContext):
-    await callback.answer()
+@router_book.message(F.text =="📚 Библиотека")
+async def show_library(message: Message, state: FSMContext):
+    await state.clear()
     books_index = DB_library().list_books()  # {hash: {filename, total_paragraphs}}
 
     if not books_index:
-        await callback.message.answer("В библиотеке пока нет книг 📚")
+        await message.answer("В библиотеке пока нет книг 📚")
         return
 
     # Формируем пронумерованный список с актуальными метаданными
@@ -101,10 +100,9 @@ async def show_library(callback: CallbackQuery, state: FSMContext):
 
     text = book_list_text + "\nНапишите номер книги, чтобы выбрать её для чтения или просмотра информации."
 
-    await send_long_message(callback.message, text)
+    await send_long_message(message, text)
 
     await state.set_state(UploadBook.waiting_book_number)
-
 
 # если длинное сообщение, делим на 4096
 async def send_long_message(message, text: str):
@@ -129,7 +127,8 @@ async def choose_book_from_library(message: Message, state: FSMContext):
     book_map = data.get("book_map", {})
 
     if message.text not in book_map:
-        await message.answer("Некорректный номер. Попробуйте снова.")
+        await message.answer("Некорректный номер. Вышли из библиотеки")
+        await state.clear()
         return
 
     book_info = book_map[message.text]
@@ -215,10 +214,9 @@ def clean_html(text: str) -> str:
 
 
 # Загрузка собственной книги
-@router_book.callback_query(F.data == "upload_book")
-async def upload_my_book(callback: CallbackQuery, state: FSMContext):
-    await callback.answer()  # 🔴 обязательно
-    await callback.message.answer("Отправь свой EPUB файл 📚 для загрузки")
+@router_book.message(F.text == "📖 Загрузить свою книгу")
+async def upload_my_book(message: Message, state: FSMContext):
+    await message.answer("Отправь свой EPUB файл 📚 для загрузки")
     await state.set_state(UploadBook.waiting_epub)
 
 @router_book.message(UploadBook.waiting_epub, F.document)
@@ -268,21 +266,13 @@ async def upload_my_book_waiting(message: Message, bot: Bot, state: FSMContext, 
 @router_book.callback_query(F.data.startswith("upload_library_book:"))
 async def upload_library_book(callback: CallbackQuery, state: FSMContext, user_id, db: DB_library):
     await callback.answer()
-    # await callback.message.delete()
     name_file = callback.data.split(":")[1]
     await upload_book(callback.message, user_id, name_file, state, db)
 
 
 # Загрузка книги
-async def upload_book(message, user_id, name_file, state, db: DB_library):
-    """
-    Завершение загрузки книги:
-    - Проверяем, есть ли книга в библиотеке по хэшу
-    - Если нет, добавляем её
-    - Назначаем пользователю
-    """
-    from pathlib import Path
-
+async def upload_book(message, user_id, name_file, state: FSMContext, db: DB_library):
+    await state.clear()
     book_path = Path(PATH_BOOKS / name_file)
     file_hash = Library.calculate_hash(book_path)
 
@@ -380,19 +370,11 @@ async def save_reading_speed(message: Message, state: FSMContext, user_id: int, 
     await state.clear()
 
 
-# Отправить абзац
-@router_book.callback_query(F.data == "next_chunk")
-async def next_chunk_callback(callback: CallbackQuery, sender: Sender, user_id: int,  reader: Reader):
-    await callback.answer()
-    await next_chunk(callback.message, sender, user_id, reader, True)
-
-@router_book.message(Command('read'))
-async def next_chunk_command(message: Message, sender: Sender, user_id: int,  reader: Reader):
-    await next_chunk(message, sender, user_id, reader, False)
-
-async def next_chunk(message: Message, sender: Sender, user_id: int,  reader: Reader, is_callback: bool):
+# Читаем абзац
+@router_book.message(F.text == "▶️ Читаем следующий абзац")
+async def next_chunk(message: Message, sender: Sender, user_id: int,  reader: Reader, state: FSMContext):
+    await state.clear()
     if not reader.book_title:
-        await message.edit_text("Похоже вы еще не выбрали книгу!")
         await book_handler(message, reader)
         return
 
@@ -402,9 +384,7 @@ async def next_chunk(message: Message, sender: Sender, user_id: int,  reader: Re
     finally:
         with suppress(TelegramBadRequest):
             await msg.delete()
-        if is_callback:
-            with suppress(TelegramBadRequest):
-                await message.delete()
+
 
 
 # Задаем абзац

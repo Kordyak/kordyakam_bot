@@ -3,6 +3,7 @@ from html import unescape
 from pathlib import Path
 import re
 
+from Cython.Shadow import returns
 from aiogram import Router, F, Bot
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext

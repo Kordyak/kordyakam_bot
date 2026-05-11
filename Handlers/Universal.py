@@ -14,7 +14,7 @@ router_universal = Router(name='universal')
 
 # Универсальный обработчик подтверждения ==========
 @router_universal.callback_query(F.data.startswith("confirm:"))
-async def handle_confirm(callback: CallbackQuery, state: FSMContext, user_id, rr: DB_library):
+async def handle_confirm(callback: CallbackQuery, user_id, db: DB_library):
     await callback.answer()
 
     action = callback.data.split(":")[1]
@@ -23,7 +23,7 @@ async def handle_confirm(callback: CallbackQuery, state: FSMContext, user_id, rr
         pass
 
     elif action == "del_book":
-        rr.remove_current_book(user_id)
+        db.remove_current_book(user_id)
         # Удаляем работу из планировщика
         job_id = f"user_{user_id}"
         if scheduler.get_job(job_id):

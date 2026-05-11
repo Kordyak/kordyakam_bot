@@ -37,14 +37,14 @@ async def stop_bot(message: Message):
 
 @router_maintenance.message(Command("sql"))
 async def migration(message: Message):
-    await message.answer('Сервисный режим SQL')
+    await message.answer('Вносим изменения в DB SQL')
     # db = DB_library(Path("SQL/read.db"))
     # repo.migrate_books_index(Path("Books/books_index.json"))
     # repo.migrate_states(Path("Users"))
     # user = db.get_user_state(user_id)
     # print("")
 
-@router_maintenance.message(Command('whatsup'))
+@router_maintenance.message(Command('u'))
 async def whatsup(message: Message):
     lines = []
     rows = DB_library().get_users_progress()

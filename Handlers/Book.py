@@ -41,17 +41,15 @@ async def run_rdp(message: Message, state: FSMContext):
 
 @router_book.message(F.text == "⚙️ Меню читателя")
 async def book_handler(message: Message, reader: Reader, state: FSMContext):
-    await state.clear()
+    await state.set_state(None)
+
     if not reader.book_title:
         text = (
-            f"Похоже у тебя не выбрана книга из библиотеки или можешь загрузить свою в формате .epub"
+            f"Похоже у тебя не загружена книга. Выбери из библиотеки или загрузи свою в формате epub"
         )
-        await message.answer(
-                            text,
-                            reply_markup=main_menu()
-                            )
+
     else:
-        text = f'Привет, мой друг. Здесь настройки чтения твоей книги "{reader.book_title}"'
+        text = f'Меню читателя. Сейчас вы читаете книгу:"{reader.book_title}"'
         await message.answer(
                             text,
                             reply_markup=reader_menu(reader)
@@ -59,9 +57,9 @@ async def book_handler(message: Message, reader: Reader, state: FSMContext):
 
 
 # 📚 Библиотека
+
 @router_book.message(F.text =="📚 Библиотека")
 async def show_library(message: Message, state: FSMContext):
-    await state.clear()
     books_index = DB_library().list_books()  # {hash: {filename, total_paragraphs}}
 
     if not books_index:
@@ -123,13 +121,15 @@ async def send_long_message(message, text: str):
 # Выбора номера книги из библиотеки
 @router_book.message(UploadBook.waiting_book_number)
 async def choose_book_from_library(message: Message, state: FSMContext):
-    await state.clear()
 
     data = await state.get_data()
     book_map = data.get("book_map", {})
 
     if message.text not in book_map:
-        await message.answer("Некорректный номер. Вышли из библиотеки")
+        await message.answer(
+            text="Некорректный номер. Вышли из библиотеки",
+            reply_markup=cancel_kb()
+        )
         return
 
     book_info = book_map[message.text]
@@ -151,7 +151,7 @@ async def choose_book_from_library(message: Message, state: FSMContext):
         f"Далее...",
         reply_markup=kb
     )
-    # await state.clear()  # очищаем состояние
+    await state.clear()  # очищаем состояние
 
 
 # Описание книги
@@ -182,9 +182,6 @@ async def book_description(callback: CallbackQuery, state: FSMContext):
         text=f"<tg-spoiler>{description_ru}</tg-spoiler>",
         parse_mode="HTML",
     )
-
-    await state.clear()  # очищаем состояние
-
 
 # Информация о текущей книги
 @router_book.callback_query(F.data == "current_book")
@@ -222,15 +219,12 @@ async def upload_my_book(message: Message, state: FSMContext):
 
 @router_book.message(UploadBook.waiting_epub, F.document)
 async def upload_my_book_waiting(message: Message, bot: Bot, state: FSMContext, user_id, db: DB_library):
-
     if not message.document.file_name.endswith(".epub"):
         await message.answer(
             'Это не epub 😅',
             reply_markup=cancel_kb()
         )
         return
-
-    await state.clear()
 
     original_name = message.document.file_name
     temp_path = PATH_BOOKS / f"temp_{user_id}.epub"
@@ -240,6 +234,7 @@ async def upload_my_book_waiting(message: Message, bot: Bot, state: FSMContext, 
         await bot.download_file(file.file_path, destination=temp_path)
     except Exception as e:
         await message.answer(f"Ошибка при сохранении файла: {e}")
+        await state.set_state(None)
         return
 
     # Вычисляем hash загруженной книги
@@ -263,6 +258,7 @@ async def upload_my_book_waiting(message: Message, bot: Bot, state: FSMContext, 
         # сохраняем книгу в books_index
         library.add_book(final_path)
     await upload_book(message, user_id, final_path, state, db)
+    await state.set_state(None)
 
 
 # Загрузка книги из библиотек
@@ -275,7 +271,7 @@ async def upload_library_book(callback: CallbackQuery, state: FSMContext, user_i
 
 # Загрузка книги
 async def upload_book(message, user_id, name_file, state: FSMContext, db: DB_library):
-    await state.clear()
+
     book_path = Path(PATH_BOOKS / name_file)
     file_hash = Library.calculate_hash(book_path)
 
@@ -335,9 +331,9 @@ async def save_time(message: Message, state: FSMContext, user_id, db: DB_library
     db.save_time(user_id, time)
     await message.answer(f"⏰ Установлено время отправки абзаца: <b>{time}</b>\n"
                          f"Планировщик включен ✅.\n"
-                         f"Также вы можете запросить абзац книги вручную через /book",
+                         f"Также вы можете запросить абзац книги через меню",
                          parse_mode = "HTML")
-    await state.clear()
+    await state.set_state(None)
 
 
 # Задаем скорость чтения
@@ -374,11 +370,10 @@ async def save_reading_speed(message: Message, state: FSMContext, user_id: int, 
 
 
 # Читаем абзац
-@router_book.message(F.text == "▶️ Читаем следующий абзац")
+@router_book.message(F.text == "▶️ Читаем абзац")
 async def next_chunk(message: Message, sender: Sender, user_id: int,  reader: Reader, state: FSMContext):
-    await state.clear()
     if not reader.book_title:
-        await book_handler(message, reader)
+        await book_handler(message, reader, state)
         return
 
     msg = await message.answer("Готовим абзац книги...")
@@ -403,7 +398,7 @@ async def change_index(callback: CallbackQuery, state: FSMContext, reader: Reade
 async def save_index(message: Message, state: FSMContext, user_id, reader: Reader, db: DB_library):
     if not reader:
         await message.answer("Книга не найдена!")
-        await state.clear()
+        await state.set_state(None)
         return
 
     if not message.text.isdigit():
@@ -423,10 +418,9 @@ async def save_index(message: Message, state: FSMContext, user_id, reader: Reade
         return
 
     db.save_i_chunk(user_id, index)
-    reader = Reader(user_id)
 
-    await message.answer("✅ Индекс абзаца обновлён!", reply_markup=reader_menu(reader))
-    await state.clear()
+    await message.answer("✅ Индекс абзаца обновлён!")
+    await state.set_state(None)
 
 
 # Удалить книгу

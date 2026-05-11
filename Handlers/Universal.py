@@ -49,4 +49,4 @@ async def handle_confirm(callback: CallbackQuery, user_id, db: DB_library):
 async def cancel_index(callback: CallbackQuery, state: FSMContext):
     await callback.answer('Запрос отменен!')
     await callback.message.delete()
-    await state.clear()
+    await state.set_state(None)

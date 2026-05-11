@@ -49,7 +49,9 @@ async def book_handler(message: Message, reader: Reader, state: FSMContext):
         )
 
     else:
-        text = f'Меню читателя. Сейчас вы читаете книгу:"{reader.book_title}"'
+        text = (f'Меню читателя:'
+                f'\nСейчас вы читаете книгу: "{reader.book_title}"'
+                f'\nПоследний прочитанный абзац: {reader.paragraph}')
         await message.answer(
                             text,
                             reply_markup=reader_menu(reader)
@@ -57,7 +59,6 @@ async def book_handler(message: Message, reader: Reader, state: FSMContext):
 
 
 # 📚 Библиотека
-
 @router_book.message(F.text =="📚 Библиотека")
 async def show_library(message: Message, state: FSMContext):
     books_index = DB_library().list_books()  # {hash: {filename, total_paragraphs}}
@@ -361,23 +362,7 @@ async def save_reading_speed(message: Message, state: FSMContext, user_id: int, 
     await state.clear()
 
 
-# Читаем абзац
-@router_book.message(F.text == "▶️ Читаем абзац")
-async def next_chunk(message: Message, sender: Sender, user_id: int,  reader: Reader, state: FSMContext):
-    if not reader.book_title:
-        await book_handler(message, reader, state)
-        return
-
-    msg = await message.answer("Готовим абзац книги...")
-    try:
-        await sender.send_chunk(user_id)
-    finally:
-        with suppress(TelegramBadRequest):
-            await msg.delete()
-
-
-
-# Задаем абзац
+# Выбрать абзац
 @router_book.callback_query(F.data == 'set_paragraf_index')
 async def change_index(callback: CallbackQuery, state: FSMContext, reader: Reader):
     await callback.answer()
@@ -387,7 +372,7 @@ async def change_index(callback: CallbackQuery, state: FSMContext, reader: Reade
     await state.set_state(UploadBook.waiting_paragraph)
 
 @router_book.message(UploadBook.waiting_paragraph)
-async def save_index(message: Message, state: FSMContext, user_id, reader: Reader, db: DB_library):
+async def save_index(message: Message, state: FSMContext, user_id, reader: Reader, db: DB_library, sender: Sender):
     if not reader:
         await message.answer("Книга не найдена!")
         await state.set_state(None)
@@ -412,7 +397,27 @@ async def save_index(message: Message, state: FSMContext, user_id, reader: Reade
     db.save_i_chunk(user_id, index)
 
     await message.answer("✅ Индекс абзаца обновлён!")
+    await next_chunk(message, sender, user_id, reader, state)
     await state.set_state(None)
+
+
+# Читаем следующий абзац
+@router_book.message(F.text == "▶️ Читаем следующий абзац")
+async def next_chunk(message: Message, sender: Sender, user_id: int,  reader: Reader, state: FSMContext):
+    if not reader.book_title:
+        await book_handler(message, reader, state)
+        return
+
+    msg = await message.answer(f"Готовим абзац {reader.paragraph+1} книги...")
+    try:
+        await sender.send_chunk(user_id)
+    finally:
+        with suppress(TelegramBadRequest):
+            await msg.delete()
+
+
+
+
 
 
 # Удалить книгу

@@ -14,7 +14,7 @@ from Keyboards.Book import reader_menu, main_menu
 from Keyboards.Universal import confirm_kb, cancel_kb
 from SQL.DB_library import DB_library
 from Services.BookMetadata import BookMetadata
-from Services.Converters import translate_rus_eng
+from Services.Converters import translator
 from Services.Library import Library, PATH_BOOKS, epub_paragraph_generator
 
 from Services.Reader import Sender, Reader
@@ -171,7 +171,7 @@ async def book_description(callback: CallbackQuery, state: FSMContext):
         await message.answer(caption)
 
     # Описание на русском
-    description_ru = await translate_rus_eng(description, "/en_ru")
+    description_ru = await translator(description, "/en_ru")
     await message.answer(
         text=f"<tg-spoiler>{description_ru}</tg-spoiler>",
         parse_mode="HTML",
@@ -408,7 +408,7 @@ async def next_chunk(message: Message, sender: Sender, user_id: int,  reader: Re
         await book_handler(message, reader, state)
         return
 
-    msg = await message.answer(f"Готовим абзац {reader.paragraph+1} книги...")
+    msg = await message.answer(f"Готовим абзац ...")
     try:
         await sender.send_chunk(user_id)
     finally:

@@ -73,11 +73,11 @@ async def voice_message_handler(message: Message, model):
 async def handler(message: Message):
     how_translate = message.text.split(' ')[0]
     if message.reply_to_message:
-        eng_text = await translate_rus_eng(message.reply_to_message.text, how_translate)
+        eng_text = await translator(message.reply_to_message.text, how_translate)
     elif message.quote:
-        eng_text = await translate_rus_eng(message.quote.text, how_translate)
+        eng_text = await translator(message.quote.text, how_translate)
     else:
-        eng_text = await translate_rus_eng(message.text, how_translate)
+        eng_text = await translator(message.text, how_translate)
 
     if eng_text:
         await message.reply(f'{eng_text}')

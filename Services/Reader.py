@@ -11,7 +11,7 @@ from aiogram.types import FSInputFile, BufferedInputFile
 from sympy.physics.units import speed
 
 from Services.BookMetadata import BookMetadata
-from Services.Converters import translate_rus_eng, convert_text_audio
+from Services.Converters import translator, convert_text_audio
 from SQL.DB_library import DB_library
 
 from mutagen.mp3 import MP3
@@ -130,7 +130,7 @@ class Sender:
 
         caption, translate_chunk = await asyncio.gather(
             convert_text_audio(chunk, title + ".mp3", "en", reading_speed),
-            translate_rus_eng(chunk, "/en_ru")
+            translator(chunk, "/en_ru")
         )
 
         audio = FSInputFile(title + ".mp3")
@@ -147,8 +147,8 @@ class Sender:
             duration=math.ceil(MP3(audio.filename).info.length),
             caption=(
                 f"{reader.book_creator}, <b>{reader.book_title}</b>\n"
-                f"Progress: <b>{reader.progress} %</b>\n"
-                f"Paragraph: <b>№№ {reader.paragraph - len(chunk.splitlines()) + 1} - {reader.paragraph}</b>\n"
+                f"Progress: <b>{reader.progress}%</b>\n"
+                f"Paragraph: № <b>{reader.paragraph-len(chunk.splitlines()) + 1}...{reader.paragraph}</b>\n"
                 f"{caption}"
             ),
             parse_mode="HTML",

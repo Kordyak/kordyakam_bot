@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 
-async def translate_rus_eng(in_text: str, how_translate: str) -> str:
+async def translator(in_text: str, how_translate: str) -> str:
     # если текст начинается с команды
     if re.match(r"^/(en_ru|ru_en)", in_text):
         text = " ".join(in_text.split()[1:])

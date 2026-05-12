@@ -75,11 +75,17 @@ class Reader:
             if paragraph is None:
                 break
 
-            if current_len > 200 and len(paragraph) > 800:
+            paragraph_len = len(paragraph)
+
+            # Проверяем лимит ДО добавления
+            if current_len + paragraph_len > 950:
+                if not buffer:
+                    buffer.append(paragraph)
+                    self.paragraph_indx += 1
                 break
 
             buffer.append(paragraph)
-            current_len += len(paragraph)
+            current_len += paragraph_len
             self.paragraph_indx += 1
 
             if current_len >= min_len:
@@ -134,31 +140,43 @@ class Sender:
         title = make_title(chunk)
 
         caption, translate_chunk = await asyncio.gather(
-            convert_text_audio(chunk + " -End of paragraph_indx-'", title + ".mp3", "en", reading_speed),
+            convert_text_audio(chunk + " End of paragraph.", title + ".mp3", "en", reading_speed),
             translator(chunk, "/en_ru")
         )
-
-
+        caption = (
+            f"{reader.book_creator} / <b>{reader.book_title}</b>\n"
+            f"Paragraph: № <b>{reader.paragraph_indx - len(chunk.splitlines()) + 1}...{reader.paragraph_indx}</b> ({reader.progress}%)\n"
+            f"{caption}"
+        )
 
         audio = FSInputFile(title + ".mp3")
         rewrite_mp3_tags(audio.filename, reader) # К файлу привязываем ТЭГИ заголовок, создатель
         thumbnail = make_thumbnail(reader.cover_image) # Миниатюра картинки для бота
 
-        # Отправляем аудио
-        await self.bot.send_audio(
+        # ПАРАМЕТРЫ для аудио сообщения
+        audio_kwargs = dict(
             chat_id=user_id,
             audio=audio,
             thumbnail=thumbnail,
             performer=reader.book_title,
             title=title,
             duration=math.ceil(MP3(audio.filename).info.length),
-            caption=(
-                f"{reader.book_creator} / <b>{reader.book_title}</b>\n"
-                f"Paragraph: № <b>{reader.paragraph_indx - len(chunk.splitlines()) + 1}...{reader.paragraph_indx}</b> ({reader.progress}%)\n"
-                f"{caption}"
-            ),
-            parse_mode="HTML",
+            parse_mode="HTML"
         )
+
+        # АУДИО вместе caption если помещается в 1024
+        if len(caption) <= 1024:
+            audio_kwargs["caption"] = caption
+
+        await self.bot.send_audio(**audio_kwargs)
+
+        # длинный caption отдельным сообщением
+        if len(caption) > 1024:
+            await self.bot.send_message(
+                chat_id=user_id,
+                text=caption,
+                parse_mode="HTML",
+            )
 
         # Отправляем скрытый перевод
         await self.bot.send_message(

@@ -38,7 +38,7 @@ class Reader:
         # Загружаем состояние пользователя
         state = self.db.get_user_state(user_id)
 
-        self.paragraph = state[0] or 0  # paragraph
+        self.paragraph_indx = state[0] or 0  # paragraph_indx
         self.daily_time = state[1]
         self.book_name = Path(str(state[2]))
         self.total_paragraphs = state[3] or 0  # total_paragraphs
@@ -54,34 +54,39 @@ class Reader:
             self.cover_image = metadata.get("cover_image")
 
             # Ленивое чтение epub
-            self.lazy_read = LazyEpubReader(path_file, self.paragraph)
+            self.lazy_read = LazyEpubReader(path_file, self.paragraph_indx)
 
     @property
     def progress(self):
         if self.total_paragraphs == 0:
             return 0
-        return round((self.paragraph / self.total_paragraphs) * 100, 1)
+        return round((self.paragraph_indx / self.total_paragraphs) * 100, 1)
 
     def get_next_chunk(self, min_len=300):
-        if self.paragraph >= self.total_paragraphs:
+        if self.paragraph_indx >= self.total_paragraphs:
             return None
 
         buffer = []
         current_len = 0
 
-        while self.paragraph < self.total_paragraphs:
+        while self.paragraph_indx < self.total_paragraphs:
             paragraph = self.lazy_read.get_next_paragraph()
 
             if paragraph is None:
                 break
+
+            if current_len > 200 and len(paragraph) > 800:
+                break
+
             buffer.append(paragraph)
             current_len += len(paragraph)
-            self.paragraph += 1
+            self.paragraph_indx += 1
+
             if current_len >= min_len:
                 break
 
         # Сохраняем прогресс
-        self.db.save_i_chunk(self.user_id, self.paragraph)
+        self.db.save_i_chunk(self.user_id, self.paragraph_indx)
 
         return "\n".join(buffer).strip()
 
@@ -129,9 +134,11 @@ class Sender:
         title = make_title(chunk)
 
         caption, translate_chunk = await asyncio.gather(
-            convert_text_audio(chunk, title + ".mp3", "en", reading_speed),
+            convert_text_audio(chunk + " -End of paragraph_indx-'", title + ".mp3", "en", reading_speed),
             translator(chunk, "/en_ru")
         )
+
+
 
         audio = FSInputFile(title + ".mp3")
         rewrite_mp3_tags(audio.filename, reader) # К файлу привязываем ТЭГИ заголовок, создатель
@@ -146,9 +153,8 @@ class Sender:
             title=title,
             duration=math.ceil(MP3(audio.filename).info.length),
             caption=(
-                f"{reader.book_creator}, <b>{reader.book_title}</b>\n"
-                f"Progress: <b>{reader.progress}%</b>\n"
-                f"Paragraph: № <b>{reader.paragraph-len(chunk.splitlines()) + 1}...{reader.paragraph}</b>\n"
+                f"{reader.book_creator} / <b>{reader.book_title}</b>\n"
+                f"Paragraph: № <b>{reader.paragraph_indx - len(chunk.splitlines()) + 1}...{reader.paragraph_indx}</b> ({reader.progress}%)\n"
                 f"{caption}"
             ),
             parse_mode="HTML",

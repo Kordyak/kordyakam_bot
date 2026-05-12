@@ -52,7 +52,7 @@ async def book_handler(message: Message, reader: Reader, state: FSMContext):
     else:
         text = (f'Меню читателя:'
                 f'\nСейчас вы читаете книгу: "{reader.book_title}"'
-                f'\nПоследний прочитанный абзац: {reader.paragraph}')
+                f'\nПоследний прочитанный абзац: {reader.paragraph_indx}')
         await message.answer(
                             text,
                             reply_markup=reader_menu(reader)
@@ -352,7 +352,7 @@ async def save_reading_speed(message: Message, state: FSMContext, user_id: int, 
         return
     db.save_reading_speed(user_id, speed)
     await message.answer(
-        f"🏃‍➡️ Скорость чтения обновлена, {speed}%"
+        f"🏃‍➡️ Скорость чтения изменена: {speed}%"
     )
     await state.clear()
 

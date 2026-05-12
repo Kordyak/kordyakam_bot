@@ -143,9 +143,15 @@ class Sender:
             convert_text_audio(chunk + " End of paragraph.", title + ".mp3", "en", reading_speed),
             translator(chunk, "/en_ru")
         )
+
+        if len(chunk.splitlines()) == 1:
+            par = reader.paragraph_indx
+        else:
+            par = f'{reader.paragraph_indx - len(chunk.splitlines()) + 1}...{reader.paragraph_indx}'
+
         caption = (
             f"{reader.book_creator} / <b>{reader.book_title}</b>\n"
-            f"Paragraph: № <b>{reader.paragraph_indx - len(chunk.splitlines()) + 1}...{reader.paragraph_indx}</b> ({reader.progress}%)\n"
+            f"Paragraph: № <b>{par}</b> ({reader.progress}%)\n"
             f"{caption}"
         )
 

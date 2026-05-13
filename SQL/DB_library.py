@@ -215,8 +215,6 @@ class DB_library:
             rows = conn.execute("""
                 SELECT * FROM books
             """).fetchall()
-        # сначала сортируем по filename (r[1])
-        rows = sorted(rows, key=lambda r: r[1])
 
         # затем формируем dict по hash
         return {

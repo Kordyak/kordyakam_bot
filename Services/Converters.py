@@ -24,10 +24,10 @@ async def translator(in_text: str, how_translate: str) -> str:
         return ""
 
     if how_translate == "/en_ru":
-        translator = GoogleTranslator(source='en', target='ru')
+        gt1 = GoogleTranslator(source='en', target='ru')
 
     elif how_translate == "/ru_en":
-        translator = GoogleTranslator(source='ru', target='en')
+        gt1 = GoogleTranslator(source='ru', target='en')
 
     else:
         return text
@@ -35,7 +35,7 @@ async def translator(in_text: str, how_translate: str) -> str:
     try:
         # deep-translator sync -> выносим в отдельный поток
         result = await asyncio.to_thread(
-            translator.translate,
+            gt1.translate,
             text
         )
         return result
@@ -64,7 +64,7 @@ async def convert_text_audio(text: str, path_mp3: str, lang: str, speed = 100) -
     else:
         communicate = edge_tts.Communicate(text=text, voice="ru-RU-SvetlanaNeural")
 
-    # СОхраняем mp3 и создаем тайминги одновременно, т.к. поток, второй раз не обратиться
+    # СОхраняем mp3 и создаем тайминги одновременно. В поток можно обратиться один раз для чтения или записи
     timestamps = []
     with open(path_mp3, "wb") as f:
         async for chunk in communicate.stream():
@@ -156,7 +156,7 @@ async def send_with_retry(bot, chat_id, text, max_retries=MAX_RETRIES, delay=RET
 
 
 
-def Mix_text(eng_text, rus_text):
+def mix_text(eng_text, rus_text):
     """Смешиваем текст англ./скрытый рус"""
     eng_lines = eng_text.split('\n')
     rus_lines = rus_text.split('\n')

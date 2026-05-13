@@ -50,11 +50,14 @@ async def book_handler(message: Message, reader: Reader, state: FSMContext):
                             )
     else:
         text = (f'Меню читателя:'
-                f'\nСейчас вы читаете книгу: "{reader.book_title}"'
-                f'\nПоследний прочитанный абзац: {reader.paragraph_indx}')
+                f'\nСейчас вы читаете: <b>"{reader.book_title}"</b>'
+                f'\nПоследний абзац: <b>{reader.paragraph_indx}</b>'
+                f'\nВаш прогресс чтения: <b>{reader.progress}%</b>'
+                )
         await message.answer(
                             text,
-                            reply_markup=reader_menu(reader)
+                            reply_markup=reader_menu(reader),
+                            parse_mode='HTML'
                             )
 
 

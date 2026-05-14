@@ -78,7 +78,7 @@ class Reader:
             paragraph_len = len(paragraph)
 
             # Проверяем лимит ДО добавления
-            if current_len + paragraph_len > 950:
+            if current_len + paragraph_len > 900:
                 if not buffer:
                     buffer.append(paragraph)
                     self.paragraph_indx += 1
@@ -128,14 +128,20 @@ class Sender:
     def __init__(self, bot: Bot):
         self.bot = bot
 
-    async def send_chunk(self, user_id: int):
-        reader = Reader(user_id)
+    async def send_chunk(self,user_id:int, reader: Reader):
         chunk = reader.get_next_chunk()
         reading_speed = reader.reading_speed
 
+        msg_end_book = (
+            "📚 Похоже вы дочитали книгу"
+            "\nПредлагаю выбрать новую книгу из моей библиотеки..."
+            "\nА также приму в дар донаты на чашечку кофе ⛾ :)"
+            "\n<tg-spoiler>СБП Яндекс"
+            "\n+79177537768</tg-spoiler>"
+        )
+
         if not chunk:
-            await self.bot.send_message(user_id, "Книга закончилась 📚")
-            return
+            await self.bot.send_message(user_id,msg_end_book)
 
         title = make_title(chunk)
 
@@ -176,11 +182,11 @@ class Sender:
 
         await self.bot.send_audio(**audio_kwargs)
 
-        # длинный caption отдельным сообщением
+        # ЕСЛИ длинный caption отдельным сообщением
         if len(caption) > 1024:
             await self.bot.send_message(
                 chat_id=user_id,
-                text=caption,
+                text=chunk + " End of paragraph.",
                 parse_mode="HTML",
             )
 
@@ -192,6 +198,10 @@ class Sender:
         )
 
         os.remove(audio.filename) # удаляем аудио
+
+        if reader.paragraph_indx == reader.total_paragraphs:
+            await self.bot.send_message(user_id,msg_end_book)
+
 
 
 # К файлу привязываем ТЭГИ заголовок, создатель

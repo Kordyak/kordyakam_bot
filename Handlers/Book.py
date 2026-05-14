@@ -24,15 +24,21 @@ router_book = Router(name='book')
 
 
 @router_book.message(Command('start'))
-async def run_rdp(message: Message, state: FSMContext):
+async def run_rdp(message: Message, reader: Reader, state: FSMContext):
     await state.clear()
-    text = (
-        f"Привет, Дружище! Меня зовут '<b>{message.bot._me.first_name}</b>'.\n\n"
-        "Я умею:\n"
-        "• Читать книги в формате <b>EPUB</b> на английском по расписанию или в любое время по вашему запросу\n"
-        "• Переводить (RU/EN) и обратно\n"
-        "• Конвертировать текст в аудио (RU,EN)\n"
-    )
+
+    if not reader.book_title:
+        text = (
+            f'Привет, <b>{message.from_user.first_name}</b>!'
+            f"\nДавай выберем <b>книгу из моей библиотеки</b> или можешь загрузить <b>свою</b> в формате <b>.epub</b>."
+            f"\nДля этого используй <b>пользовательскую панель</b> внизу, вызывается <b>кнопкой в правом нижнем углу</b>."
+        )
+    else:
+        text = (
+            f"Привет, <b>{message.from_user.first_name}</b>!"
+            f'\nПохоже ты еще читаешь <b>"{reader.book_title}"</b>.'
+            f'\nТы можешь через <b>пользовательскую панель</b> под чатом проверить <b>свое состояние</b> или вызвать <b>новый абзац</b>'
+        )
     await message.answer(
         text,
         parse_mode="HTML",
@@ -42,8 +48,7 @@ async def run_rdp(message: Message, state: FSMContext):
 
 @router_book.message(F.text == "⚙️ Меню читателя")
 async def book_handler(message: Message, reader: Reader, state: FSMContext):
-    await state.set_state(None)
-
+    # await state.set_state(None)
     if not reader.book_title:
         await message.answer(
                             f"Похоже у тебя не загружена книга.\nВыбери из библиотеки или загрузи свою в формате epub",
@@ -328,16 +333,19 @@ async def save_time(message: Message, state: FSMContext, user_id, db: DB_library
             raise ValueError
     except ValueError:
         await message.answer(
-            '😈 Некорректное время. Формат <code>HH:MM</code> ',
+            '😈 Некорректное время. Формат <b>HH:MM</b> ',
+            parse_mode="HTML",
             reply_markup=cancel_kb()
         )
         return
     # сохраняем время
     db.save_time(user_id, time)
-    await message.answer(f"⏰ Установлено время отправки абзаца: <b>{time}</b>\n"
-                         f"Планировщик включен ✅.\n"
-                         f"Также вы можете запросить абзац книги через пользовательскую клавиатуру",
-                         parse_mode = "HTML")
+    await message.answer(
+        f"⏰ Установлено время отправки абзаца: <b>{time}</b>\n"
+         f"Планировщик включен ✅.\n"
+         f"Также вы можете запросить абзац книги через пользовательскую клавиатуру",
+         parse_mode = "HTML"
+         )
     await state.set_state(None)
 
 
@@ -407,7 +415,7 @@ async def save_index(message: Message, state: FSMContext, user_id, reader: Reade
     db.save_i_chunk(user_id, index)
 
     await message.answer("✅ Индекс абзаца обновлён!")
-    await next_chunk(message, sender, user_id, reader, state)
+    await next_chunk(message, sender, user_id, Reader(user_id), state)
     await state.set_state(None)
 
 
@@ -420,7 +428,7 @@ async def next_chunk(message: Message, sender: Sender, user_id: int,  reader: Re
 
     msg = await message.answer(f"Готовим абзац ...")
     try:
-        await sender.send_chunk(user_id)
+        await sender.send_chunk(user_id, reader)
     finally:
         with suppress(TelegramBadRequest):
             await msg.delete()

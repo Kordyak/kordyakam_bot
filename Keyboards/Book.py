@@ -29,6 +29,7 @@ def main_menu():
     ]
     return ReplyKeyboardMarkup(
         keyboard=buttons,
-        resize_keyboard=True
+        resize_keyboard=True,
+        one_time_keyboard=True,
     )
 

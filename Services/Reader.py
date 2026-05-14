@@ -43,6 +43,7 @@ class Reader:
         self.book_name = Path(str(state[2]))
         self.total_paragraphs = state[3] or 0  # total_paragraphs
         self.reading_speed = state[4] or 0  # reading_speed
+        self.username = state[5] or 0  # reading_speed
 
         path_file = Path(PATH_BOOKS / self.book_name)
 
@@ -133,7 +134,7 @@ class Sender:
         reading_speed = reader.reading_speed
 
         msg_end_book = (
-            "Поздравляю! Похоже вы дочитали книгу!"
+            f'Поздравляю {reader.username}! Похоже ты дочитал "{reader.book_title}"!'
             "\nПредлагаю выбрать новую книгу из моей <b>библиотеки...</b>"
             "\n\n<b>Принимаю дары и донаты</b> на чашечку ⛾ :)"
             "\n<tg-spoiler>СБП Яндекс"

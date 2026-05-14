@@ -200,7 +200,8 @@ class DB_library:
                     u.daily_time,
                     b.filename,
                     b.total_paragraphs,
-                    u.reading_speed
+                    u.reading_speed,
+                    u.username
                 FROM users u
                 LEFT JOIN books b ON u.current_book_id = b.id
                 WHERE u.user_id = ?

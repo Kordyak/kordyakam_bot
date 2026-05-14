@@ -133,15 +133,16 @@ class Sender:
         reading_speed = reader.reading_speed
 
         msg_end_book = (
-            "📚 Похоже вы дочитали книгу"
-            "\nПредлагаю выбрать новую книгу из моей библиотеки..."
-            "\nА также приму в дар донаты на чашечку кофе ⛾ :)"
+            "Поздравляю! Похоже вы дочитали книгу!"
+            "\nПредлагаю выбрать новую книгу из моей <b>библиотеки...</b>"
+            "\n\n<b>Принимаю дары и донаты</b> на чашечку ⛾ :)"
             "\n<tg-spoiler>СБП Яндекс"
             "\n+79177537768</tg-spoiler>"
         )
 
         if not chunk:
-            await self.bot.send_message(user_id,msg_end_book)
+            await self.bot.send_message(user_id,msg_end_book, parse_mode='HTML')
+            return
 
         title = make_title(chunk)
 
@@ -200,7 +201,7 @@ class Sender:
         os.remove(audio.filename) # удаляем аудио
 
         if reader.paragraph_indx == reader.total_paragraphs:
-            await self.bot.send_message(user_id,msg_end_book)
+            await self.bot.send_message(user_id,msg_end_book, parse_mode='HTML')
 
 
 

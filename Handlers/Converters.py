@@ -7,7 +7,7 @@ from aiogram.filters.command import CommandObject
 from aiogram.types import Message, FSInputFile
 
 from Services.Converters import *
-from Services.Reader import make_title, Reader
+from Services.Reader import Reader
 
 router_converter = Router(name='converter')
 
@@ -113,6 +113,12 @@ async def handler(message: Message, command: CommandObject, reader:Reader):
         await message.answer('Текст не обнаружен, вставьте его после команды!')
 
     await msg.delete()
+
+# титул из текста
+def make_title(text, words=6, max_len=60):
+    clean = re.sub(r'[<>:"/\\|?*]', '', text)
+    title = " ".join(clean.split()[:words])
+    return title[:max_len]
 
 
 def check_english_content(text, threshold=0.7):

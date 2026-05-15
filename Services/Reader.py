@@ -227,7 +227,6 @@ def rewrite_mp3_tags(file_path: str, reader: Reader):
     tags.add(TALB(encoding=3, text=reader.book_title))
     tags.save(file_path, v2_version=3)
 
-
 # Миниатюру из аудио файла для сообщения
 def make_thumbnail(image_bytes: bytes) -> BufferedInputFile:
     with Image.open(BytesIO(image_bytes)) as img:
@@ -247,8 +246,3 @@ def make_thumbnail(image_bytes: bytes) -> BufferedInputFile:
         return BufferedInputFile(file=output.getvalue(), filename="thumb.jpg")
 
 
-# титул из текста
-def make_title(text, words=6, max_len=60):
-    clean = re.sub(r'[<>:"/\\|?*]', '', text)
-    title = " ".join(clean.split()[:words])
-    return title[:max_len]

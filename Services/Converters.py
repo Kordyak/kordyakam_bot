@@ -46,8 +46,6 @@ async def translator(in_text: str) -> str:
 
 async def convert_text_audio(text: str, path_mp3: str, speed) -> str | None:
     text = re.sub('https.*', '', string=text)
-    # text = re.sub(r'\.\.\.+', '.', text)
-    # text = re.sub(r"(?<!\w)'|'(?!\w)", "", text)  # убирает ' в начале и конце каждого предложения.
     # voice = "ru-RU-DmitryNeural"  # Самый популярный мужской RU голос. Спокойный и очень разборчивый.
     # voice = "ru-RU-PavelNeural"  # Чуть более живой и эмоциональный.
     # voice = "en-US-GuyNeural"  # Очень чистый американский голос.

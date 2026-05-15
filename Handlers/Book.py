@@ -341,9 +341,9 @@ async def save_time(message: Message, state: FSMContext, user_id, db: DB_library
     # сохраняем время
     db.save_time(user_id, time)
     await message.answer(
-        f"⏰ Установлено время отправки абзаца: <b>{time}</b>\n"
-         f"Планировщик включен ✅.\n"
-         f"Также вы можете запросить абзац книги через пользовательскую клавиатуру",
+        f"⏰ Установлено время отправки абзаца: <b>{time}</b>"
+         f"\nПланировщик включен ✅"
+         f"\nА также через <b>пользовательскую клавиатуру под чатом</b> можешь запросить абзац книги, установить скорость чтения...",
          parse_mode = "HTML"
          )
     await state.set_state(None)

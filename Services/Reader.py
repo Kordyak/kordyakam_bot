@@ -38,12 +38,12 @@ class Reader:
         # Загружаем состояние пользователя
         state = self.db.get_user_state(user_id)
 
-        self.paragraph_indx = state[0] or 0  # paragraph_indx
+        self.paragraph_indx = state[0] or 0
         self.daily_time = state[1]
         self.book_name = Path(str(state[2]))
-        self.total_paragraphs = state[3] or 0  # total_paragraphs
-        self.reading_speed = state[4] or 0  # reading_speed
-        self.username = state[5] or 0  # reading_speed
+        self.total_paragraphs = state[3] or 0
+        self.reading_speed = state[4]
+        self.username = state[5]
 
         path_file = Path(PATH_BOOKS / self.book_name)
 
@@ -145,25 +145,26 @@ class Sender:
             await self.bot.send_message(user_id,msg_end_book, parse_mode='HTML')
             return
 
-        title = make_title(chunk)
+        if len(chunk.splitlines()) == 1:
+            paragraph = reader.paragraph_indx
+        else:
+            paragraph = f'{reader.paragraph_indx - len(chunk.splitlines()) + 1}...{reader.paragraph_indx}'
+
 
         caption, translate_chunk = await asyncio.gather(
-            convert_text_audio(chunk + " End of paragraph.", title + ".mp3", "en", reading_speed),
+            convert_text_audio(chunk + " End of paragraph.", paragraph + ".mp3", "en", reading_speed),
             translator(chunk, "/en_ru")
         )
 
-        if len(chunk.splitlines()) == 1:
-            par = reader.paragraph_indx
-        else:
-            par = f'{reader.paragraph_indx - len(chunk.splitlines()) + 1}...{reader.paragraph_indx}'
 
         caption = (
             f"{reader.book_creator} / <b>{reader.book_title}</b>\n"
-            f"Paragraph: № <b>{par}</b> ({reader.progress}%)\n"
+            f"Paragraph: № <b>{paragraph}</b> ({reader.progress}%)\n"
             f"{caption}"
         )
 
-        audio = FSInputFile(title + ".mp3")
+        audio = FSInputFile(paragraph + ".mp3")
+        duration = math.ceil(MP3(audio.filename).info.length)
         rewrite_mp3_tags(audio.filename, reader) # К файлу привязываем ТЭГИ заголовок, создатель
         thumbnail = make_thumbnail(reader.cover_image) # Миниатюра картинки для бота
 
@@ -173,8 +174,8 @@ class Sender:
             audio=audio,
             thumbnail=thumbnail,
             performer=reader.book_title,
-            title=title,
-            duration=math.ceil(MP3(audio.filename).info.length),
+            title=paragraph,
+            duration=duration,
             parse_mode="HTML"
         )
 

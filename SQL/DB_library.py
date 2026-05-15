@@ -35,12 +35,11 @@ class DB_library:
                 user_id INTEGER PRIMARY KEY,
                 username TEXT,
                 daily_time TEXT DEFAULT '08:00',
-
                 current_book_id INTEGER,
                 chunk_index INTEGER DEFAULT 0 CHECK(chunk_index >= 0),
-
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
+                reding_speed INTEGER DEFAULT 88,
+                last_access TIMESTAMP,
                 FOREIGN KEY (current_book_id) 
                     REFERENCES books(id) 
                     ON DELETE SET NULL
@@ -112,7 +111,7 @@ class DB_library:
                 UPDATE users
                 SET last_access=?
                 WHERE user_id=?
-            """, (datetime.now().date(), telegram_id))
+            """, (datetime.now().strftime("%d.%m.%Y %H:%M"), telegram_id))
 
     def get_time(self, telegram_id: int) -> str | None:
         with self._get_connection() as connection:

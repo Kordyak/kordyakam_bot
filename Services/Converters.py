@@ -47,7 +47,7 @@ async def translator(in_text: str, how_translate: str) -> str:
 
 
 
-async def convert_text_audio(text: str, path_mp3: str, lang: str, speed = 100) -> str:
+async def convert_text_audio(text: str, path_mp3: str, lang: str, speed) -> str:
     text = re.sub('https.*', '', string=text)
     # text = re.sub(r'\.\.\.+', '.', text)
     # text = re.sub(r"(?<!\w)'|'(?!\w)", "", text)  # убирает ' в начале и конце каждого предложения.

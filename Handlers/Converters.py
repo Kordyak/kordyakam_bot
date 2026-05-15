@@ -7,7 +7,7 @@ from aiogram.filters.command import CommandObject
 from aiogram.types import Message, FSInputFile
 
 from Services.Converters import *
-from Services.Reader import make_title
+from Services.Reader import make_title, Reader
 
 router_converter = Router(name='converter')
 
@@ -86,7 +86,7 @@ async def handler(message: Message):
 
 
 @router_converter.message(Command('audio_eng', 'audio_ru'))
-async def handler(message: Message, command: CommandObject):
+async def handler(message: Message, command: CommandObject, reader:Reader):
     temp_msg = await message.answer('Подготавливаю аудио!')
 
     text = command.args
@@ -108,14 +108,16 @@ async def handler(message: Message, command: CommandObject):
 
     if text:
         name_file = make_title(text)
-        await convert_text_audio(text, name_file + ".mp3", lang)
-        audio_file: FSInputFile = FSInputFile(name_file + ".mp3")
+        await convert_text_audio(text, name_file + ".mp3", lang, reader.reading_speed)
+
+        audio = FSInputFile(name_file + ".mp3")
+
         await message.reply_audio(
-            audio=audio_file,
+            audio=audio,
             performer=message.bot._me.first_name,
             title=name_file,
         )
-        os.remove(audio_file.filename)
+        os.remove(audio.filename)
 
     else:
         await message.answer('Текст не обнаружен, вставьте его после команды!')

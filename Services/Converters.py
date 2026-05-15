@@ -53,17 +53,18 @@ async def convert_text_audio(text: str, path_mp3: str, speed) -> str | None:
 
     # "en-US-GuyNeural"  # Очень чистый американский голос.
     # "en-US-AndrewNeural"  # Более спокойный и "дикторский".
-    # "en-US-BrianNeural"  # Хорошо подходит для книг и long-text.
-    # "en-US-JennyNeural"  # один из самых популярных женских голосов
-    # "en-US-AriaNeural"  # более выразительный и живой
-    # "en-US-SoniaNeural"  # британский акцент, спокойное чтение
-    # "en-US-AnaNeural"  # мягкий и довольно естественный
+    # "en-US-BrianNeural"  # Хорошо подходит для книг и long-text. // СУПЕР ГОЛОС
+
+    # "en-US-JennyNeural"  # один из самых популярных женских голосов // ОТСТОЙ
+    # "en-US-AriaNeural"  # более выразительный и живой // ТАКСЕБЕ, высокий
+    # "en-US-AnaNeural"  # мягкий и довольно естественный // Детский отстой
+    # "en-GB-SoniaNeural"  # британский акцент, спокойное чтение /// ПРИЯТНЫЙ !!!!
 
     # Генерация mp3
     lang = detect(text)
     rate = f"{speed-100:+d}%"
     if lang == "en":
-        communicate = edge_tts.Communicate(text=text,voice="en-US-JennyNeural",rate=rate)
+        communicate = edge_tts.Communicate(text=text,voice="en-GB-SoniaNeural",rate=rate)
     elif lang == "ru":
         communicate = edge_tts.Communicate(text=text, voice="ru-RU-SvetlanaNeural",rate=rate)
     else:

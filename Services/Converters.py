@@ -46,20 +46,26 @@ async def translator(in_text: str) -> str:
 
 async def convert_text_audio(text: str, path_mp3: str, speed) -> str | None:
     text = re.sub('https.*', '', string=text)
-    # voice = "ru-RU-DmitryNeural"  # Самый популярный мужской RU голос. Спокойный и очень разборчивый.
-    # voice = "ru-RU-PavelNeural"  # Чуть более живой и эмоциональный.
-    # voice = "en-US-GuyNeural"  # Очень чистый американский голос.
-    # voice = "en-US-AndrewNeural"  # Более спокойный и "дикторский".
-    # voice = "en-US-BrianNeural"  # Хорошо подходит для книг и long-text.
 
-    lang = detect(text)
+    # "ru-RU-DmitryNeural"  # Самый популярный мужской RU голос. Спокойный и очень разборчивый.
+    # "ru-RU-PavelNeural"  # Чуть более живой и эмоциональный.
+    # "ru-RU-SvetlanaNeural"  # мягкая подача
+
+    # "en-US-GuyNeural"  # Очень чистый американский голос.
+    # "en-US-AndrewNeural"  # Более спокойный и "дикторский".
+    # "en-US-BrianNeural"  # Хорошо подходит для книг и long-text.
+    # "en-US-JennyNeural"  # один из самых популярных женских голосов
+    # "en-US-AriaNeural"  # более выразительный и живой
+    # "en-US-SoniaNeural"  # британский акцент, спокойное чтение
+    # "en-US-AnaNeural"  # мягкий и довольно естественный
 
     # Генерация mp3
+    lang = detect(text)
+    rate = f"{speed-100:+d}%"
     if lang == "en":
-        rate = f"{speed-100:+d}%"
-        communicate = edge_tts.Communicate(text=text,voice="en-US-BrianNeural",rate=rate)
+        communicate = edge_tts.Communicate(text=text,voice="en-US-JennyNeural",rate=rate)
     elif lang == "ru":
-        communicate = edge_tts.Communicate(text=text, voice="ru-RU-SvetlanaNeural")
+        communicate = edge_tts.Communicate(text=text, voice="ru-RU-SvetlanaNeural",rate=rate)
     else:
         return None
 
@@ -100,64 +106,49 @@ def format_time(seconds: float) -> str:
 
 
 
-# Function to check internet connectivity
-def is_internet_available():
-    try:
-        # Try to connect to a reliable external server
-        requests.get("https://www.google.com", timeout=5)
-        return True
-    except requests.ConnectionError:
-        return False
+# # Function to check internet connectivity
+# def is_internet_available():
+#     try:
+#         # Try to connect to a reliable external server
+#         requests.get("https://www.google.com", timeout=5)
+#         return True
+#     except requests.ConnectionError:
+#         return False
+#
+#
+# # Retry settings
+# MAX_RETRIES = 60  # Maximum number of retry attempts
+# RETRY_DELAY = 60  # Delay between retries in seconds
+#
+#
+# async def send_with_retry(bot, chat_id, text, max_retries=MAX_RETRIES, delay=RETRY_DELAY):
+#     """
+#     Send a message with retry logic in case of connection errors.
+#     """
+#     for attempt in range(max_retries):
+#
+#         try:
+#             if not is_internet_available():
+#                 logger.warning(f"No internet connection. Retrying in {delay} seconds...")
+#                 await asyncio.sleep(delay)
+#                 continue
+#
+#             # if '_' in text:
+#             await bot.send_message(chat_id=chat_id,
+#                                    text=text,
+#                                    parse_mode='HTML')
+#             # else:
+#             # await bot.send_message(chat_id=chat_id, text=text)
+#             logger.info(f"Message sent to {chat_id}")
+#             break  # Exit the loop if the message is sent successfully
+#
+#         except Exception as e:
+#             logger.error(f"Attempt {attempt + 1} failed: {e}")
+#             if attempt < max_retries - 1:  # Don't wait on the last attempt
+#                 await asyncio.sleep(delay)
+#             else:
+#                 logger.error(f"Max retries reached. Failed to send message to {chat_id}")
 
 
-# Retry settings
-MAX_RETRIES = 60  # Maximum number of retry attempts
-RETRY_DELAY = 60  # Delay between retries in seconds
 
 
-async def send_with_retry(bot, chat_id, text, max_retries=MAX_RETRIES, delay=RETRY_DELAY):
-    """
-    Send a message with retry logic in case of connection errors.
-    """
-    for attempt in range(max_retries):
-
-        try:
-            if not is_internet_available():
-                logger.warning(f"No internet connection. Retrying in {delay} seconds...")
-                await asyncio.sleep(delay)
-                continue
-
-            # if '_' in text:
-            await bot.send_message(chat_id=chat_id,
-                                   text=text,
-                                   parse_mode='HTML')
-            # else:
-            # await bot.send_message(chat_id=chat_id, text=text)
-            logger.info(f"Message sent to {chat_id}")
-            break  # Exit the loop if the message is sent successfully
-
-        except Exception as e:
-            logger.error(f"Attempt {attempt + 1} failed: {e}")
-            if attempt < max_retries - 1:  # Don't wait on the last attempt
-                await asyncio.sleep(delay)
-            else:
-                logger.error(f"Max retries reached. Failed to send message to {chat_id}")
-
-
-
-def mix_text(eng_text, rus_text):
-    """Смешиваем текст англ./скрытый рус"""
-    eng_lines = eng_text.split('\n')
-    rus_lines = rus_text.split('\n')
-
-    result = []
-    for i in range(max(len(eng_lines), len(rus_lines)) - 1):
-        eng_line = eng_lines[i] if i < len(eng_lines) else ""
-        rus_line = rus_lines[i] if i < len(rus_lines) else ""
-
-        if rus_line.strip():
-            result.append(f"{eng_line}\n\n<tg-spoiler><i>{rus_line}</i></tg-spoiler>\n")
-        elif eng_line.strip():
-            result.append(f"{eng_line}")
-
-    return '\n'.join(result)

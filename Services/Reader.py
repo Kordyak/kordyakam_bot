@@ -146,21 +146,26 @@ class Sender:
             return
 
         if len(chunk.splitlines()) == 1:
-            paragraph = reader.paragraph_indx
+            paragraph = str(reader.paragraph_indx)
         else:
             paragraph = f'{reader.paragraph_indx - len(chunk.splitlines()) + 1}...{reader.paragraph_indx}'
 
 
         caption, translate_chunk = await asyncio.gather(
-            convert_text_audio(chunk + " End of paragraph.", paragraph + ".mp3", "en", reading_speed),
-            translator(chunk, "/en_ru")
+            convert_text_audio(chunk + " End of paragraph.", paragraph + ".mp3", reader.reading_speed),
+            translator(chunk)
         )
 
 
         caption = (
-            f"{reader.book_creator} / <b>{reader.book_title}</b>\n"
-            f"Paragraph: № <b>{paragraph}</b> ({reader.progress}%)\n"
-            f"{caption}"
+            f'{reader.book_creator} / <b>"{reader.book_title}"</b>'
+            f"\n({reader.progress}%)"
+            f"\n{caption}"
+        )
+        long_caption = (
+            f'{reader.book_creator} / <b>"{reader.book_title}"</b>'
+            f"\n({reader.progress}%)"
+            f"\n{chunk}"
         )
 
         audio = FSInputFile(paragraph + ".mp3")
@@ -189,7 +194,7 @@ class Sender:
         if len(caption) > 1024:
             await self.bot.send_message(
                 chat_id=user_id,
-                text=chunk + " End of paragraph.",
+                text=long_caption,
                 parse_mode="HTML",
             )
 

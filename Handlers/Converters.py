@@ -69,15 +69,15 @@ async def voice_message_handler(message: Message, model):
         await temp_msg.delete()
 
 
-@router_converter.message(Command('ru_en', 'en_ru'))
+@router_converter.message(Command('trans'))
 async def handler(message: Message):
     how_translate = message.text.split(' ')[0]
     if message.reply_to_message:
-        eng_text = await translator(message.reply_to_message.text, how_translate)
+        eng_text = await translator(message.reply_to_message.text)
     elif message.quote:
-        eng_text = await translator(message.quote.text, how_translate)
+        eng_text = await translator(message.quote.text)
     else:
-        eng_text = await translator(message.text, how_translate)
+        eng_text = await translator(message.text)
 
     if eng_text:
         await message.reply(f'{eng_text}')
@@ -85,33 +85,23 @@ async def handler(message: Message):
         await message.answer('Текст не обнаружен, вставьте его после команды!')
 
 
-@router_converter.message(Command('audio_eng', 'audio_ru'))
+@router_converter.message(Command('convert'))
 async def handler(message: Message, command: CommandObject, reader:Reader):
-    temp_msg = await message.answer('Подготавливаю аудио!')
+    msg = await message.answer('Подготавливаю аудио...')
 
     text = command.args
+
     if message.reply_to_message:  # Если просто текст в АУДИО перевести когда репли делаешь
         if message.reply_to_message.text:  # Если просто текст в АУДИО перевести когда репли делаешь
             text = message.reply_to_message.text
 
-        elif message.reply_to_message.caption:  # Текст из чата про книги в АУДИО (капча под картинкой)
-            match = re.search(r'Description:\s*(.*?)\s*Read book', message.reply_to_message.caption, re.DOTALL)
-            if match:
-                text = match.group(1).strip()
-            else:
-                text = message.reply_to_message.caption
-
-    if command.command == "audio_ru":
-        lang = "ru"
-    else:
-        lang = "en"
+        elif message.reply_to_message.caption:  # Если подпись под картинкой
+            text = message.reply_to_message.caption
 
     if text:
         name_file = make_title(text)
-        await convert_text_audio(text, name_file + ".mp3", lang, reader.reading_speed)
-
+        await convert_text_audio(text, name_file + ".mp3", reader.reading_speed)
         audio = FSInputFile(name_file + ".mp3")
-
         await message.reply_audio(
             audio=audio,
             performer=message.bot._me.first_name,
@@ -122,7 +112,7 @@ async def handler(message: Message, command: CommandObject, reader:Reader):
     else:
         await message.answer('Текст не обнаружен, вставьте его после команды!')
 
-    await temp_msg.delete()
+    await msg.delete()
 
 
 def check_english_content(text, threshold=0.7):

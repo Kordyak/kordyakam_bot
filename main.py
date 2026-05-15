@@ -67,10 +67,8 @@ async def set_bot():
 async def set_bot_commands():
     commands = [
         BotCommand(command="/start", description="Немного обо мне"),
-        BotCommand(command="/ru_en", description="Перевод (RU/EN)"),
-        BotCommand(command="/en_ru", description="Перевод (EN/RU)"),
-        BotCommand(command="/audio_eng", description="Текст -> аудио (EN)"),
-        BotCommand(command="/audio_ru", description="Текст -> аудио (RU)"),
+        BotCommand(command="/trans", description="Перевод (RU,EN)"),
+        BotCommand(command="/convert", description="Конверт текст в аудио (RU,EN)"),
     ]
     await bot.set_my_commands(commands)
 

@@ -1,17 +1,14 @@
 import logging
 import re
 import edge_tts
-
 from deep_translator import GoogleTranslator
-
 import requests
 import asyncio
+from langdetect import detect
 
 logger = logging.getLogger(__name__)
 
-
-
-async def translator(in_text: str, how_translate: str) -> str:
+async def translator(in_text: str) -> str:
     # если текст начинается с команды
     if re.match(r"^/(en_ru|ru_en)", in_text):
         text = " ".join(in_text.split()[1:])
@@ -23,12 +20,12 @@ async def translator(in_text: str, how_translate: str) -> str:
     if not text:
         return ""
 
-    if how_translate == "/en_ru":
+    lang = detect(text)
+
+    if lang == "en":
         gt1 = GoogleTranslator(source='en', target='ru')
-
-    elif how_translate == "/ru_en":
+    elif lang == "ru":
         gt1 = GoogleTranslator(source='ru', target='en')
-
     else:
         return text
 
@@ -47,7 +44,7 @@ async def translator(in_text: str, how_translate: str) -> str:
 
 
 
-async def convert_text_audio(text: str, path_mp3: str, lang: str, speed) -> str:
+async def convert_text_audio(text: str, path_mp3: str, speed) -> str | None:
     text = re.sub('https.*', '', string=text)
     # text = re.sub(r'\.\.\.+', '.', text)
     # text = re.sub(r"(?<!\w)'|'(?!\w)", "", text)  # убирает ' в начале и конце каждого предложения.
@@ -57,12 +54,16 @@ async def convert_text_audio(text: str, path_mp3: str, lang: str, speed) -> str:
     # voice = "en-US-AndrewNeural"  # Более спокойный и "дикторский".
     # voice = "en-US-BrianNeural"  # Хорошо подходит для книг и long-text.
 
+    lang = detect(text)
+
     # Генерация mp3
     if lang == "en":
         rate = f"{speed-100:+d}%"
         communicate = edge_tts.Communicate(text=text,voice="en-US-BrianNeural",rate=rate)
-    else:
+    elif lang == "ru":
         communicate = edge_tts.Communicate(text=text, voice="ru-RU-SvetlanaNeural")
+    else:
+        return None
 
     # СОхраняем mp3 и создаем тайминги одновременно. В поток можно обратиться один раз для чтения или записи
     timestamps = []
@@ -78,25 +79,17 @@ async def convert_text_audio(text: str, path_mp3: str, lang: str, speed) -> str:
     caption = build_caption(timestamps)
     return caption
 
-
-
-
-
-
-def format_time(seconds: float) -> str:
-    seconds = int(seconds)
-    m = seconds // 60
-    s = seconds % 60
-    return f"{m}:{s:02d}"
-
-
 def build_caption(timestamps) -> str:
     lines = []
     for t, sentence in timestamps:
         lines.append(f"{format_time(t)} {sentence}")
     return "\n".join(lines)
 
-
+def format_time(seconds: float) -> str:
+    seconds = int(seconds)
+    m = seconds // 60
+    s = seconds % 60
+    return f"{m}:{s:02d}"
 
 
 
@@ -151,8 +144,6 @@ async def send_with_retry(bot, chat_id, text, max_retries=MAX_RETRIES, delay=RET
                 await asyncio.sleep(delay)
             else:
                 logger.error(f"Max retries reached. Failed to send message to {chat_id}")
-
-
 
 
 

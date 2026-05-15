@@ -13,14 +13,14 @@ router_converter = Router(name='converter')
 
 
 @router_converter.message(Command('trans'))
-async def handler(message: Message):
-    how_translate = message.text.split(' ')[0]
+async def handler(message: Message, command: CommandObject):
+
     if message.reply_to_message:
         eng_text = await translator(message.reply_to_message.text)
     elif message.quote:
         eng_text = await translator(message.quote.text)
     else:
-        eng_text = await translator(message.text)
+        eng_text = await translator(command.args)
 
     if eng_text:
         await message.reply(f'{eng_text}')
@@ -29,21 +29,19 @@ async def handler(message: Message):
 
 
 @router_converter.message(Command('convert'))
-async def handler(message: Message, command: CommandObject, reader:Reader):
+async def handler(message: Message, command: CommandObject):
     msg = await message.answer('Подготавливаю аудио...')
-
     text = command.args
-
-    if message.reply_to_message:  # Если просто текст в АУДИО перевести когда репли делаешь
-        if message.reply_to_message.text:  # Если просто текст в АУДИО перевести когда репли делаешь
+    if message.reply_to_message:  # Если ответить
+        if message.reply_to_message.text:  # Если ответить на текст
             text = message.reply_to_message.text
 
-        elif message.reply_to_message.caption:  # Если подпись под картинкой
+        elif message.reply_to_message.caption:  # Если ответить на картинку с подписью
             text = message.reply_to_message.caption
 
     if text:
         name_file = make_title(text)
-        await convert_text_audio(text, name_file + ".mp3", reader.reading_speed)
+        await convert_text_audio(text, name_file + ".mp3", 100)
         audio = FSInputFile(name_file + ".mp3")
         await message.reply_audio(
             audio=audio,

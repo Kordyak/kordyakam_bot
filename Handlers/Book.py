@@ -395,11 +395,11 @@ async def set_voice(callback: CallbackQuery, db: DB_library, user_id: int):
     voice = callback.data.split(":", 1)[1]
     db.save_voice(user_id, voice)
     await callback.message.edit_text(
-        f"✅ Голос установлен:\n<b>{format_voice_name(voice)}</b>",
+        f"✅ Голос установлен:\n🎙 <b>{format_voice_name(voice)}</b>",
         reply_markup=None,
         parse_mode='HTML'
     )
-    await callback.answer("Голос обновлён")
+    await callback.answer("🎙 Голос обновлён")
 
 
 

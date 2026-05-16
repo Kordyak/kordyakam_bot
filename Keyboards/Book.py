@@ -9,7 +9,7 @@ def reader_menu(reader: Reader):
         [InlineKeyboardButton(text=f'📖 Описание "{reader.book_title}"', callback_data="current_book")],
         [InlineKeyboardButton(text=f'⏰ Изменить время ({reader.daily_time})', callback_data="change_time")],
         [InlineKeyboardButton(text=f'🏃‍➡️ Изменить скорость ({reader.reading_speed})%', callback_data="reading_speed")],
-        [InlineKeyboardButton(text=f'🗣️️ Изменить голос ({format_voice_name(reader.voice)})', callback_data='voice')],
+        [InlineKeyboardButton(text=f'🎙️ Изменить голос ({format_voice_name(reader.voice)})', callback_data='voice')],
         [InlineKeyboardButton(text=f'🔖 Читать с другого абзаца', callback_data='set_paragraf_index')],
         [InlineKeyboardButton(text=f'❌ Удалить "{reader.book_title}"', callback_data="del_book")],
     ]

@@ -10,11 +10,11 @@ from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, C
 from aiogram.filters import Command
 
 from FSM.states import UploadBook, StateUser
-from Keyboards.Book import reader_menu, main_menu
+from Keyboards.Book import reader_menu, main_menu, voice_menu_ru, voice_menu_eng, format_voice_name
 from Keyboards.Universal import confirm_kb, cancel_kb
 from SQL.DB_library import DB_library
 from Services.BookMetadata import BookMetadata
-from Services.Converters import translator
+from Services.Converters import translator, detect_lang_simple
 from Services.Library import Library, PATH_BOOKS, epub_paragraph_generator
 
 from Services.Reader import Sender, Reader
@@ -244,7 +244,6 @@ async def upload_my_book_waiting(message: Message, bot: Bot, state: FSMContext, 
             reply_markup=cancel_kb()
         )
         return
-
     original_name = message.document.file_name
     temp_path = PATH_BOOKS / f"temp_{user_id}.epub"
     file = await bot.get_file(message.document.file_id)
@@ -305,7 +304,7 @@ async def upload_book(message, user_id, name_file, state: FSMContext, db: DB_lib
     await state.set_state(StateUser.waiting_time)
 
 
-# Задаем Время
+# Изменить Время
 @router_book.callback_query(F.data == "change_time")
 async def change_time(callback: CallbackQuery, db: DB_library, user_id: int, state: FSMContext):
     await callback.answer()  # 🔴 обязательно
@@ -344,7 +343,7 @@ async def save_time(message: Message, state: FSMContext, user_id, db: DB_library
     await state.set_state(None)
 
 
-# Задаем скорость чтения
+# Изменить скорость чтения
 @router_book.callback_query(F.data == "reading_speed")
 async def change_reading_speed(callback: CallbackQuery, db: DB_library, user_id: int, state: FSMContext):
     await callback.answer()
@@ -374,6 +373,34 @@ async def save_reading_speed(message: Message, state: FSMContext, user_id: int, 
         f"🏃‍➡️ Скорость чтения изменена: {speed}%"
     )
     await state.clear()
+
+
+# Выбрать голос
+@router_book.callback_query(F.data == "voice")
+async def open_voice_menu(callback: CallbackQuery, reader: Reader):
+    await callback.answer()
+    lang = detect_lang_simple(reader.description)
+    if lang == 'ru':
+        await callback.message.edit_text(
+            "🎙 Выбери голос для озвучки:",
+            reply_markup=voice_menu_ru()
+        )
+    else:
+        await callback.message.edit_text(
+            "🎙 Выбери голос для озвучки:",
+            reply_markup=voice_menu_eng()
+        )
+@router_book.callback_query(F.data.startswith("voice:"))
+async def set_voice(callback: CallbackQuery, db: DB_library, user_id: int):
+    voice = callback.data.split(":", 1)[1]
+    db.save_voice(user_id, voice)
+    await callback.message.edit_text(
+        f"✅ Голос установлен:\n<b>{format_voice_name(voice)}</b>",
+        reply_markup=None,
+        parse_mode='HTML'
+    )
+    await callback.answer("Голос обновлён")
+
 
 
 # Выбрать абзац

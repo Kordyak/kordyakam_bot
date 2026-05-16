@@ -49,14 +49,14 @@ class DB_library:
 
             """)
 
-            # # migration
-            # columns = [row[1] for row in conn.execute("PRAGMA table_info(users)")]
-            #
-            # if "last_access" not in columns:
-            #     conn.execute("""
-            #         ALTER TABLE users
-            #         ADD COLUMN last_access TIMESTAMP
-            #     """)
+            # migration
+            columns = [row[1] for row in conn.execute("PRAGMA table_info(users)")]
+
+            if "voice" not in columns:
+                conn.execute("""
+                    ALTER TABLE users
+                    ADD COLUMN voice TEXT
+                """)
 
     # ============================ USER ============================================
     def get_or_create_user(self, telegram_id: int, username: str | None = None):
@@ -145,6 +145,14 @@ class DB_library:
                 WHERE user_id=?
             """, (speed, telegram_id))
 
+    def save_voice(self, user_id:int, voice:str):
+        with self._get_connection() as conn:
+            conn.execute("""
+                UPDATE users
+                SET voice=?
+                WHERE user_id=?
+            """, (voice, user_id))
+
     def list_users_with_time(self) -> list[dict]:
         with self._get_connection() as conn:
             rows = conn.execute("""
@@ -200,7 +208,8 @@ class DB_library:
                     b.filename,
                     b.total_paragraphs,
                     u.reading_speed,
-                    u.username
+                    u.username,
+                    u.voice
                 FROM users u
                 LEFT JOIN books b ON u.current_book_id = b.id
                 WHERE u.user_id = ?

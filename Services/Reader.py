@@ -11,7 +11,7 @@ from aiogram.types import FSInputFile, BufferedInputFile
 from sympy.physics.units import speed
 
 from Services.BookMetadata import BookMetadata
-from Services.Converters import translator, convert_text_audio
+from Services.Converters import translator, convert_text_audio, detect_lang_simple
 from SQL.DB_library import DB_library
 
 from mutagen.mp3 import MP3
@@ -44,9 +44,9 @@ class Reader:
         self.total_paragraphs = state[3] or 0
         self.reading_speed = state[4]
         self.username = state[5]
+        self.voice = state[6]
 
         path_file = Path(PATH_BOOKS / self.book_name)
-
         if path_file.exists():
             metadata = BookMetadata.get_cache(path_file)
             self.book_title = metadata.get("book_title", "")
@@ -56,6 +56,15 @@ class Reader:
 
             # Ленивое чтение epub
             self.lazy_read = LazyEpubReader(path_file, self.paragraph_indx)
+
+        if self.voice is None:
+            lang = detect_lang_simple(self.description)
+            if lang == 'ru':
+                self.voice = "ru-RU-SvetlanaNeural"
+            else:
+                self.voice = "en-US-BrianNeural"
+
+
 
     @property
     def progress(self):
@@ -131,7 +140,6 @@ class Sender:
 
     async def send_chunk(self,user_id:int, reader: Reader):
         chunk = reader.get_next_chunk()
-        reading_speed = reader.reading_speed
 
         msg_end_book = (
             f'Поздравляю {reader.username}! Похоже ты дочитал "{reader.book_title}"!'
@@ -150,10 +158,8 @@ class Sender:
         else:
             paragraph = f'{reader.paragraph_indx - len(chunk.splitlines()) + 1}...{reader.paragraph_indx}'
 
-        voice = "en-US-AndrewNeural"
-
         caption, translate_chunk = await asyncio.gather(
-            convert_text_audio(chunk + " End of paragraph.", paragraph + ".mp3", reader.reading_speed, voice),
+            convert_text_audio(chunk + " End of paragraph.", paragraph + ".mp3", reader.reading_speed, reader.voice),
             translator(chunk)
         )
 

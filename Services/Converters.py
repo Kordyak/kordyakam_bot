@@ -34,36 +34,32 @@ async def translator(in_text: str) -> str:
         print(msg)
         return msg
 
+async def convert_text_audio(text: str, path_mp3: str, speed:int, voice: str) -> str | None:
+    text = re.sub(r'https?://\S+', '', text)
+    if not text:
+        return None
 
-    # "ru-RU-DmitryNeural"  # Самый популярный мужской RU голос. Спокойный и очень разборчивый.
-    # "ru-RU-PavelNeural"  # Чуть более живой и эмоциональный.
-    # "ru-RU-SvetlanaNeural"  # мягкая подача
-
-    # "en-US-GuyNeural"  # Очень чистый американский голос.  +++
-    # "en-US-AndrewNeural"  # Более спокойный и "дикторский". ++
-    # "en-US-BrianNeural"  # Хорошо подходит для книг и long-text. // СУПЕР ГОЛОС  ++++
-    # "en-GB-SoniaNeural"  # британский акцент, спокойное чтение /// ПРИЯТНЫЙ !!!! +
-async def convert_text_audio(text: str, path_mp3: str, speed, voice: str) -> str | None:
-    text = re.sub('https.*', '', string=text)
-    # Генерация mp3
     lang = detect_lang_simple(text)
-    rate = f"{speed-100:+d}%"
+    rate = f"{speed - 100:+d}%"
     if lang == "ru":
-        communicate = edge_tts.Communicate(text=text, voice="ru-RU-SvetlanaNeural",rate=rate)
+        communicate = edge_tts.Communicate(text=text, voice=voice,rate=rate)
     else:
         communicate = edge_tts.Communicate(text=text,voice=voice,rate=rate)
 
     # СОхраняем mp3 и создаем тайминги одновременно. В поток можно обратиться один раз для чтения или записи
     timestamps = []
     with open(path_mp3, "wb") as f:
-        async for chunk in communicate.stream():
-            if chunk["type"] == "audio":
-                f.write(chunk["data"])
-            elif chunk["type"] == "SentenceBoundary":
-                timestamps.append((
-                    chunk["offset"] / 10_000_000,
-                    chunk["text"].strip()
-                ))
+        try:
+            async for chunk in communicate.stream():
+                if chunk["type"] == "audio":
+                    f.write(chunk["data"])
+                elif chunk["type"] == "SentenceBoundary":
+                    timestamps.append((
+                        chunk["offset"] / 10_000_000,
+                        chunk["text"].strip()
+                    ))
+        except edge_tts.exceptions.NoAudioReceived:
+            return None
     caption = build_caption(timestamps)
     return caption
 

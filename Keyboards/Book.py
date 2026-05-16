@@ -1,36 +1,25 @@
 from aiogram.types import InlineKeyboardMarkup,InlineKeyboardButton,ReplyKeyboardMarkup,KeyboardButton
+from Locales.translator import t
 from Services.Reader import Reader
 
 
-# Главная клавиатура
-def reader_menu(reader: Reader):
+
+
+def reader_menu(reader: Reader, lang: str):
     return InlineKeyboardMarkup(
         inline_keyboard=[
-        [InlineKeyboardButton(text=f'📖 Описание "{reader.book_title}"', callback_data="current_book")],
-        [InlineKeyboardButton(text=f'⏰ Изменить время ({reader.daily_time})', callback_data="change_time")],
-        [InlineKeyboardButton(text=f'🏃‍➡️ Изменить скорость ({reader.reading_speed})%', callback_data="reading_speed")],
-        [InlineKeyboardButton(text=f'🎙️ Изменить голос ({format_voice_name(reader.voice)})', callback_data='voice')],
-        [InlineKeyboardButton(text=f'🔖 Читать с другого абзаца', callback_data='set_paragraf_index')],
-        [InlineKeyboardButton(text=f'❌ Удалить "{reader.book_title}"', callback_data="del_book")],
+        [InlineKeyboardButton(text=t(lang, "btn_book_info", title=reader.book_title), callback_data="current_book")],
+        [InlineKeyboardButton(text=t(lang, "btn_change_time", time=reader.daily_time), callback_data="change_time")],
+        [InlineKeyboardButton(text=t(lang, "btn_change_speed", speed=reader.reading_speed), callback_data="reading_speed")],
+        [InlineKeyboardButton(text=t(lang, "btn_change_voice", voice=format_voice_name(reader.voice)), callback_data='voice')],
+        [InlineKeyboardButton(text=t(lang, "btn_change_paragraph"), callback_data='set_paragraf_index')],
+        [InlineKeyboardButton(text=t(lang, "btn_delete_book", title=reader.book_title), callback_data="del_book")],
     ]
     )
-
 def format_voice_name(voice: str) -> str:
-    # ru-RU-SvetlanaNeural → Svetlana
     return voice.split("-")[-1].replace("Neural", "")
 
-def main_menu():
-    buttons = [
-        [KeyboardButton(text="📚 Библиотека")],
-        [KeyboardButton(text="📖 Загрузить свою книгу")],
-        [KeyboardButton(text="⚙️ Меню читателя")],
-        [KeyboardButton(text="▶️ Читаем следующий абзац")],
-    ]
-    return ReplyKeyboardMarkup(
-        keyboard=buttons,
-        resize_keyboard=True,
-        one_time_keyboard=True,
-    )
+
 
 def voice_menu_ru():
     return InlineKeyboardMarkup(

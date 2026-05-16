@@ -4,8 +4,8 @@ import asyncio
 from aiogram import Dispatcher, Bot
 from aiogram.client.default import DefaultBotProperties
 from aiogram.types import BotCommand
-from argostranslate import package
 
+from Locales.translator import t
 from Middlewares.mw1 import Middleware_typing, Middleware_access_maintenenace
 from Services.Library import Library
 from Services.Reader import Sender
@@ -18,13 +18,7 @@ from Handlers.Book import router_book
 
 from config import Config, load_config
 
-import whisper
-import argostranslate.package
-import argostranslate.translate
 
-from aiogram.client.session.aiohttp import AiohttpSession
-
-# Конфигурация и логирование
 config: Config = load_config()
 
 logging.basicConfig(
@@ -64,13 +58,23 @@ async def set_bot():
     dispatcher.include_router(router_universal)
 
 
-async def set_bot_commands():
-    commands = [
-        BotCommand(command="/start", description="Немного обо мне"),
-        BotCommand(command="/trans", description="Перевод (RU,EN)"),
-        BotCommand(command="/convert", description="Конверт текст в аудио (RU,EN)"),
-    ]
-    await bot.set_my_commands(commands)
+# async def set_bot_commands():
+#     ru_commands = [
+#         BotCommand(command="/start", description=t("ru", "cmd_start")),
+#         BotCommand(command="/read_next", description=t("ru", "cmd_read_next")),
+#         BotCommand(command="/trans", description=t("ru", "cmd_trans")),
+#         BotCommand(command="/convert", description=t("ru", "cmd_convert")),
+#     ]
+#     en_commands = [
+#         BotCommand(command="/start", description=t("en", "cmd_start")),
+#         BotCommand(command="/read_next", description=t("en", "cmd_read_next")),
+#         BotCommand(command="/trans", description=t("en", "cmd_trans")),
+#         BotCommand(command="/convert", description=t("en", "cmd_convert")),
+#     ]
+#     await bot.delete_my_commands()
+#     await bot.set_my_commands(en_commands)
+#     await bot.set_my_commands(en_commands, language_code="en")
+#     await bot.set_my_commands(ru_commands, language_code="ru")
 
 
 async def set_scheduler():
@@ -84,7 +88,7 @@ async def set_scheduler():
 async def main():
     try:
         await set_bot()
-        await set_bot_commands()
+        # await set_bot_commands()
         await set_scheduler()
 
         library1 = Library()
@@ -92,7 +96,7 @@ async def main():
 
         async with bot:
             await bot.delete_webhook(drop_pending_updates=True)
-            await dispatcher.start_polling(bot, drop_pending_updates=True)
+            await dispatcher.start_polling(bot,drop_pending_updates=True)
             logger.info("Bot polling started")
 
     except Exception as e:

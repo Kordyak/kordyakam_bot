@@ -206,8 +206,8 @@ async def current_book(callback: CallbackQuery, state: FSMContext, reader: Reade
         return
 
     book_info = {
-        'book_title': reader.book_title,
-        'book_creator': reader.book_creator,
+        'title': reader.book_title,
+        'creator': reader.book_creator,
         'description': reader.description,
         'cover_image': reader.cover_image,
         'path': reader.book_name,
@@ -282,10 +282,8 @@ async def upload_my_book_waiting(message: Message, bot: Bot, state: FSMContext, 
 
 # Загрузка книги
 async def upload_book(message, user_id, name_file, state: FSMContext, db: DB_library):
-
     book_path = Path(PATH_BOOKS / name_file)
     file_hash = Library.calculate_hash(book_path)
-
     # Проверяем, есть ли книга в библиотеке
     book = db.get_book_by_hash(file_hash)
     if not book:
@@ -295,13 +293,10 @@ async def upload_book(message, user_id, name_file, state: FSMContext, db: DB_lib
         book_id = db.add_book(str(name_file), file_hash, total_paragraphs)
     else:
         book_id = book["id"]
-
     # Назначаем книгу пользователю
     db.set_current_book(user_id, book_id)
-
     # Создаем Reader для пользователя
     reader = Reader(user_id)
-
     await message.answer(
         f"Книга {reader.book_title} установлена.\n"
         "Сейчас давайте установим время отправки абзаца на каждый день.\n"

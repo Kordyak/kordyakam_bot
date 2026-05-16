@@ -150,9 +150,10 @@ class Sender:
         else:
             paragraph = f'{reader.paragraph_indx - len(chunk.splitlines()) + 1}...{reader.paragraph_indx}'
 
+        voice = "en-US-AndrewNeural"
 
         caption, translate_chunk = await asyncio.gather(
-            convert_text_audio(chunk + " End of paragraph.", paragraph + ".mp3", reader.reading_speed),
+            convert_text_audio(chunk + " End of paragraph.", paragraph + ".mp3", reader.reading_speed, voice),
             translator(chunk)
         )
 

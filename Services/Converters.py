@@ -25,35 +25,25 @@ async def translator(in_text: str) -> str:
     else:
         gt1 = GoogleTranslator(source='en', target='ru')
 
-
     try:
-        # deep-translator sync -> выносим в отдельный поток
-        result = await asyncio.to_thread(
-            gt1.translate,
-            text
-        )
+        # выносим в отдельный поток
+        result = await asyncio.to_thread(gt1.translate,text)
         return result
-
     except Exception as e:
         msg = f"😢 Ошибка перевода: {e}"
         print(msg)
         return msg
 
 
-
     # "ru-RU-DmitryNeural"  # Самый популярный мужской RU голос. Спокойный и очень разборчивый.
     # "ru-RU-PavelNeural"  # Чуть более живой и эмоциональный.
     # "ru-RU-SvetlanaNeural"  # мягкая подача
 
-    # "en-US-GuyNeural"  # Очень чистый американский голос.
-    # "en-US-AndrewNeural"  # Более спокойный и "дикторский".
-    # "en-US-BrianNeural"  # Хорошо подходит для книг и long-text. // СУПЕР ГОЛОС
-
-    # "en-US-JennyNeural"  # один из самых популярных женских голосов // ОТСТОЙ
-    # "en-US-AriaNeural"  # более выразительный и живой // ТАКСЕБЕ, высокий
-    # "en-US-AnaNeural"  # мягкий и довольно естественный // Детский отстой
-    # "en-GB-SoniaNeural"  # британский акцент, спокойное чтение /// ПРИЯТНЫЙ !!!!
-async def convert_text_audio(text: str, path_mp3: str, speed) -> str | None:
+    # "en-US-GuyNeural"  # Очень чистый американский голос.  +++
+    # "en-US-AndrewNeural"  # Более спокойный и "дикторский". ++
+    # "en-US-BrianNeural"  # Хорошо подходит для книг и long-text. // СУПЕР ГОЛОС  ++++
+    # "en-GB-SoniaNeural"  # британский акцент, спокойное чтение /// ПРИЯТНЫЙ !!!! +
+async def convert_text_audio(text: str, path_mp3: str, speed, voice: str) -> str | None:
     text = re.sub('https.*', '', string=text)
     # Генерация mp3
     lang = detect_lang_simple(text)
@@ -61,7 +51,7 @@ async def convert_text_audio(text: str, path_mp3: str, speed) -> str | None:
     if lang == "ru":
         communicate = edge_tts.Communicate(text=text, voice="ru-RU-SvetlanaNeural",rate=rate)
     else:
-        communicate = edge_tts.Communicate(text=text,voice="en-GB-SoniaNeural",rate=rate)
+        communicate = edge_tts.Communicate(text=text,voice=voice,rate=rate)
 
     # СОхраняем mp3 и создаем тайминги одновременно. В поток можно обратиться один раз для чтения или записи
     timestamps = []

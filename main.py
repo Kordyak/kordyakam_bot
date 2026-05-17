@@ -22,7 +22,6 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
-# logger.info("Start bot!")
 
 
 dispatcher: Dispatcher
@@ -71,7 +70,6 @@ async def main():
     async with bot:
         await bot.delete_webhook(drop_pending_updates=True)
         await dispatcher.start_polling(bot,drop_pending_updates=True)
-        # logger.info("start polling!")
 
 
 if __name__ == "__main__":

@@ -8,6 +8,7 @@ from aiogram.filters import Command
 from FSM.states import UploadBook, StateUser
 from Keyboards.Book import reader_menu, voice_menu_ru, voice_menu_eng, format_voice_name
 from Keyboards.Universal import confirm_kb, cancel_kb
+from Locales.translator import t
 from SQL.DB_library import DB_library
 from Services.BookMetadata import BookMetadata
 from Services.Converters import translator, detect_lang_simple
@@ -23,23 +24,13 @@ router_book = Router(name='book')
 @router_book.message(Command('start'))
 async def start_handler(message: Message, reader: Reader, lang):
     if not reader.book_title:
-        text = (
-            f'Привет, <b>{message.from_user.first_name}</b>!'
-            f"\nДавай выберем <b>книгу из библиотеки</b> "
-            f"\n/library."
-            f"\nИли можешь загрузить <b>свою книгу в формате EPUB</b> "
-            f"\n/upload."
-        )
+        text = t(lang, "start_no_book", first_name=message.from_user.first_name)
         await message.answer(
                             text,
                             parse_mode='HTML'
                             )
     else:
-        text = (f'Меню читателя:'
-                f'\nСейчас вы читаете: <b>"{reader.book_title}"</b>'
-                f'\nПоследний абзац: <b>{reader.paragraph_indx}</b>'
-                f'\nВаш прогресс чтения: <b>{reader.progress}%</b>'
-                )
+        text =  t(lang, "start_with_book", book_title=reader.book_title,paragraph_indx=reader.paragraph_indx,progress=reader.progress)
         await message.answer(
                             text,
                             reply_markup=reader_menu(reader, lang),
@@ -451,9 +442,12 @@ async def del_book(callback: CallbackQuery):
 
 # Язык интерфейса
 @router_book.message(Command("language"))
-async def select_language(message: Message):
+async def select_language(message: Message,lang):
 
-    text = '🌐 Выберите язык'
+    text = (
+        f'🌐 Выберите язык'
+        f'\nСейчас установлен <b>"{lang}"</b>'
+    )
 
     reply_markup = InlineKeyboardMarkup(
         inline_keyboard=[

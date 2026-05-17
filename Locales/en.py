@@ -1,8 +1,5 @@
 TEXTS = {
-    # "cmd_start": "Let's go",
-    # "cmd_read_next": "Read next chunk",
-    # "cmd_trans": "Translate (RU,EN)",
-    # "cmd_convert": "Convert text to audio (RU,EN)",
+    # ================= Button =================
 
     "btn_book_info": '📖 Description "{title}"',
     "btn_change_time": '⏰ Change time ({time})',
@@ -17,8 +14,15 @@ TEXTS = {
     "btn_next_paragraph": "▶️ Read next paragraph",
 
     # ================= START =================
-    "start_no_book": 'Hello, <b>{name}</b>!\nLet’s choose a <b>book from the library</b>, or you can upload your own <b>.epub</b> file.',
-    "start_with_book": 'Reader menu:\nYou are currently reading: <b>"{title}"</b>\nLast paragraph: <b>{index}</b>\nReading progress: <b>{progress}%</b>',
+    "start_no_book": 'Hello, <b>{first_name}</b>!'
+                     '\nLet’s choose a <b>book from the library</b>.'
+                     '\n/library'
+                     '\nOr you can upload your own <b>.epub</b> file.'
+                     '\n/upload',
+    "start_with_book": 'Reader menu:'
+                       '\nYou are reading now: <b>"{book_title}"</b>'
+                       '\nLast paragraph: <b>{paragraph_indx}</b>'
+                       '\nReading progress: <b>{progress}%</b>',
 
     # ================= LIBRARY =================
     "library_empty": "The library is empty for now 📚",

@@ -1,7 +1,8 @@
 from datetime import datetime
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from SQL.DB_library import DB_library
-from Services.Reader import Sender, Reader
+from Services.Reader import Reader
+from Services.Sender import Sender
 
 scheduler = AsyncIOScheduler()
 

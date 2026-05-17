@@ -1,12 +1,11 @@
+import asyncio
 from contextlib import suppress
 from pathlib import Path
-
 from aiogram import Router, F, Bot
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, BufferedInputFile
 from aiogram.filters import Command
-
 from FSM.states import UploadBook, StateUser
 from Keyboards.Book import reader_menu, voice_menu_ru, voice_menu_eng, format_voice_name
 from Keyboards.Universal import confirm_kb, cancel_kb
@@ -14,8 +13,8 @@ from SQL.DB_library import DB_library
 from Services.BookMetadata import BookMetadata
 from Services.Converters import translator, detect_lang_simple
 from Services.Library import Library, PATH_BOOKS, epub_paragraph_generator
-
-from Services.Reader import Sender, Reader
+from Services.Reader import Reader
+from Services.Sender import Sender
 
 
 router_book = Router(name='book')
@@ -23,12 +22,14 @@ router_book = Router(name='book')
 
 
 @router_book.message(Command('start'))
-async def start_handler(message: Message, reader: Reader, state: FSMContext):
+async def start_handler(message: Message, reader: Reader):
     if not reader.book_title:
         text = (
             f'Привет, <b>{message.from_user.first_name}</b>!'
-            f"\nДавай выберем <b>книгу из моей библиотеки</b> /library."
-            f"\nИли можешь загрузить <b>свою в формате EPUB</b> /upload."
+            f"\nДавай выберем <b>книгу из библиотеки</b> "
+            f"\n/library."
+            f"\nИли можешь загрузить <b>свою книгу в формате EPUB</b> "
+            f"\n/upload."
         )
         await message.answer(
                             text,
@@ -164,14 +165,18 @@ async def book_description(callback: CallbackQuery, state: FSMContext):
         f"\n{description}"
     )
 
-    if book_info['cover_image']:  # если есть байты картинки
+
+    # параллельно перевод
+    description_ru = await translator(description)
+
+    if book_info.get('cover_image'):  # если есть байты картинки
         photo = BufferedInputFile(book_info['cover_image'], filename="cover.jpg")
         await message.answer_photo(photo=photo, caption=caption, parse_mode="HTML")
+
     else:
         await message.answer(caption)
 
     # Описание на русском
-    description_ru = await translator(description)
     await message.answer(
         text=f"<tg-spoiler>{description_ru}</tg-spoiler>",
         parse_mode="HTML",

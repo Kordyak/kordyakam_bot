@@ -34,6 +34,7 @@ async def translator(in_text: str) -> str:
         print(msg)
         return msg
 
+
 async def convert_text_audio(text: str, path_mp3: str, speed:int, voice: str) -> str | None:
     text = re.sub(r'https?://\S+', '', text)
     if not text:
@@ -62,13 +63,11 @@ async def convert_text_audio(text: str, path_mp3: str, speed:int, voice: str) ->
             return None
     caption = build_caption(timestamps)
     return caption
-
 def build_caption(timestamps) -> str:
     lines = []
     for t, sentence in timestamps:
         lines.append(f"{format_time(t)} {sentence}")
     return "\n".join(lines)
-
 def format_time(seconds: float) -> str:
     seconds = int(seconds)
     m = seconds // 60
@@ -77,68 +76,11 @@ def format_time(seconds: float) -> str:
 
 
 
-
-
-
 def detect_lang_simple(text):
     ru_chars = len(re.findall(r'[а-яА-ЯёЁ]', text))
     en_chars = len(re.findall(r'[a-zA-Z]', text))
 
     return "ru" if ru_chars > en_chars else "en"
-
-
-
-
-
-
-
-
-
-
-
-
-# # Function to check internet connectivity
-# def is_internet_available():
-#     try:
-#         # Try to connect to a reliable external server
-#         requests.get("https://www.google.com", timeout=5)
-#         return True
-#     except requests.ConnectionError:
-#         return False
-#
-#
-# # Retry settings
-# MAX_RETRIES = 60  # Maximum number of retry attempts
-# RETRY_DELAY = 60  # Delay between retries in seconds
-#
-#
-# async def send_with_retry(bot, chat_id, text, max_retries=MAX_RETRIES, delay=RETRY_DELAY):
-#     """
-#     Send a message with retry logic in case of connection errors.
-#     """
-#     for attempt in range(max_retries):
-#
-#         try:
-#             if not is_internet_available():
-#                 logger.warning(f"No internet connection. Retrying in {delay} seconds...")
-#                 await asyncio.sleep(delay)
-#                 continue
-#
-#             # if '_' in text:
-#             await bot.send_message(chat_id=chat_id,
-#                                    text=text,
-#                                    parse_mode='HTML')
-#             # else:
-#             # await bot.send_message(chat_id=chat_id, text=text)
-#             logger.info(f"Message sent to {chat_id}")
-#             break  # Exit the loop if the message is sent successfully
-#
-#         except Exception as e:
-#             logger.error(f"Attempt {attempt + 1} failed: {e}")
-#             if attempt < max_retries - 1:  # Don't wait on the last attempt
-#                 await asyncio.sleep(delay)
-#             else:
-#                 logger.error(f"Max retries reached. Failed to send message to {chat_id}")
 
 
 

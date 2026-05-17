@@ -1,21 +1,15 @@
 import logging
 import asyncio
-
 from aiogram import Dispatcher, Bot
 from aiogram.client.default import DefaultBotProperties
-from aiogram.types import BotCommand
-
-from Locales.translator import t
 from Middlewares.mw1 import Middleware_typing, Middleware_access_maintenenace
 from Services.Library import Library
-from Services.Reader import Sender
+from Services.Sender import Sender
 from Services.Scheduler import scheduler, Scheduler
-
 from Handlers.Universal import router_universal
 from Handlers.Maintenance import router_maintenance
 from Handlers.Converters import router_converter
 from Handlers.Book import router_book
-
 from config import Config, load_config
 
 

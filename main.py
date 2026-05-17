@@ -22,7 +22,8 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
-logger.info("Start bot!")
+# logger.info("Start bot!")
+
 
 dispatcher: Dispatcher
 bot: Bot
@@ -52,25 +53,6 @@ async def set_bot():
     dispatcher.include_router(router_universal)
 
 
-# async def set_bot_commands():
-#     ru_commands = [
-#         BotCommand(command="/start", description=t("ru", "cmd_start")),
-#         BotCommand(command="/read_next", description=t("ru", "cmd_read_next")),
-#         BotCommand(command="/trans", description=t("ru", "cmd_trans")),
-#         BotCommand(command="/convert", description=t("ru", "cmd_convert")),
-#     ]
-#     en_commands = [
-#         BotCommand(command="/start", description=t("en", "cmd_start")),
-#         BotCommand(command="/read_next", description=t("en", "cmd_read_next")),
-#         BotCommand(command="/trans", description=t("en", "cmd_trans")),
-#         BotCommand(command="/convert", description=t("en", "cmd_convert")),
-#     ]
-#     await bot.delete_my_commands()
-#     await bot.set_my_commands(en_commands)
-#     await bot.set_my_commands(en_commands, language_code="en")
-#     await bot.set_my_commands(ru_commands, language_code="ru")
-
-
 async def set_scheduler():
     sender = Sender(bot)
     dispatcher["sender"] = sender
@@ -80,22 +62,16 @@ async def set_scheduler():
 
 
 async def main():
-    try:
-        await set_bot()
-        # await set_bot_commands()
-        await set_scheduler()
+    await set_bot()
+    await set_scheduler()
 
-        library1 = Library()
-        library1.sync_library()
+    library1 = Library()
+    library1.sync_library()
 
-        async with bot:
-            await bot.delete_webhook(drop_pending_updates=True)
-            await dispatcher.start_polling(bot,drop_pending_updates=True)
-            logger.info("Bot polling started")
-
-    except Exception as e:
-        await bot.session.close()
-        input("Нажми Enter чтобы закрыть консоль...")
+    async with bot:
+        await bot.delete_webhook(drop_pending_updates=True)
+        await dispatcher.start_polling(bot,drop_pending_updates=True)
+        # logger.info("start polling!")
 
 
 if __name__ == "__main__":

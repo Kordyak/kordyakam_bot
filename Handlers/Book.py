@@ -1,4 +1,3 @@
-import asyncio
 from contextlib import suppress
 from pathlib import Path
 from aiogram import Router, F, Bot

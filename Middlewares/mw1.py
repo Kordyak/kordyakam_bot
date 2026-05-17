@@ -1,9 +1,9 @@
 import asyncio
 from aiogram import BaseMiddleware
 from aiogram.enums import ChatAction
-from aiogram.types import TelegramObject, Message, CallbackQuery
+from aiogram.types import TelegramObject, CallbackQuery
 
-from SQL.DB_library import DB_library, PATH_READ_DB
+from SQL.DB_library import DB_library
 from Services.Reader import Reader
 from typing import Callable, Awaitable, Dict, Any
 

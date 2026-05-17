@@ -42,7 +42,6 @@ class Library:
         """
         Проверяет папку Books и синхронизирует её с SQL.
         """
-
         # 1. Удаляем из базы книги, файлы которых отсутствуют
         books = self.db.get_all_books()  # [(id, filename, hash, ...)]
 
@@ -55,21 +54,24 @@ class Library:
                 self.db.delete_book(book[0])  # удаление по id
 
         # 2. Добавляем новые книги
-        for book_path in PATH_BOOKS.glob("*.epub"):
+        for pattern in ("*.epub", "*.fb2"):
+            for book_path in PATH_BOOKS.glob(pattern):
+                if not zipfile.is_zipfile(book_path):
+                    print(f"⚠ Файл {book_path.name} поврежден или не EPUB — удаляем")
+                    book_path.unlink(missing_ok=True)
+                    continue
 
-            if not zipfile.is_zipfile(book_path):
-                print(f"⚠ Файл {book_path.name} поврежден или не EPUB — удаляем")
-                book_path.unlink(missing_ok=True)
-                continue
+                file_hash = self.calculate_hash(book_path)
 
-            file_hash = self.calculate_hash(book_path)
+                if not self.db.get_book_by_hash(file_hash):
+                    print(f"Добавляю книгу в базу: {book_path.name}")
+                    try:
+                        total_paragraphs = sum(1 for _ in epub_paragraph_generator(book_path))
+                    except Exception as e:
+                        print(f"Ошибка чтения {book_path.name}: {e}")
+                        continue
 
-            if not self.db.get_book_by_hash(file_hash):
-                print(f"Добавляю книгу в базу: {book_path.name}")
-
-                total_paragraphs = sum(1 for _ in epub_paragraph_generator(book_path))
-
-                self.db.add_book(str(book_path.name), file_hash, total_paragraphs)
+                    self.db.add_book(str(book_path.name), file_hash, total_paragraphs)
 
 
 

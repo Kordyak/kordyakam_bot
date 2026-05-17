@@ -19,6 +19,11 @@ class Middleware_typing(BaseMiddleware):
 
         reader = Reader(user_id)
         data["reader"] = reader
+        if not reader.language:
+            lang = event.message.from_user.language_code
+        else:
+            lang = reader.language
+        data["lang"] = lang
 
         db = DB_library()
         db.get_or_create_user(user_id, username)

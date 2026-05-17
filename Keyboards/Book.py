@@ -5,8 +5,7 @@ from Services.Reader import Reader
 
 
 
-def reader_menu(reader: Reader):
-    lang = reader.language
+def reader_menu(reader: Reader, lang):
     return InlineKeyboardMarkup(
         inline_keyboard=[
         [InlineKeyboardButton(text=t(lang, "btn_book_info", title=reader.book_title), callback_data="current_book")],

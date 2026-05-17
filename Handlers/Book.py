@@ -22,7 +22,7 @@ router_book = Router(name='book')
 
 
 @router_book.message(Command('start'))
-async def start_handler(message: Message, reader: Reader):
+async def start_handler(message: Message, reader: Reader, lang):
     if not reader.book_title:
         text = (
             f'Привет, <b>{message.from_user.first_name}</b>!'
@@ -43,7 +43,7 @@ async def start_handler(message: Message, reader: Reader):
                 )
         await message.answer(
                             text,
-                            reply_markup=reader_menu(reader),
+                            reply_markup=reader_menu(reader, lang),
                             parse_mode='HTML'
                             )
 
@@ -459,7 +459,7 @@ async def select_language(message: Message):
     reply_markup = InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text="🇷🇺 Russia", callback_data="language:ru")],
-            [InlineKeyboardButton(text="🇷🇺 English", callback_data="language:en")],
+            [InlineKeyboardButton(text="🇺🇸 English", callback_data="language:en")],
         ]
     )
 

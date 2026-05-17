@@ -34,6 +34,7 @@ class Reader:
         self.reading_speed = state[4]
         self.username = state[5]
         self.voice = state[6]
+        self.language = state[7]
 
         path_file = Path(PATH_BOOKS / self.book_name)
         if path_file.exists():
@@ -61,7 +62,7 @@ class Reader:
             return 0
         return round((self.paragraph_indx / self.total_paragraphs) * 100, 1)
 
-    def get_next_chunk(self, min_len=300):
+    def get_next_chunk(self, min_len=300, max_len=900):
         if self.paragraph_indx >= self.total_paragraphs:
             return None
 
@@ -77,7 +78,7 @@ class Reader:
             paragraph_len = len(paragraph)
 
             # Проверяем лимит ДО добавления
-            if current_len + paragraph_len >= min_len:
+            if current_len + paragraph_len >= max_len:
                 if not buffer:
                     buffer.append(paragraph)
                     self.paragraph_indx += 1

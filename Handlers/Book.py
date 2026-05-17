@@ -43,7 +43,7 @@ async def start_handler(message: Message, reader: Reader):
                 )
         await message.answer(
                             text,
-                            reply_markup=reader_menu(reader, message.from_user.language_code),
+                            reply_markup=reader_menu(reader),
                             parse_mode='HTML'
                             )
 
@@ -448,3 +448,34 @@ async def del_book(callback: CallbackQuery):
     await callback.answer()
     await callback.message.delete()
     await callback.message.answer('Вы уверены?', reply_markup=confirm_kb('del_book'))
+
+
+# Язык интерфейса
+@router_book.message(Command("language"))
+async def select_language(message: Message):
+
+    text = '🌐 Выберите язык'
+
+    reply_markup = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="🇷🇺 Russia", callback_data="language:ru")],
+            [InlineKeyboardButton(text="🇷🇺 English", callback_data="language:en")],
+        ]
+    )
+
+    await message.answer(
+        text,
+        parse_mode='HTML',
+        reply_markup=reply_markup,
+    )
+@router_book.callback_query(F.data.startswith("language:"))
+async def waiting_language(call: CallbackQuery, user_id: int, db:DB_library):
+    language = call.data.split(":", 1)[1]
+    db.save_language(user_id,language)
+    await call.message.edit_text(
+        f"✅ Язык установлен:"
+        f"\n🌐 <b>{language}</b>",
+        parse_mode='HTML',
+        reply_markup=None,
+    )
+    await call.answer("🎙 Язык обновлён")

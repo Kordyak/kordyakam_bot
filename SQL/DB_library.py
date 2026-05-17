@@ -40,6 +40,8 @@ class DB_library:
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 reding_speed INTEGER DEFAULT 88,
                 last_access TIMESTAMP,
+                voice TEXT,
+                language TEXT,
                 FOREIGN KEY (current_book_id) 
                     REFERENCES books(id) 
                     ON DELETE SET NULL
@@ -49,14 +51,14 @@ class DB_library:
 
             """)
 
-            # migration
-            columns = [row[1] for row in conn.execute("PRAGMA table_info(users)")]
-
-            if "voice" not in columns:
-                conn.execute("""
-                    ALTER TABLE users
-                    ADD COLUMN voice TEXT
-                """)
+            # # migration
+            # columns = [row[1] for row in conn.execute("PRAGMA table_info(users)")]
+            #
+            # if "language" not in columns:
+            #     conn.execute("""
+            #         ALTER TABLE users
+            #         ADD COLUMN language TEXT
+            #     """)
 
     # ============================ USER ============================================
     def get_or_create_user(self, telegram_id: int, username: str | None = None):
@@ -153,6 +155,14 @@ class DB_library:
                 WHERE user_id=?
             """, (voice, user_id))
 
+    def save_language(self, user_id:int, language:str):
+        with self._get_connection() as conn:
+            conn.execute("""
+                UPDATE users
+                SET language=?
+                WHERE user_id=?
+            """, (language, user_id))
+
     def list_users_with_time(self) -> list[dict]:
         with self._get_connection() as conn:
             rows = conn.execute("""
@@ -209,7 +219,8 @@ class DB_library:
                     b.total_paragraphs,
                     u.reading_speed,
                     u.username,
-                    u.voice
+                    u.voice,
+                    u.language
                 FROM users u
                 LEFT JOIN books b ON u.current_book_id = b.id
                 WHERE u.user_id = ?

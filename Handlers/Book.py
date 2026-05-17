@@ -40,11 +40,11 @@ async def start_handler(message: Message, reader: Reader, lang):
 
 # ================= 📚 Библиотека ========================
 @router_book.message(Command("library"))
-async def show_library(message: Message, state: FSMContext):
+async def show_library(message: Message, state: FSMContext, lang):
     books_index = DB_library().list_books()  # {hash: {filename, total_paragraphs}}
 
     if not books_index:
-        await message.answer("В библиотеке пока нет книг 📚")
+        await message.answer(t(lang,'library_empty'))
         return
 
     # Собираем книги в список
@@ -86,9 +86,8 @@ async def show_library(message: Message, state: FSMContext):
             "total_paragraphs": book["info"].get("total_paragraphs", 0),
         }
 
-    msg = "📚 Библиотека:\n\n"
-    msg += "\n".join(books_list)
-    msg += "\n\nНапишите номер книги, чтобы выбрать её для чтения или просмотра информации."
+    msg = "\n".join(books_list)
+    msg += t(lang,'library_choose')
 
     await send_long_message(message, msg)
     await state.update_data(books_map=books_map)# сохранить в state
@@ -109,14 +108,14 @@ async def send_long_message(message, text: str):
         await message.answer(current, parse_mode='HTML')
 # Выбора номера книги из библиотеки
 @router_book.message(UploadBook.waiting_book_number)
-async def choose_book_from_library(message: Message, state: FSMContext):
+async def choose_book_from_library(message: Message, state: FSMContext,lang):
     data = await state.get_data()
     books_map = data.get("books_map", {})
     i = message.text
 
     if i not in books_map:
         await message.answer(
-            text="Некорректный номер книги. Чтобы выйти, жми отмена.",
+            text=t(lang,'invalid_book_number'),
             reply_markup=cancel_kb()
         )
         return
@@ -126,14 +125,12 @@ async def choose_book_from_library(message: Message, state: FSMContext):
 
     kb = InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text=f"ℹ️ Описание книги",callback_data="book_description")],
-            [InlineKeyboardButton(text=f"⬇️ Загружаем книгу для чтения?",callback_data=f"upload_library_book:{i}")]
+            [InlineKeyboardButton(text=t(lang,'btn_book_description'),callback_data="book_description")],
+            [InlineKeyboardButton(text=t(lang,'btn_book_description'),callback_data=f"upload_library_book:{i}")]
         ]
     )
     await message.answer(
-        f"Вы выбрали:"
-        f"\n{i}. {book['creator']} / <b>{book['title']}</b>"
-        f"\nИли выберите другую книгу, указав другой номер книги.",
+        t(lang, 'book_selected', i=i, creator= book['creator'],title=book['title']),
         reply_markup=kb,
         parse_mode = 'HTML'
     )
@@ -143,7 +140,6 @@ async def choose_book_from_library(message: Message, state: FSMContext):
 @router_book.callback_query(F.data == "book_description")
 async def book_description(callback: CallbackQuery, state: FSMContext):
     message = callback.message
-
     data = await state.get_data()
     book_info = data.get("book_info", {})
     description = book_info['description']
@@ -154,11 +150,8 @@ async def book_description(callback: CallbackQuery, state: FSMContext):
         f"<b>Total paragraphs</b>: {book_info['total_paragraphs']}"
         f"\n{description}"
     )
-
-
     # параллельно перевод
     description_ru = await translator(description)
-
     if book_info.get('cover_image'):  # если есть байты картинки
         photo = BufferedInputFile(book_info['cover_image'], filename="cover.jpg")
         await message.answer_photo(photo=photo, caption=caption, parse_mode="HTML")
@@ -175,26 +168,25 @@ async def book_description(callback: CallbackQuery, state: FSMContext):
 
 # Загрузка книги из библиотек
 @router_book.callback_query(F.data.startswith("upload_library_book:"))
-async def upload_library_book(callback: CallbackQuery, state: FSMContext, user_id, db: DB_library):
+async def select_library_book(callback: CallbackQuery, state: FSMContext, user_id, db: DB_library):
     await callback.answer()
     i = callback.data.split(":")[1]
     data = await state.get_data()
     books_map = data.get("books_map", {})
     file_name = books_map[i]['filename']
-    await upload_book(callback.message, user_id, file_name, state, db)
+    await set_book(callback.message, user_id, file_name, state, db)
 
 
 # Загрузка собственной книги
 @router_book.message(Command("upload"))
-async def upload_my_book(message: Message, state: FSMContext):
-    await message.answer("Отправь свой EPUB файл 📚 для загрузки")
+async def upload_my_book(message: Message, state: FSMContext, lang):
+    await message.answer(t(lang,'upload_book'))
     await state.set_state(UploadBook.waiting_epub)
-
 @router_book.message(UploadBook.waiting_epub)
-async def upload_my_book_waiting(message: Message, bot: Bot, state: FSMContext, user_id, db: DB_library):
+async def upload_my_book_waiting(message: Message, bot: Bot, state: FSMContext, user_id, db: DB_library, lang):
     if not message.document or not message.document.file_name.endswith(".epub"):
         await message.answer(
-            'Это не epub 😅',
+            t(lang,'upload_error'),
             reply_markup=cancel_kb()
         )
         return
@@ -229,12 +221,12 @@ async def upload_my_book_waiting(message: Message, bot: Bot, state: FSMContext, 
         temp_path.rename(final_name)
         # сохраняем книгу в books_index
         library.add_book(final_name)
-    await upload_book(message, user_id, final_name, state, db)
+    await set_book(message, user_id, final_name, state, db)
     await state.set_state(None)
 
 
 # Загрузка книги
-async def upload_book(message, user_id, name_file, state: FSMContext, db: DB_library):
+async def set_book(message, user_id, name_file, state: FSMContext, db: DB_library, lang):
     book_path = Path(PATH_BOOKS / name_file)
     file_hash = Library.calculate_hash(book_path)
     # Проверяем, есть ли книга в библиотеке
@@ -250,11 +242,7 @@ async def upload_book(message, user_id, name_file, state: FSMContext, db: DB_lib
     db.set_current_book(user_id, book_id)
     # Создаем Reader для пользователя
     reader = Reader(user_id)
-    await message.answer(
-        f"Книга {reader.book_title} установлена.\n"
-        "Сейчас давайте установим время отправки абзаца на каждый день.\n"
-        "Укажите время в формате HH:MM"
-    )
+    await message.answer(t(lang,'book_set',book_title=reader.book_title))
     await state.set_state(StateUser.waiting_time)
 
 
@@ -442,22 +430,15 @@ async def del_book(callback: CallbackQuery):
 
 # Язык интерфейса
 @router_book.message(Command("language"))
-async def select_language(message: Message,lang):
-
-    text = (
-        f'🌐 Выберите язык'
-        f'\nСейчас установлен <b>"{lang}"</b>'
-    )
-
+async def select_language(message: Message, lang):
     reply_markup = InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="🇷🇺 Russia", callback_data="language:ru")],
+            [InlineKeyboardButton(text="🇷🇺 Русский", callback_data="language:ru")],
             [InlineKeyboardButton(text="🇺🇸 English", callback_data="language:en")],
         ]
     )
-
     await message.answer(
-        text,
+        t(lang,'select_language'),
         parse_mode='HTML',
         reply_markup=reply_markup,
     )
@@ -466,9 +447,8 @@ async def waiting_language(call: CallbackQuery, user_id: int, db:DB_library):
     language = call.data.split(":", 1)[1]
     db.save_language(user_id,language)
     await call.message.edit_text(
-        f"✅ Язык установлен:"
-        f"\n🌐 <b>{language}</b>",
+        t(language, 'set_language'),
         parse_mode='HTML',
         reply_markup=None,
     )
-    await call.answer("🎙 Язык обновлён")
+    await call.answer()

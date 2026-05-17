@@ -2,12 +2,12 @@ import logging
 import asyncio
 from aiogram import Dispatcher, Bot
 from aiogram.client.default import DefaultBotProperties
-from Middlewares.mw1 import Middleware_typing, Middleware_access_maintenenace
+from Middlewares.mw1 import MiddlewareUsers, MiddlewareAdmin
 from Services.Library import Library
 from Services.Sender import Sender
 from Services.Scheduler import scheduler, Scheduler
 from Handlers.Universal import router_universal
-from Handlers.Maintenance import router_maintenance
+from Handlers.Service import router_service
 from Handlers.Converters import router_converter
 from Handlers.Book import router_book
 from config import Config, load_config
@@ -30,23 +30,21 @@ bot: Bot
 
 async def set_bot():
     global dispatcher, bot
-
     # session = AiohttpSession(proxy='socks5://127.0.0.1:12334')
     bot = Bot(
         token=config.tg_bot.token,
         default=DefaultBotProperties(parse_mode='Markdown'),
         # session=session
     )
-
+    # Users
     dispatcher = Dispatcher()
+    dispatcher.message.outer_middleware(MiddlewareUsers())
+    dispatcher.callback_query.outer_middleware(MiddlewareUsers())
+    # Admin
+    router_service.message.middleware(MiddlewareAdmin())
+    router_service.callback_query.middleware(MiddlewareAdmin())
+    dispatcher.include_router(router_service)
 
-    dispatcher.message.outer_middleware(Middleware_typing())
-    dispatcher.callback_query.outer_middleware(Middleware_typing())
-
-    router_maintenance.message.middleware(Middleware_access_maintenenace())
-    router_maintenance.callback_query.middleware(Middleware_access_maintenenace())
-
-    dispatcher.include_router(router_maintenance)
     dispatcher.include_router(router_converter)
     dispatcher.include_router(router_book)
     dispatcher.include_router(router_universal)
@@ -55,7 +53,6 @@ async def set_bot():
 async def set_scheduler():
     sender = Sender(bot)
     dispatcher["sender"] = sender
-
     Scheduler(sender)
     scheduler.start()
 
@@ -68,8 +65,8 @@ async def main():
     library1.sync_library()
 
     async with bot:
-        await bot.delete_webhook(drop_pending_updates=True)
-        await dispatcher.start_polling(bot,drop_pending_updates=True)
+        await bot.delete_webhook()
+        await dispatcher.start_polling(bot)
 
 
 if __name__ == "__main__":

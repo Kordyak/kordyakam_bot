@@ -13,6 +13,9 @@ TEXTS = {
     "btn_reader_menu": "⚙️ Reader menu",
     "btn_next_paragraph": "▶️ Read next paragraph",
 
+    "btn_book_description": "ℹ️ Book description",
+    "btn_upload_library_book": "⬇️ Uploading a book to read?",
+
     # ================= START =================
     "start_no_book": 'Hello, <b>{first_name}</b>!'
                      '\nLet’s choose a <b>book from the library</b>.'
@@ -26,13 +29,20 @@ TEXTS = {
 
     # ================= LIBRARY =================
     "library_empty": "The library is empty for now 📚",
-    "library_choose": "Enter the book number to select it for reading or viewing details.",
-
-    "book_selected": "You selected:\n{i}. {creator} / <b>{title}</b>\nOr choose another book by entering a different number.",
+    "library_choose": "\n\nEnter the book number to select it for reading or viewing details.",
+    "book_selected": "You selected:"
+                     "\n{i}. {creator} / <b>{title}</b>"
+                     "\nOr choose another book by entering a different number.",
     "invalid_book_number": "Invalid book number. Press cancel to exit.",
 
+    # Загрузка собственной книги
+    "upload_book": 'Submit your EPUB file 📚 for download',
+    "upload_error": 'This is not an epub 😅',
+
     # ================= BOOK SET =================
-    "book_set": "Book {title} has been set.\nNow let's set the daily paragraph delivery time.\nEnter time in HH:MM format.",
+    "book_set": "Book {book_title} has been set."
+                "\nNow let's set the daily paragraph delivery time."
+                "\nEnter time in HH:MM format.",
 
     # ================= TIME =================
     "invalid_time": "😈 Invalid time format. Use HH:MM",
@@ -58,5 +68,10 @@ TEXTS = {
 
     # ================= DELETE =================
     "delete_confirm": "Are you sure?",
+
+    # Language
+    "select_language": '🌐 Select language.'
+                       '\nNow installed <b>english</b>.',
+    "set_language": '🌐 English language is installed.'
 
 }

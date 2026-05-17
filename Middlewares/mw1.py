@@ -1,4 +1,6 @@
 import asyncio
+import contextlib
+
 from aiogram import BaseMiddleware
 from aiogram.enums import ChatAction
 from aiogram.types import TelegramObject, CallbackQuery
@@ -8,7 +10,7 @@ from Services.Reader import Reader
 from typing import Callable, Awaitable, Dict, Any
 
 
-class Middleware_typing(BaseMiddleware):
+class MiddlewareUsers(BaseMiddleware):
     async def __call__(self, handler, event: TelegramObject, data: dict):
         bot = data.get("bot")
         user_id = event.from_user.id
@@ -34,6 +36,7 @@ class Middleware_typing(BaseMiddleware):
             chat_id = event.message.chat.id
         else:
             chat_id = event.chat.id
+
         typing_task = asyncio.create_task(self._typing_loop(bot, chat_id))
 
         try:
@@ -41,6 +44,8 @@ class Middleware_typing(BaseMiddleware):
         finally:
             if typing_task:
                 typing_task.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await typing_task
 
     async def _typing_loop(self, bot, chat_id: int):
         try:
@@ -53,8 +58,7 @@ class Middleware_typing(BaseMiddleware):
 
 
 ADMIN_ID = 995657021
-
-class Middleware_access_maintenenace(BaseMiddleware):
+class MiddlewareAdmin(BaseMiddleware):
     async def __call__(
             self,
             handler: Callable[[TelegramObject, Dict[str, Any]], Awaitable[Any]],

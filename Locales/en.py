@@ -35,9 +35,12 @@ TEXTS = {
                      "\nOr choose another book by entering a different number.",
     "invalid_book_number": "Invalid book number. Press cancel to exit.",
 
+    # Description
+    "invalid_book": "😈 It looks like you haven't downloaded the book",
+
     # Загрузка собственной книги
     "upload_book": 'Submit your EPUB file 📚 for download',
-    "upload_error": 'This is not an epub 😅',
+    "upload_error": '😅 This is not an epub',
 
     # ================= BOOK SET =================
     "book_set": "Book {book_title} has been set."
@@ -45,8 +48,13 @@ TEXTS = {
                 "\nEnter time in HH:MM format.",
 
     # ================= TIME =================
+    "change_time": '⏰ The paragraph is currently being sent at <b>{time}</b>.'
+                    '\nTo change:'
+                    '\nSend the time in <code>HH:MM</code> format.',
     "invalid_time": "😈 Invalid time format. Use HH:MM",
-    "time_saved": "⏰ Paragraph delivery time set: {time}\nScheduler enabled ✅\nYou can also use the keyboard under the chat to request a paragraph or adjust reading speed...",
+    "time_saved": "⏰ Paragraph delivery time set: {time}"
+                  "\nScheduler enabled ✅"
+                  "\nYou can request a paragraph now with the /next command.",
 
     # ================= SPEED =================
     "speed_current": "🏃‍➡️ Your current reading speed is {speed}%\nYou can adjust it between 50 and 150 (clarity range)",

@@ -254,10 +254,10 @@ async def set_book(message, user_id, name_file, state: FSMContext, db: DB_librar
 
 # Описание текущей книги из МЕНЮ ЧИТАТЕЛЯ
 @router_book.callback_query(F.data == "current_book")
-async def description_current_book(callback: CallbackQuery, state: FSMContext, reader: Reader):
+async def description_current_book(callback: CallbackQuery, state: FSMContext, reader: Reader, lang):
     await callback.answer()
     if not reader:
-        await callback.answer("Сначала загрузите книгу 📚")
+        await callback.answer(t(lang,'invalid_book'))
         return
 
     book_info = {
@@ -275,18 +275,16 @@ async def description_current_book(callback: CallbackQuery, state: FSMContext, r
 
 # Изменить Время
 @router_book.callback_query(F.data == "change_time")
-async def change_time(callback: CallbackQuery, db: DB_library, user_id: int, state: FSMContext):
+async def change_time(callback: CallbackQuery, db: DB_library, user_id: int, state: FSMContext, lang):
     await callback.answer()  # 🔴 обязательно
     time = db.get_time(user_id)
     await callback.message.edit_text(
-        f"⏰ Сейчас время отправки абзаца: <b>{time}</b>.\n"
-        "Чтобы изменить:\n"
-        "отправьте время в формате <code>HH:MM</code>",
+        t(lang,'change_time',time=time),
         parse_mode="HTML",
     )
     await state.set_state(StateUser.waiting_time)
 @router_book.message(StateUser.waiting_time)
-async def save_time(message: Message, state: FSMContext, user_id, db: DB_library):
+async def save_time(message: Message, state: FSMContext, user_id, db: DB_library, lang):
     time = message.text.strip()
     try:
         hours, minutes = map(int, time.split(":"))
@@ -296,7 +294,7 @@ async def save_time(message: Message, state: FSMContext, user_id, db: DB_library
             raise ValueError
     except ValueError:
         await message.answer(
-            '😈 Некорректное время. Формат <b>HH:MM</b> ',
+            t(lang,'invalid_time'),
             parse_mode="HTML",
             reply_markup=cancel_kb()
         )
@@ -304,27 +302,24 @@ async def save_time(message: Message, state: FSMContext, user_id, db: DB_library
     # сохраняем время
     db.save_time(user_id, time)
     await message.answer(
-        f"⏰ Установлено время отправки абзаца: <b>{time}</b>"
-         f"\nПланировщик включен ✅"
-         f"\nА также через <b>пользовательскую клавиатуру под чатом</b> можешь запросить абзац книги, установить скорость чтения...",
-         parse_mode = "HTML"
+        t(lang,'time_saved',time=time),
+         parse_mode = "HTML",
          )
     await state.set_state(None)
 
 
 # Изменить скорость чтения
 @router_book.callback_query(F.data == "reading_speed")
-async def change_reading_speed(callback: CallbackQuery, db: DB_library, user_id: int, state: FSMContext):
+async def change_reading_speed(callback: CallbackQuery, db: DB_library, user_id: int, state: FSMContext,lang):
     await callback.answer()
     reading_speed = db.get_reading_speed(user_id)
     await callback.message.edit_text(
-        f"🏃‍➡️ Сейчас для вас установлена скорость чтения <code>{reading_speed}</code>\n"
-        f"Вы можете уменьшить либо увеличить скорость от 50 до 150 (диапазон разборчивости)",
+        t(lang,'speed_current',speed=reading_speed),
         parse_mode="HTML"
     )
     await state.set_state(StateUser.waiting_reading_speed)
 @router_book.message(StateUser.waiting_reading_speed)
-async def save_reading_speed(message: Message, state: FSMContext, user_id: int, db: DB_library):
+async def save_reading_speed(message: Message, state: FSMContext, user_id: int, db: DB_library, lang):
     try:
         speed = int(message.text.strip())
         if speed < 50:
@@ -333,14 +328,12 @@ async def save_reading_speed(message: Message, state: FSMContext, user_id: int, 
             speed = 150
     except ValueError:
         await message.answer(
-            '😈 Вероятно ввели буквы. Формат от 50 до 150 ',
+            t(lang,'speed_invalid'),
             reply_markup=cancel_kb()
         )
         return
     db.save_reading_speed(user_id, speed)
-    await message.answer(
-        f"🏃‍➡️ Скорость чтения изменена: {speed}%"
-    )
+    await message.answer(t(lang,'speed_saved',speed=speed))
     await state.clear()
 
 

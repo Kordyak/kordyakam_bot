@@ -29,7 +29,7 @@ async def handler(message: Message, command: CommandObject):
 
 
 @router_converter.message(Command('convert'))
-async def handler(message: Message, command: CommandObject, reader: Reader):
+async def handler(message: Message, command: CommandObject):
     msg = await message.answer('Подготавливаю аудио...')
     text = command.args
     if message.reply_to_message:  # Если ответить
@@ -41,7 +41,7 @@ async def handler(message: Message, command: CommandObject, reader: Reader):
 
     if text:
         name_file = make_title(text)
-        await convert_text_audio(text, name_file + ".mp3", reader.reading_speed, "")
+        await convert_text_audio(text, name_file + ".mp3", 90, "")
         audio = FSInputFile(name_file + ".mp3")
         await message.reply_audio(
             audio=audio,

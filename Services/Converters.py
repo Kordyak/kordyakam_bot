@@ -42,9 +42,14 @@ async def convert_text_audio(text: str, path_mp3: str, speed:int, voice: str) ->
 
     lang = detect_lang_simple(text)
     rate = f"{speed - 100:+d}%"
+
     if lang == "ru":
+        if voice == "":
+            voice = 'en-US-BrianNeural'
         communicate = edge_tts.Communicate(text=text, voice=voice,rate=rate)
     else:
+        if voice == "":
+            voice = 'ru-RU-SvetlanaNeural'
         communicate = edge_tts.Communicate(text=text,voice=voice,rate=rate)
 
     # СОхраняем mp3 и создаем тайминги одновременно. В поток можно обратиться один раз для чтения или записи

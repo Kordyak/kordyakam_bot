@@ -33,10 +33,21 @@ def voice_menu_ru():
 def voice_menu_eng():
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="🇺🇸 Guy (EN)", callback_data="voice:en-US-GuyNeural")],
-            [InlineKeyboardButton(text="🇺🇸 Andrew (EN)", callback_data="voice:en-US-AndrewNeural")],
-            [InlineKeyboardButton(text="🇺🇸 Brian (EN) ⭐", callback_data="voice:en-US-BrianNeural")],
-            [InlineKeyboardButton(text="🇬🇧 Sonia (UK)", callback_data="voice:en-GB-SoniaNeural")],
+            [InlineKeyboardButton(text="🇺🇸 Brian ⭐", callback_data="voice:en-US-BrianNeural")],
+            [InlineKeyboardButton(text="🇺🇸 Andrew", callback_data="voice:en-US-AndrewNeural")],
+            [InlineKeyboardButton(text="🇺🇸 Guy", callback_data="voice:en-US-GuyNeural")],
+            [InlineKeyboardButton(text="🇺🇸 Davis", callback_data="voice:en-US-DavisNeural")],
+            [InlineKeyboardButton(text="🇺🇸 Tony", callback_data="voice:en-US-TonyNeural")],
+            [InlineKeyboardButton(text="🇺🇸 Aria ♀️", callback_data="voice:en-US-AriaNeural")],
+            [InlineKeyboardButton(text="🇺🇸 Jenny ♀️", callback_data="voice:en-US-JennyNeural")],
+            [InlineKeyboardButton(text="🇺🇸 Emma ♀️", callback_data="voice:en-US-EmmaNeural")],
+            [InlineKeyboardButton(text="🇺🇸 Michelle ♀️", callback_data="voice:en-US-MichelleNeural")],
+
+            [InlineKeyboardButton(text="🇬🇧 Ryan", callback_data="voice:en-GB-RyanNeural")],
+            [InlineKeyboardButton(text="🇬🇧 Thomas", callback_data="voice:en-GB-ThomasNeural")],
+            [InlineKeyboardButton(text="🇬🇧 Sonia ♀️", callback_data="voice:en-GB-SoniaNeural")],
+            [InlineKeyboardButton(text="🇬🇧 Libby ♀️", callback_data="voice:en-GB-LibbyNeural")],
+            [InlineKeyboardButton(text="🇬🇧 Maisie ♀️", callback_data="voice:en-GB-MaisieNeural")],
         ]
     )
 

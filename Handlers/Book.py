@@ -30,7 +30,11 @@ async def start_handler(message: Message, reader: Reader, lang):
                             parse_mode='HTML'
                             )
     else:
-        text =  t(lang, "start_with_book", book_title=reader.book_title,paragraph_indx=reader.paragraph_indx,progress=reader.progress)
+        text =  t(lang, "start_with_book",
+                  book_title=reader.book_title,
+                  paragraph_indx=reader.paragraph_indx,
+                  progress=reader.progress,
+                  )
         await message.answer(
                             text,
                             reply_markup=reader_menu(reader, lang),
@@ -106,7 +110,7 @@ async def send_long_message(message, text: str):
 
     if current:
         await message.answer(current, parse_mode='HTML')
-# Выбора номера книги из библиотеки
+# Выбор книги из библиотеки
 @router_book.message(UploadBook.waiting_book_number)
 async def choose_book_from_library(message: Message, state: FSMContext,lang):
     data = await state.get_data()
@@ -248,9 +252,9 @@ async def set_book(message, user_id, name_file, state: FSMContext, db: DB_librar
 
 
 
-# Описание текущей книги
+# Описание текущей книги из МЕНЮ ЧИТАТЕЛЯ
 @router_book.callback_query(F.data == "current_book")
-async def current_book(callback: CallbackQuery, state: FSMContext, reader: Reader):
+async def description_current_book(callback: CallbackQuery, state: FSMContext, reader: Reader):
     await callback.answer()
     if not reader:
         await callback.answer("Сначала загрузите книгу 📚")
@@ -266,6 +270,7 @@ async def current_book(callback: CallbackQuery, state: FSMContext, reader: Reade
     }
     await state.update_data(book_info=book_info)
     await book_description(callback, state)
+
 
 
 # Изменить Время
@@ -346,45 +351,45 @@ async def open_voice_menu(callback: CallbackQuery, reader: Reader):
     lang = detect_lang_simple(reader.description)
     if lang == 'ru':
         await callback.message.edit_text(
-            "🎙 Выбери голос для озвучки:",
+            text= t(lang,'voice_select'),
             reply_markup=voice_menu_ru()
         )
     else:
         await callback.message.edit_text(
-            "🎙 Выбери голос для озвучки:",
+            text= t(lang,'voice_select'),
             reply_markup=voice_menu_eng()
         )
 @router_book.callback_query(F.data.startswith("voice:"))
-async def set_voice(callback: CallbackQuery, db: DB_library, user_id: int):
+async def set_voice(callback: CallbackQuery, db: DB_library, user_id: int,lang):
     voice = callback.data.split(":", 1)[1]
     db.save_voice(user_id, voice)
+    format_voice = format_voice_name(voice)
     await callback.message.edit_text(
-        f"✅ Голос установлен:\n🎙 <b>{format_voice_name(voice)}</b>",
+        t(lang,'voice_set',voice=format_voice),
         reply_markup=None,
         parse_mode='HTML'
     )
-    await callback.answer("🎙 Голос обновлён")
+    await callback.answer()
 
 
 
 # Читать с другого абзаца
 @router_book.callback_query(F.data == 'set_paragraf_index')
-async def change_index(callback: CallbackQuery, state: FSMContext, reader: Reader):
+async def change_index(callback: CallbackQuery, state: FSMContext, reader: Reader,lang):
     await callback.answer()
     await callback.message.delete()
-    await callback.message.answer("Укажите № абзаца c которого начнем читать\n"
-                                  f"Введите число от 1 до {reader.total_paragraphs}")
+    await callback.message.answer(t(lang,'paragraph_input',total=reader.total_paragraphs))
     await state.set_state(UploadBook.waiting_paragraph)
 @router_book.message(UploadBook.waiting_paragraph)
-async def save_index(message: Message, state: FSMContext, user_id, reader: Reader, db: DB_library, sender: Sender):
+async def save_index(message: Message, state: FSMContext, user_id, reader: Reader, db: DB_library, sender: Sender,lang):
     if not reader:
-        await message.answer("Книга не найдена!")
+        await message.answer(t(lang,'no_book'))
         await state.set_state(None)
         return
 
     if not message.text.isdigit():
         await message.answer(
-            f"Укажите число, без текста",
+            t(lang,'paragraph_only_number'),
             reply_markup=cancel_kb()
         )
         return
@@ -393,14 +398,13 @@ async def save_index(message: Message, state: FSMContext, user_id, reader: Reade
 
     if index < 0 or index > reader.total_paragraphs:
         await message.answer(
-            f"Введите число в диапазоне от 1 до {reader.total_paragraphs}",
+            t(lang,'paragraph_range',total=reader.total_paragraphs),
             reply_markup=cancel_kb()
         )
         return
 
     db.save_i_chunk(user_id, index)
-
-    await message.answer("✅ Индекс абзаца обновлён!")
+    await message.answer(t(lang,'paragraph_updated'))
     await next_chunk(message, sender, user_id, Reader(user_id), state)
     await state.set_state(None)
 
@@ -412,7 +416,7 @@ async def next_chunk(message: Message, sender: Sender, user_id: int,  reader: Re
         await start_handler(message, reader, state)
         return
 
-    msg = await message.answer(f"Готовим абзац ...")
+    msg = await message.answer("⏳...")
     try:
         await sender.send_chunk(user_id, reader)
     finally:
@@ -422,10 +426,13 @@ async def next_chunk(message: Message, sender: Sender, user_id: int,  reader: Re
 
 # Удалить книгу
 @router_book.callback_query(F.data == 'del_book')
-async def del_book(callback: CallbackQuery):
+async def del_book(callback: CallbackQuery,lang):
     await callback.answer()
     await callback.message.delete()
-    await callback.message.answer('Вы уверены?', reply_markup=confirm_kb('del_book'))
+    await callback.message.answer(
+        t(lang,'delete_confirm'),
+        reply_markup=confirm_kb('del_book')
+    )
 
 
 # Язык интерфейса

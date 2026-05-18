@@ -54,11 +54,13 @@ TEXTS = {
     "speed_saved": "🏃‍➡️ Reading speed changed: {speed}%",
 
     # ================= VOICE =================
-    "voice_select": "🎙 Choose a voice for text-to-speech:",
-    "voice_set": "✅ Voice set: 🎙 {voice}",
+    "voice_select": "🎙 Choose a voice for text-to-speech",
+    "voice_set": "🎙 Selected voice: {voice}",
 
     # ================= PARAGRAPH =================
-    "paragraph_input": "Enter the paragraph number to start reading from\nEnter a number from 1 to {total}",
+    "paragraph_input": "Enter the paragraph number to start reading from."
+                       "\nEnter a number from 1 to {total}",
+    "no_book": "You don't have a book selected.",
     "paragraph_only_number": "Please enter a number only",
     "paragraph_range": "Enter a number between 1 and {total}",
     "paragraph_updated": "✅ Paragraph index updated!",

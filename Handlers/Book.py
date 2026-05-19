@@ -205,15 +205,12 @@ async def book_description(message: Message, state: FSMContext):
 # Загрузка книги из библиотек
 @router_book.callback_query(F.data.startswith("upload_library_book:"))
 async def select_library_book(callback: CallbackQuery, state: FSMContext, reader):
-    user_id = reader.user_id
-    db = reader.db
-    lang = reader.language
     await callback.answer()
     i = callback.data.split(":")[1]
     data = await state.get_data()
     books_map = data.get("books_map", {})
     file_name = books_map[i]['filename']
-    await set_book(callback.message, user_id, file_name, state, db, lang)
+    await set_book(callback.message, file_name, state, reader)
 
 
 # Загрузка собственной книги
@@ -224,7 +221,6 @@ async def upload_my_book(message: Message, state: FSMContext, lang):
 @router_book.message(UploadBook.waiting_epub)
 async def handler_waiting_epub(message: Message, bot: Bot, state: FSMContext, reader):
     user_id = reader.user_id
-    db = reader.db
     lang = reader.language
     if not message.document or not message.document.file_name.endswith(".epub"):
         await message.answer(
@@ -241,7 +237,6 @@ async def handler_waiting_epub(message: Message, bot: Bot, state: FSMContext, re
         await message.answer(f"Ошибка при сохранении файла: {e}")
         await state.set_state(None)
         return
-
     # Вычисляем hash загруженной книги
     library = Library()
     file_hash = library.calculate_hash(temp_path)
@@ -251,7 +246,6 @@ async def handler_waiting_epub(message: Message, bot: Bot, state: FSMContext, re
         final_name = Path(books_index[file_hash]["filename"])
         temp_path.unlink()
         await message.answer("Такая книга уже есть в моей базе 📚")
-
     else:  # 📥 Если новая книга
         final_name = PATH_EN_BOOKS / original_name
         counter = 1
@@ -261,14 +255,16 @@ async def handler_waiting_epub(message: Message, bot: Bot, state: FSMContext, re
         temp_path.rename(final_name)
         # сохраняем книгу в books_index
         library.add_book(final_name)
-    await set_book(message, user_id, final_name, state, db, lang)
+
+    await set_book(message, final_name, state, reader)
     await state.set_state(None)
 
 
 # Загрузка книги ОКОНЧАТЕЛЬНАЯ функция
-async def set_book(message, user_id, name_file, state: FSMContext, reader):
+async def set_book(message, name_file, state, reader):
     db = reader.db
     lang = reader.language
+    user_id= reader.user_id
     book_path = Path(PATH_EN_BOOKS / name_file)
     file_hash = Library.calculate_hash(book_path)
     # Проверяем, есть ли книга в библиотеке
@@ -295,12 +291,11 @@ async def set_book(message, user_id, name_file, state: FSMContext, reader):
 
 
 
-
-
 # Изменить Время
 @router_book.callback_query(F.data == "change_time")
-async def change_time(callback: CallbackQuery, db: DB_library, user_id: int, state: FSMContext, reader):
-
+async def change_time(callback: CallbackQuery, state: FSMContext, reader):
+    user_id = reader.user_id
+    db = reader.db
     await callback.answer()  # 🔴 обязательно
     time = db.get_time(user_id)
     await callback.message.edit_text(
@@ -338,7 +333,9 @@ async def save_time(message: Message, state: FSMContext, reader):
 
 # Изменить скорость чтения
 @router_book.callback_query(F.data == "reading_speed")
-async def change_reading_speed(callback: CallbackQuery, db: DB_library, user_id: int, state: FSMContext, reader):
+async def change_reading_speed(callback: CallbackQuery, state: FSMContext, reader):
+    user_id = reader.user_id
+    db = reader.db
     await callback.answer()
     reading_speed = db.get_reading_speed(user_id)
     await callback.message.edit_text(
@@ -347,7 +344,10 @@ async def change_reading_speed(callback: CallbackQuery, db: DB_library, user_id:
     )
     await state.set_state(StateUser.waiting_reading_speed)
 @router_book.message(StateUser.waiting_reading_speed)
-async def save_reading_speed(message: Message, state: FSMContext, user_id: int, db: DB_library, lang):
+async def save_reading_speed(message: Message, state: FSMContext, reader):
+    lang = reader.language
+    user_id = reader.user_id
+    db = reader.db
     try:
         speed = int(message.text.strip())
         if speed < 50:

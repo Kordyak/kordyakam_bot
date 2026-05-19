@@ -22,7 +22,8 @@ router_book = Router(name='book')
 
 
 @router_book.message(Command('start'))
-async def start_handler(message: Message, reader: Reader, lang):
+async def start_handler(message: Message, reader: Reader):
+    lang = reader.language
     if not reader.book_title:
         text = t(lang, "start_no_book", first_name=message.from_user.first_name)
         await message.answer(
@@ -380,7 +381,10 @@ async def open_voice_menu(callback: CallbackQuery, reader: Reader):
             reply_markup=voice_menu_eng()
         )
 @router_book.callback_query(F.data.startswith("voice:"))
-async def set_voice(callback: CallbackQuery, db: DB_library, user_id: int,lang):
+async def set_voice(callback: CallbackQuery, reader):
+    lang = reader.language
+    user_id = reader.user_id
+    db = reader.db
     voice = callback.data.split(":", 1)[1]
     db.save_voice(user_id, voice)
     format_voice = format_voice_name(voice)
@@ -427,8 +431,9 @@ async def save_index(message: Message, state: FSMContext, reader: Reader, sender
         return
 
     db.save_i_chunk(user_id, index)
+
     await message.answer(t(lang,'paragraph_updated'))
-    await next_chunk(message, sender, user_id, Reader(user_id), state)
+    await next_chunk(message, sender, Reader(user_id), state)
     await state.set_state(None)
 
 

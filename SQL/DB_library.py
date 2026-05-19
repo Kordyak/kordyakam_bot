@@ -38,7 +38,7 @@ class DB_library:
                 current_book_id INTEGER,
                 chunk_index INTEGER DEFAULT 0 CHECK(chunk_index >= 0),
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                reding_speed INTEGER DEFAULT 88,
+                reading_speed INTEGER DEFAULT 88,
                 last_access TIMESTAMP,
                 voice TEXT,
                 lang_interface TEXT,

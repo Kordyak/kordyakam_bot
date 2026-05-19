@@ -47,6 +47,6 @@ async def handle_confirm(callback: CallbackQuery, user_id, db: DB_library):
 # Кнопка отмена
 @router_universal.callback_query(F.data == "cancel")
 async def cancel_index(callback: CallbackQuery, state: FSMContext):
+    await state.set_state(None)
     await callback.answer('Запрос отменен!')
     await callback.message.delete()
-    await state.set_state(None)

@@ -5,7 +5,6 @@ from aiogram import BaseMiddleware
 from aiogram.enums import ChatAction
 from aiogram.types import TelegramObject, CallbackQuery
 
-from SQL.DB_library import DB_library
 from Services.Reader import Reader
 from typing import Callable, Awaitable, Dict, Any
 
@@ -16,28 +15,19 @@ class MiddlewareUsers(BaseMiddleware):
         user_id = event.from_user.id
         username = event.from_user.username
         username = f"@{username}" if username else None
-
-        data["user_id"] = user_id
-
-        reader = Reader(user_id)
-        data["reader"] = reader
-        if not reader.language:
-            lang = event.message.from_user.language_code
-        else:
-            lang = reader.language
-        data["lang"] = lang
-
-        db = DB_library()
-        db.get_or_create_user(user_id, username)
-        db.set_last_access(user_id)
-        data["db"] = db
+        lang = event.from_user.language_code
 
         if isinstance(event, CallbackQuery):
             chat_id = event.message.chat.id
         else:
             chat_id = event.chat.id
 
-        typing_task = asyncio.create_task(self._typing_loop(bot, chat_id))
+        typing_task = None
+        if chat_id:
+            typing_task = asyncio.create_task(self._typing_loop(bot, chat_id))
+
+        reader = Reader(user_id, username, lang)
+        data["reader"] = reader
 
         try:
             return await handler(event, data)

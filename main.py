@@ -1,5 +1,7 @@
 import logging
 import asyncio
+
+import edge_tts
 from aiogram import Dispatcher, Bot
 from aiogram.client.default import DefaultBotProperties
 from Middlewares.mw1 import MiddlewareUsers, MiddlewareAdmin
@@ -57,7 +59,21 @@ async def set_scheduler():
     scheduler.start()
 
 
+
+async def list_voices():
+    voices = await edge_tts.list_voices()
+    for voice in voices:
+        print(
+            voice["ShortName"],
+            "|",
+            voice["Gender"],
+            "|",
+            voice["Locale"]
+        )
+
+
 async def main():
+    # await list_voices()
     await set_bot()
     await set_scheduler()
 

@@ -20,11 +20,9 @@ class Scheduler:
         )
 
     async def send_all_users(self):
-        rr = DB_library()
+        db = DB_library()
         now = datetime.now()
-        users = rr.get_users_to_send(now)
-
+        users = db.get_users_to_send(now)
         for user in users:
-            user_id = user["user_id"]
-            reader = Reader(user_id)
-            await self.sender.send_chunk(user_id, reader)
+            reader = Reader(user["user_id"])
+            await self.sender.send_chunk(reader)

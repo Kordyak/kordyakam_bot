@@ -8,6 +8,7 @@ from mutagen.mp3 import MP3
 from mutagen.id3 import ID3, APIC, TIT2, TPE1, TALB
 from PIL import Image
 
+from Locales.translator import t
 from Services.Converters import convert_text_audio, translator
 from Services.Reader import Reader
 
@@ -17,19 +18,13 @@ class Sender:
     def __init__(self, bot: Bot):
         self.bot = bot
 
-    async def send_chunk(self,user_id:int, reader:Reader):
+    async def send_chunk(self, reader:Reader):
         chunk = reader.get_next_chunk()
+        user_id = reader.user_id
 
-        msg_end_book = (
-            f'Поздравляю {reader.username}! Похоже ты дочитал "{reader.book_title}"!'
-            "\nПредлагаю выбрать новую книгу из моей <b>библиотеки...</b>"
-            "\n\n<b>Принимаю дары и донаты</b> на чашечку ⛾ :)"
-            "\n<tg-spoiler>СБП Яндекс"
-            "\n+79177537768</tg-spoiler>"
-        )
-
+        msg_end_book = t(reader.language,'donate_me',username=reader.username,book_title=reader.book_title)
         if not chunk:
-            await self.bot.send_message(user_id,msg_end_book, parse_mode='HTML')
+            await self.bot.send_message(user_id, msg_end_book, parse_mode='HTML')
             return
 
         if len(chunk.splitlines()) == 1:
@@ -94,7 +89,7 @@ class Sender:
         os.remove(audio.filename) # удаляем аудио
 
         if reader.paragraph_indx == reader.total_paragraphs:
-            await self.bot.send_message(user_id,msg_end_book, parse_mode='HTML')
+            await self.bot.send_message(user_id, msg_end_book, parse_mode='HTML')
 
 
 # К файлу привязываем ТЭГИ заголовок, создатель

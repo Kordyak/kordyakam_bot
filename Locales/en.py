@@ -43,7 +43,7 @@ TEXTS = {
     "upload_error": '😅 This is not an epub',
 
     # ================= BOOK SET =================
-    "book_set": "Book {book_title} has been set."
+    "book_set": 'Book <b>"{book_title}"</b> has been set.'
                 "\nNow let's set the daily paragraph delivery time."
                 "\nEnter time in HH:MM format.",
 
@@ -82,6 +82,13 @@ TEXTS = {
     # Language
     "select_language": '🌐 Select language.'
                        '\nNow installed <b>english</b>.',
-    "set_language": '🌐 English language is installed.'
+    "set_language": '🌐 English language is installed.',
+
+    # DONATE
+    'donate_me': "Congratulations, {username}!"
+                 "\nLooks like you've finished reading{book_title}!"
+                 "\nI suggest you choose a new book from my <b>library...</b>"
+                 "\n\n<b>I accept gifts and donations</b> for a cup of tea ⛾ :)"
+                 "\n You can send me TG stars...★★★",
 
 }

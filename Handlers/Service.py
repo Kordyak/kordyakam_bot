@@ -14,10 +14,10 @@ router_service = Router(name='maintenance')
 
 
 # start call_process_by_time
-@router_service.message(F.text.regexp(r"^\d{6}$"))
-async def run_rdp(message: Message):
-    os.system(f"start call_process_by_time.exe {message.text}")
-    await message.delete()
+# @router_service.message(F.text.regexp(r"^\d{6}$"))
+# async def run_rdp(message: Message):
+#     os.system(f"start call_process_by_time.exe {message.text}")
+#     await message.delete()
 
 
 @router_service.message(Command("hibernate"))
@@ -35,14 +35,14 @@ async def stop_bot(message: Message):
     await message.answer('Вы уверены?', reply_markup=confirm_kb('exit'))
 
 
-@router_service.message(Command("sql"))
-async def migration(message: Message):
-    await message.answer('Вносим изменения в DB SQL')
-    # db = DB_library(Path("SQL/read.db"))
-    # repo.migrate_books_index(Path("Books/books_index.json"))
-    # repo.migrate_states(Path("Users"))
-    # user = db.get_user_state(user_id)
-    # print("")
+# @router_service.message(Command("sql"))
+# async def migration(message: Message):
+#     await message.answer('Вносим изменения в DB SQL')
+#     # db = DB_library(Path("SQL/read.db"))
+#     # repo.migrate_books_index(Path("Books/books_index.json"))
+#     # repo.migrate_states(Path("Users"))
+#     # user = db.get_user_state(user_id)
+#     # print("")
 
 @router_service.message(Command('users'))
 async def users(message: Message):

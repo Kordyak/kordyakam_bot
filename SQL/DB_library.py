@@ -1,7 +1,7 @@
 import json
 import sqlite3
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime
 
 PATH_READ_DB = Path("SQL/read.db")
 
@@ -61,7 +61,7 @@ class DB_library:
             #     """)
 
     # ============================ USER ============================================
-    def get_or_create_user(self, telegram_id: int, username: str | None = None):
+    def get_create_user(self, telegram_id: int, username: str | None = None):
 
         with self._get_connection() as conn:
             cursor = conn.execute(
@@ -106,7 +106,7 @@ class DB_library:
                 WHERE user_id=?
             """, (book_id, telegram_id))
 
-    def set_last_access(self, telegram_id: int):
+    def save_last_contact(self, telegram_id: int):
         """Назначает пользователю книгу по id, сбрасывает прогресс"""
         with self._get_connection() as conn:
             conn.execute("""

@@ -3,10 +3,8 @@ from pathlib import Path
 from Services.BookMetadata import BookMetadata
 
 from Services.Converters import detect_lang_simple
-
+from Services.Library import PATH_EN_BOOKS, epub_paragraph_generator
 from SQL.DB_library import DB_library
-
-from Services.Library import PATH_BOOKS, epub_paragraph_generator
 
 
 # Чтец
@@ -17,15 +15,19 @@ class Reader:
     description = None
     cover_image = None
 
-    def __init__(self, user_id: int):
+    def __init__(self,
+                 user_id: int,
+                 username: str | None = None,
+                 lang: str | None = None
+                 ):
+
         self.user_id = user_id
+
         self.db = DB_library()
+        self.db.get_create_user(user_id, username)
+        self.db.save_last_contact(user_id)
 
-        # Создаём пользователя, если нет
-        self.db.get_or_create_user(user_id)
-
-        # Загружаем состояние пользователя
-        state = self.db.get_user_state(user_id)
+        state = self.db.get_user_state(user_id) # Загружаем состояние пользователя
 
         self.paragraph_indx = state[0] or 0
         self.daily_time = state[1]
@@ -36,7 +38,17 @@ class Reader:
         self.voice = state[6]
         self.language = state[7]
 
-        path_file = Path(PATH_BOOKS / self.book_name)
+        if self.voice is None:
+            detect_lang = detect_lang_simple(self.description)
+            if detect_lang == 'ru':
+                self.voice = "ru-RU-SvetlanaNeural"
+            else:
+                self.voice = "en-US-BrianNeural"
+
+        if self.language is None:
+            self.db.save_language(user_id, lang)
+
+        path_file = Path(PATH_EN_BOOKS / self.book_name)
         if path_file.exists():
             metadata = BookMetadata.get_cache(path_file)
             self.book_title = metadata.get("book_title", "")
@@ -47,12 +59,6 @@ class Reader:
             # Ленивое чтение epub
             self.lazy_read = LazyEpubReader(path_file, self.paragraph_indx)
 
-        if self.voice is None:
-            lang = detect_lang_simple(self.description)
-            if lang == 'ru':
-                self.voice = "ru-RU-SvetlanaNeural"
-            else:
-                self.voice = "en-US-BrianNeural"
 
 
 

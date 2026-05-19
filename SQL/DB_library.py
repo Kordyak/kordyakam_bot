@@ -41,7 +41,7 @@ class DB_library:
                 reding_speed INTEGER DEFAULT 88,
                 last_access TIMESTAMP,
                 voice TEXT,
-                language TEXT,
+                lang_interface TEXT,
                 FOREIGN KEY (current_book_id) 
                     REFERENCES books(id) 
                     ON DELETE SET NULL
@@ -54,10 +54,10 @@ class DB_library:
             # # migration
             # columns = [row[1] for row in conn.execute("PRAGMA table_info(users)")]
             #
-            # if "language" not in columns:
+            # if "lang_interface" not in columns:
             #     conn.execute("""
             #         ALTER TABLE users
-            #         ADD COLUMN language TEXT
+            #         ADD COLUMN lang_interface TEXT
             #     """)
 
     # ============================ USER ============================================
@@ -159,7 +159,7 @@ class DB_library:
         with self._get_connection() as conn:
             conn.execute("""
                 UPDATE users
-                SET language=?
+                SET lang_interface=?
                 WHERE user_id=?
             """, (language, user_id))
 

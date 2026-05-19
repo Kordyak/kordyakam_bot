@@ -62,7 +62,7 @@ TEXTS = {
     "speed_saved": "🏃‍➡️ Reading speed changed: {speed}%",
 
     # ================= VOICE =================
-    "voice_select": "🎙 Choose a voice for text-to-speech",
+    "voice_select": "🎙 Choose a voice for book's text-to-speech",
     "voice_set": "🎙 Selected voice: {voice}",
 
     # ================= PARAGRAPH =================
@@ -80,9 +80,9 @@ TEXTS = {
     "delete_confirm": "Are you sure?",
 
     # Language
-    "select_language": '🌐 Select language.'
+    "select_language": '🌐 Select lang_interface.'
                        '\nNow installed <b>english</b>.',
-    "set_language": '🌐 English language is installed.',
+    "set_language": '🌐 English lang_interface is installed.',
 
     # DONATE
     'donate_me': "Congratulations, {username}!"

@@ -36,7 +36,7 @@ class Reader:
         self.reading_speed = state[4]
         self.username = state[5]
         self.voice = state[6]
-        self.language = state[7]
+        self.lang_interface = state[7]
 
         if self.voice is None:
             detect_lang = detect_lang_simple(self.description)
@@ -45,9 +45,9 @@ class Reader:
             else:
                 self.voice = "en-US-BrianNeural"
 
-        if self.language is None:
+        if self.lang_interface is None:
             self.db.save_language(user_id, lang)
-            self.language = lang
+            self.lang_interface = lang
 
         path_file = Path(PATH_EN_BOOKS / self.book_name)
         if path_file.exists():

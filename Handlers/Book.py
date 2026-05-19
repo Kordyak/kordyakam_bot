@@ -23,7 +23,7 @@ router_book = Router(name='book')
 
 @router_book.message(Command('start'))
 async def start_handler(message: Message, reader: Reader):
-    lang = reader.language
+    lang = reader.lang_interface
     if not reader.book_title:
         text = t(lang, "start_no_book", first_name=message.from_user.first_name)
         await message.answer(
@@ -46,7 +46,7 @@ async def start_handler(message: Message, reader: Reader):
 # ================= 📚 Библиотека ========================
 @router_book.message(Command("library"))
 async def show_library(message: Message, state: FSMContext, reader: Reader):
-    lang = reader.language
+    lang = reader.lang_interface
     books_index = DB_library().list_books()  # {hash: {filename, total_paragraphs}}
 
     if not books_index:
@@ -119,7 +119,7 @@ async def send_long_message(message, text: str):
 # НОМЕР КНИГИ / Описание или загрузка книги
 @router_book.message(UploadBook.waiting_book_number)
 async def handler_waiting_book_number(message: Message, state: FSMContext, reader):
-    lang = reader.language
+    lang = reader.lang_interface
     data = await state.get_data()
     books_map = data.get("books_map", {})
     i = message.text
@@ -152,7 +152,7 @@ async def handler_waiting_book_number(message: Message, state: FSMContext, reade
 # Описание текущей книги из МЕНЮ ЧИТАТЕЛЯ
 @router_book.callback_query(F.data == "current_book")
 async def description_current_book(callback: CallbackQuery, state: FSMContext, reader: Reader):
-    lang = reader.language
+    lang = reader.lang_interface
     await callback.answer()
     if not reader:
         await callback.answer(t(lang,'invalid_book'))
@@ -221,7 +221,7 @@ async def upload_my_book(message: Message, state: FSMContext, lang):
 @router_book.message(UploadBook.waiting_epub)
 async def handler_waiting_epub(message: Message, bot: Bot, state: FSMContext, reader):
     user_id = reader.user_id
-    lang = reader.language
+    lang = reader.lang_interface
     if not message.document or not message.document.file_name.endswith(".epub"):
         await message.answer(
             t(lang,'upload_error'),
@@ -263,7 +263,7 @@ async def handler_waiting_epub(message: Message, bot: Bot, state: FSMContext, re
 # Загрузка книги ОКОНЧАТЕЛЬНАЯ функция
 async def set_book(message, name_file, state, reader):
     db = reader.db
-    lang = reader.language
+    lang = reader.lang_interface
     user_id= reader.user_id
     book_path = Path(PATH_EN_BOOKS / name_file)
     file_hash = Library.calculate_hash(book_path)
@@ -299,14 +299,14 @@ async def change_time(callback: CallbackQuery, state: FSMContext, reader):
     await callback.answer()  # 🔴 обязательно
     time = db.get_time(user_id)
     await callback.message.edit_text(
-        t(reader.language,'change_time',time=time),
+        t(reader.lang_interface, 'change_time', time=time),
         parse_mode="HTML",
     )
     await state.set_state(StateUser.waiting_time)
 @router_book.message(StateUser.waiting_time)
 async def save_time(message: Message, state: FSMContext, reader):
     user_id = reader.user_id
-    lang = reader.language
+    lang = reader.lang_interface
     db = reader.db
     time = message.text.strip()
     try:
@@ -339,13 +339,13 @@ async def change_reading_speed(callback: CallbackQuery, state: FSMContext, reade
     await callback.answer()
     reading_speed = db.get_reading_speed(user_id)
     await callback.message.edit_text(
-        t(reader.language,'speed_current',speed=reading_speed),
+        t(reader.lang_interface, 'speed_current', speed=reading_speed),
         parse_mode="HTML"
     )
     await state.set_state(StateUser.waiting_reading_speed)
 @router_book.message(StateUser.waiting_reading_speed)
 async def save_reading_speed(message: Message, state: FSMContext, reader):
-    lang = reader.language
+    lang = reader.lang_interface
     user_id = reader.user_id
     db = reader.db
     try:
@@ -369,8 +369,9 @@ async def save_reading_speed(message: Message, state: FSMContext, reader):
 @router_book.callback_query(F.data == "voice")
 async def open_voice_menu(callback: CallbackQuery, reader: Reader):
     await callback.answer()
-    lang = detect_lang_simple(reader.description)
-    if lang == 'ru':
+    voices_lang = detect_lang_simple(reader.description)
+    lang = reader.lang_interface
+    if voices_lang == 'ru':
         await callback.message.edit_text(
             text= t(lang,'voice_select'),
             reply_markup=voice_menu_ru()
@@ -382,7 +383,7 @@ async def open_voice_menu(callback: CallbackQuery, reader: Reader):
         )
 @router_book.callback_query(F.data.startswith("voice:"))
 async def set_voice(callback: CallbackQuery, reader):
-    lang = reader.language
+    lang = reader.lang_interface
     user_id = reader.user_id
     db = reader.db
     voice = callback.data.split(":", 1)[1]
@@ -402,11 +403,11 @@ async def set_voice(callback: CallbackQuery, reader):
 async def change_index(callback: CallbackQuery, state: FSMContext, reader: Reader):
     await callback.answer()
     await callback.message.delete()
-    await callback.message.answer(t(reader.language,'paragraph_input',total=reader.total_paragraphs))
+    await callback.message.answer(t(reader.lang_interface, 'paragraph_input', total=reader.total_paragraphs))
     await state.set_state(UploadBook.waiting_paragraph)
 @router_book.message(UploadBook.waiting_paragraph)
 async def save_index(message: Message, state: FSMContext, reader: Reader, sender: Sender):
-    lang = reader.language
+    lang = reader.lang_interface
     user_id = reader.user_id
     db = reader.db
     if not reader:
@@ -458,26 +459,26 @@ async def del_book(callback: CallbackQuery, reader):
     await callback.answer()
     await callback.message.delete()
     await callback.message.answer(
-        t(reader.language,'delete_confirm'),
+        t(reader.lang_interface, 'delete_confirm'),
         reply_markup=confirm_kb('del_book')
     )
 
 
 # Язык интерфейса
-@router_book.message(Command("language"))
+@router_book.message(Command("lang_interface"))
 async def select_language(message: Message, reader):
     reply_markup = InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="🇷🇺 Русский", callback_data="language:ru")],
-            [InlineKeyboardButton(text="🇺🇸 English", callback_data="language:en")],
+            [InlineKeyboardButton(text="🇷🇺 Русский", callback_data="lang_interface:ru")],
+            [InlineKeyboardButton(text="🇺🇸 English", callback_data="lang_interface:en")],
         ]
     )
     await message.answer(
-        t(reader.language,'select_language'),
+        t(reader.lang_interface, 'select_language'),
         parse_mode='HTML',
         reply_markup=reply_markup,
     )
-@router_book.callback_query(F.data.startswith("language:"))
+@router_book.callback_query(F.data.startswith("lang_interface:"))
 async def waiting_language(call: CallbackQuery, reader):
     db = reader.db
     user_id = reader.user_id

@@ -22,7 +22,7 @@ class Sender:
         chunk = reader.get_next_chunk()
         user_id = reader.user_id
 
-        msg_end_book = t(reader.language,'donate_me',username=reader.username,book_title=reader.book_title)
+        msg_end_book = t(reader.lang_interface, 'donate_me', username=reader.username, book_title=reader.book_title)
         if not chunk:
             await self.bot.send_message(user_id, msg_end_book, parse_mode='HTML')
             return

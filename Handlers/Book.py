@@ -298,16 +298,20 @@ async def set_book(message, user_id, name_file, state: FSMContext, reader):
 
 # Изменить Время
 @router_book.callback_query(F.data == "change_time")
-async def change_time(callback: CallbackQuery, db: DB_library, user_id: int, state: FSMContext, lang):
+async def change_time(callback: CallbackQuery, db: DB_library, user_id: int, state: FSMContext, reader):
+
     await callback.answer()  # 🔴 обязательно
     time = db.get_time(user_id)
     await callback.message.edit_text(
-        t(lang,'change_time',time=time),
+        t(reader.language,'change_time',time=time),
         parse_mode="HTML",
     )
     await state.set_state(StateUser.waiting_time)
 @router_book.message(StateUser.waiting_time)
-async def save_time(message: Message, state: FSMContext, user_id, db: DB_library, lang):
+async def save_time(message: Message, state: FSMContext, reader):
+    user_id = reader.user_id
+    lang = reader.language
+    db = reader.db
     time = message.text.strip()
     try:
         hours, minutes = map(int, time.split(":"))
@@ -333,11 +337,11 @@ async def save_time(message: Message, state: FSMContext, user_id, db: DB_library
 
 # Изменить скорость чтения
 @router_book.callback_query(F.data == "reading_speed")
-async def change_reading_speed(callback: CallbackQuery, db: DB_library, user_id: int, state: FSMContext,lang):
+async def change_reading_speed(callback: CallbackQuery, db: DB_library, user_id: int, state: FSMContext, reader):
     await callback.answer()
     reading_speed = db.get_reading_speed(user_id)
     await callback.message.edit_text(
-        t(lang,'speed_current',speed=reading_speed),
+        t(reader.language,'speed_current',speed=reading_speed),
         parse_mode="HTML"
     )
     await state.set_state(StateUser.waiting_reading_speed)
@@ -391,13 +395,16 @@ async def set_voice(callback: CallbackQuery, db: DB_library, user_id: int,lang):
 
 # Читать с другого абзаца
 @router_book.callback_query(F.data == 'set_paragraf_index')
-async def change_index(callback: CallbackQuery, state: FSMContext, reader: Reader,lang):
+async def change_index(callback: CallbackQuery, state: FSMContext, reader: Reader):
     await callback.answer()
     await callback.message.delete()
-    await callback.message.answer(t(lang,'paragraph_input',total=reader.total_paragraphs))
+    await callback.message.answer(t(reader.language,'paragraph_input',total=reader.total_paragraphs))
     await state.set_state(UploadBook.waiting_paragraph)
 @router_book.message(UploadBook.waiting_paragraph)
-async def save_index(message: Message, state: FSMContext, user_id, reader: Reader, db: DB_library, sender: Sender,lang):
+async def save_index(message: Message, state: FSMContext, reader: Reader, sender: Sender):
+    lang = reader.language
+    user_id = reader.user_id
+    db = reader.db
     if not reader:
         await message.answer(t(lang,'no_book'))
         await state.set_state(None)
@@ -427,7 +434,7 @@ async def save_index(message: Message, state: FSMContext, user_id, reader: Reade
 
 # Читаем следующий абзац
 @router_book.message(Command("next"))
-async def next_chunk(message: Message, sender: Sender, user_id: int,  reader: Reader, state: FSMContext):
+async def next_chunk(message: Message, sender: Sender, reader: Reader, state: FSMContext):
     if not reader.book_title:
         await start_handler(message, reader, state)
         return
@@ -442,18 +449,18 @@ async def next_chunk(message: Message, sender: Sender, user_id: int,  reader: Re
 
 # Удалить книгу
 @router_book.callback_query(F.data == 'del_book')
-async def del_book(callback: CallbackQuery,lang):
+async def del_book(callback: CallbackQuery, reader):
     await callback.answer()
     await callback.message.delete()
     await callback.message.answer(
-        t(lang,'delete_confirm'),
+        t(reader.language,'delete_confirm'),
         reply_markup=confirm_kb('del_book')
     )
 
 
 # Язык интерфейса
 @router_book.message(Command("language"))
-async def select_language(message: Message, lang):
+async def select_language(message: Message, reader):
     reply_markup = InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text="🇷🇺 Русский", callback_data="language:ru")],
@@ -461,12 +468,14 @@ async def select_language(message: Message, lang):
         ]
     )
     await message.answer(
-        t(lang,'select_language'),
+        t(reader.language,'select_language'),
         parse_mode='HTML',
         reply_markup=reply_markup,
     )
 @router_book.callback_query(F.data.startswith("language:"))
-async def waiting_language(call: CallbackQuery, user_id: int, db:DB_library):
+async def waiting_language(call: CallbackQuery, reader):
+    db = reader.db
+    user_id = reader.user_id
     language = call.data.split(":", 1)[1]
     db.save_language(user_id,language)
     await call.message.edit_text(

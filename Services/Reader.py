@@ -47,6 +47,7 @@ class Reader:
 
         if self.language is None:
             self.db.save_language(user_id, lang)
+            self.language = lang
 
         path_file = Path(PATH_EN_BOOKS / self.book_name)
         if path_file.exists():

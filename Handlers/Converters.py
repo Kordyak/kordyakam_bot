@@ -13,7 +13,7 @@ router_converter = Router(name='converter')
 
 
 @router_converter.message(Command('trans'))
-async def handler(message: Message, command: CommandObject):
+async def handler_trans(message: Message, command: CommandObject):
 
     if message.reply_to_message:
         eng_text = await translator(message.reply_to_message.text)
@@ -29,7 +29,7 @@ async def handler(message: Message, command: CommandObject):
 
 
 @router_converter.message(Command('convert'))
-async def handler(message: Message, command: CommandObject):
+async def handler_convert(message: Message, command: CommandObject):
     msg = await message.answer('Подготавливаю аудио...')
     text = command.args
     if message.reply_to_message:  # Если ответить

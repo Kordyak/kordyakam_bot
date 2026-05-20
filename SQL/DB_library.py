@@ -159,13 +159,7 @@ class DB_library:
                 WHERE user_id=?
             """, (language, user_id))
 
-    def save_book_lang(self, book_id:int, book_lang:str):
-        with self._get_connection() as conn:
-            conn.execute("""
-                UPDATE books
-                SET book_lang=?
-                WHERE user_id=?
-            """, (book_lang, book_id))
+
 
     def list_users_with_time(self) -> list[dict]:
         with self._get_connection() as conn:
@@ -191,7 +185,7 @@ class DB_library:
             rows = conn.execute("""
                 SELECT user_id, username, daily_time
                 FROM users
-                WHERE daily_time = ?
+                WHERE daily_time = ? AND current_book_id IS NOT NULL
             """, (now_str,)).fetchall()
         return [
             {
@@ -268,6 +262,15 @@ class DB_library:
     def get_all_books(self):
         with self._get_connection() as conn:
             return conn.execute("SELECT id, filename, book_lang FROM books").fetchall()
+
+
+    def save_book_lang(self, book_id:int, book_lang:str):
+        with self._get_connection() as conn:
+            conn.execute("""
+                UPDATE books
+                SET book_lang=?
+                WHERE id=?
+            """, (book_lang, book_id))
 
     def delete_book(self, book_id):
         with self._get_connection() as conn:

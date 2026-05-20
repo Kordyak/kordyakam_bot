@@ -52,15 +52,15 @@ class Reader:
             self.description = metadata.get("description", "")
             self.cover_image = metadata.get("cover_image")
 
-        if self.voice is None:
-            detect_lang = detect_lang_simple(self.description)
-            if detect_lang == 'ru':
-                self.voice = "ru-RU-SvetlanaNeural"
-            else:
-                self.voice = "en-US-BrianNeural"
+            if self.voice is None:
+                detect_lang = detect_lang_simple(self.description)
+                if detect_lang == 'ru':
+                    self.voice = "ru-RU-SvetlanaNeural"
+                else:
+                    self.voice = "en-US-BrianNeural"
 
-            # Ленивое чтение epub
-            self.lazy_read = LazyEpubReader(path_file, self.paragraph_indx)
+        # Ленивое чтение epub
+        self.lazy_read = LazyEpubReader(path_file, self.paragraph_indx)
 
     @property
     def progress(self):

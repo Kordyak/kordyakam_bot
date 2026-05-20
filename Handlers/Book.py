@@ -251,9 +251,9 @@ async def handler_waiting_epub(message: Message, bot: Bot, state: FSMContext, re
     buf.seek(0)
     file_hash = library.calculate_hash_buffer(buf)
 
-    final_name = PATH_EN_BOOKS / original_name
-    metadata = BookMetadata.get_cache(final_name)
+    metadata = BookMetadata.get_cache(buf)
     book_lang = detect_lang_simple(metadata['description'])
+    final_name = BOOK_PATHS[book_lang] / original_name
 
     # Проверяем, есть ли книга в библиотеке
     books = DB_library().list_books(book_lang) # возвращает {hash: {filename, total_paragraphs}}

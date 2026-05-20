@@ -3,7 +3,7 @@ from pathlib import Path
 from Services.BookMetadata import BookMetadata
 
 from Services.Converters import detect_lang_simple
-from Services.Library import PATH_EN_BOOKS, epub_paragraph_generator
+from Services.Library import epub_paragraph_generator, BOOK_PATHS
 from SQL.DB_library import DB_library
 
 
@@ -37,6 +37,7 @@ class Reader:
         self.username = state[5]
         self.voice = state[6]
         self.lang_interface = state[7]
+        self.lang_book = state[8]
 
         if self.voice is None:
             detect_lang = detect_lang_simple(self.description)
@@ -49,7 +50,7 @@ class Reader:
             self.db.save_language(user_id, lang)
             self.lang_interface = lang
 
-        path_file = Path(PATH_EN_BOOKS / self.book_name)
+        path_file = Path(BOOK_PATHS[self.lang_book] / self.book_name)
         if path_file.exists():
             metadata = BookMetadata.get_cache(path_file)
             self.book_title = metadata.get("book_title", "")
@@ -59,9 +60,6 @@ class Reader:
 
             # Ленивое чтение epub
             self.lazy_read = LazyEpubReader(path_file, self.paragraph_indx)
-
-
-
 
     @property
     def progress(self):

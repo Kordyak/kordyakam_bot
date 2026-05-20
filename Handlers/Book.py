@@ -7,7 +7,7 @@ from aiogram import Router, F, Bot
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, BufferedInputFile
-from aiogram.filters import Command
+from aiogram.filters import Command, CommandObject
 from FSM.states import UploadBook, StateUser
 from Keyboards.Book import reader_menu, voice_menu_ru, voice_menu_eng, format_voice_name
 from Keyboards.Universal import confirm_kb, cancel_kb
@@ -15,7 +15,7 @@ from Locales.translator import t
 from SQL.DB_library import DB_library
 from Services.BookMetadata import BookMetadata
 from Services.Converters import translator, detect_lang_simple
-from Services.Library import Library, PATH_EN_BOOKS, epub_paragraph_generator
+from Services.Library import Library, PATH_EN_BOOKS, epub_paragraph_generator, PATH_RU_BOOKS, BOOK_PATHS
 from Services.Reader import Reader
 from Services.Sender import Sender
 
@@ -47,22 +47,27 @@ async def start_handler(message: Message, reader: Reader):
 
 
 # ================= 📚 Библиотека ========================
-@router_book.message(Command("library_en"))
-async def show_library(message: Message, state: FSMContext, reader: Reader):
+@router_book.message(Command("library_en", "library_ru"))
+async def show_library(message: Message, state: FSMContext, reader: Reader, command: CommandObject):
     library = Library()
     library.sync_library()
-    lang = reader.lang_interface
-    books_index = DB_library().list_books()  # {hash: {filename, total_paragraphs}}
+    lang_face = reader.lang_interface
+
+    if command == 'library_en':
+        lang_book = 'en'
+    else:
+        lang_book = 'ru'
+
+    books_index = DB_library().list_books(lang_book)  # {hash: {filename, total_paragraphs}}
 
     if not books_index:
-        await message.answer(t(lang,'library_empty'))
+        await message.answer(t(lang_face,'library_empty'))
         return
 
     # Собираем книги в список
     books = []
-
     for file_hash, info in books_index.items():
-        book_path = PATH_EN_BOOKS / info["filename"]
+        book_path = BOOK_PATHS[lang_book] / info["filename"]
 
         metadata = BookMetadata.get_cache(book_path)
 
@@ -98,7 +103,7 @@ async def show_library(message: Message, state: FSMContext, reader: Reader):
         }
 
     msg = "\n".join(books_list)
-    msg += t(lang,'library_choose')
+    msg += t(lang_face,'library_choose')
 
     await send_long_message(message, msg)
     await state.update_data(books_map=books_map)# сохранить в state
@@ -246,15 +251,18 @@ async def handler_waiting_epub(message: Message, bot: Bot, state: FSMContext, re
     buf.seek(0)
     file_hash = library.calculate_hash_buffer(buf)
 
+    final_name = PATH_EN_BOOKS / original_name
+    metadata = BookMetadata.get_cache(final_name)
+    book_lang = detect_lang_simple(metadata['description'])
+
     # Проверяем, есть ли книга в библиотеке
-    books = DB_library().list_books() # возвращает {hash: {filename, total_paragraphs}}
+    books = DB_library().list_books(book_lang) # возвращает {hash: {filename, total_paragraphs}}
     if file_hash in books: # 🔎 Если уже есть по хэшу
         await message.answer(t(lang,'exist_book'))
     else:  # 📥 Если новая книга
-        final_name = PATH_EN_BOOKS / original_name
         buf.seek(0)
         final_name.write_bytes(buf.read())  # пишем на диск только если нужно
-        library.add_book(final_name) # сохраняем книгу в DB
+        library.add_book(final_name, book_lang) # сохраняем книгу в DB
 
     await set_book(message, file_hash, reader, state)
     await state.set_state(None)

@@ -28,7 +28,8 @@ class DB_library:
                 filename TEXT NOT NULL UNIQUE,
                 hash TEXT NOT NULL UNIQUE,
                 total_paragraphs INTEGER NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                book_lang TEXT
             );
 
             CREATE TABLE IF NOT EXISTS users (
@@ -48,17 +49,12 @@ class DB_library:
             );
 
             CREATE INDEX IF NOT EXISTS idx_books_hash ON books(hash);
-
             """)
 
-            # # migration
-            # columns = [row[1] for row in conn.execute("PRAGMA table_info(users)")]
-            #
-            # if "lang_interface" not in columns:
-            #     conn.execute("""
-            #         ALTER TABLE users
-            #         ADD COLUMN lang_interface TEXT
-            #     """)
+            # Миграция: добавляем lang если её ещё нет
+            columns = [row[1] for row in conn.execute("PRAGMA table_info(books)")]
+            if "book_lang" not in columns:
+                conn.execute("ALTER TABLE books ADD COLUMN book_lang TEXT")
 
     # ============================ USER ============================================
     def get_create_user(self, telegram_id: int, username: str | None = None):
@@ -221,6 +217,7 @@ class DB_library:
                     u.username,
                     u.voice,
                     u.language
+                    b.book_lang
                 FROM users u
                 LEFT JOIN books b ON u.current_book_id = b.id
                 WHERE u.user_id = ?
@@ -229,12 +226,13 @@ class DB_library:
             return cursor.fetchone()
 
     # ======================== BOOK =======================================
-    def list_books(self) -> dict[str, dict]:
+    def list_books(self, book_lang:str) -> dict[str, dict]:
         """Возвращает список всех книг в библиотеке"""
         with self._get_connection() as conn:
             rows = conn.execute("""
                 SELECT * FROM books
-            """).fetchall()
+                WHERE book_lang = ?
+            """, (book_lang,)).fetchall()
 
         # затем формируем dict по hash
         return {
@@ -246,13 +244,13 @@ class DB_library:
             for r in rows
         }
 
-    def add_book(self, filename: str, file_hash: str, total_paragraphs: int) -> int:
+    def add_book(self, filename: str, file_hash: str, total_paragraphs: int, lang: str) -> int:
         """Добавляет книгу в библиотеку, возвращает её id"""
         with self._get_connection() as conn:
             conn.execute("""
-                INSERT OR IGNORE INTO books (filename, hash, total_paragraphs)
-                VALUES (?, ?, ?)
-            """, (filename, file_hash, total_paragraphs))
+                    INSERT OR IGNORE INTO books (filename, hash, total_paragraphs, lang)
+                    VALUES (?, ?, ?, ?)
+                """, (filename, file_hash, total_paragraphs, lang))
 
             book_id = conn.execute(
                 "SELECT id FROM books WHERE hash=?", (file_hash,)
@@ -261,7 +259,7 @@ class DB_library:
 
     def get_all_books(self):
         with self._get_connection() as conn:
-            return conn.execute("SELECT id, filename FROM books").fetchall()
+            return conn.execute("SELECT id, filename, book_lang FROM books").fetchall()
 
     def delete_book(self, book_id):
         with self._get_connection() as conn:

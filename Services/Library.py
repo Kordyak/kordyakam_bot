@@ -62,8 +62,6 @@ class Library:
             if not book_path.exists():
                 print(f"⚠ Файл {filename} отсутствует — удаляем из базы")
                 self.db.delete_book(book_id)
-            else:
-                self.db.save_book_lang(book_id, book_lang)
 
         # Добавляем новые книги
         for lang, BOOK_PATH in BOOK_PATHS.items():

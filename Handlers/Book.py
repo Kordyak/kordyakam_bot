@@ -1,7 +1,7 @@
 from contextlib import suppress
 from io import BytesIO
 import re
-
+from pathlib import Path
 
 from aiogram import Router, F, Bot
 from aiogram.exceptions import TelegramBadRequest
@@ -53,7 +53,7 @@ async def show_library(message: Message, state: FSMContext, reader: Reader, comm
     library.sync_library()
     lang_face = reader.lang_interface
 
-    if command == 'library_en':
+    if command.command == 'library_en':
         lang_book = 'en'
     else:
         lang_book = 'ru'
@@ -243,26 +243,29 @@ async def handler_waiting_epub(message: Message, bot: Bot, state: FSMContext, re
         await message.answer(t(lang, 'upload_too_large'), reply_markup=cancel_kb())
         return
 
-    original_name = message.document.file_name
-    file = await bot.get_file(message.document.file_id)
+    file_name = message.document.file_name
+    tg_file = await bot.get_file(message.document.file_id)
 
-    buf = BytesIO()
-    await bot.download_file(file.file_path, destination=buf)
-    buf.seek(0)
-    file_hash = library.calculate_hash_buffer(buf)
+    final_path = Path.cwd() / file_name
+    await bot.download_file(tg_file.file_path, destination=final_path)
 
-    metadata = BookMetadata.get_cache(buf)
+    file_hash = library.calculate_hash(final_path)
+
+    metadata = BookMetadata.get_cache(final_path)
     book_lang = detect_lang_simple(metadata['description'])
-    final_name = BOOK_PATHS[book_lang] / original_name
 
-    # Проверяем, есть ли книга в библиотеке
-    books = DB_library().list_books(book_lang) # возвращает {hash: {filename, total_paragraphs}}
-    if file_hash in books: # 🔎 Если уже есть по хэшу
-        await message.answer(t(lang,'exist_book'))
-    else:  # 📥 Если новая книга
-        buf.seek(0)
-        final_name.write_bytes(buf.read())  # пишем на диск только если нужно
-        library.add_book(final_name, book_lang) # сохраняем книгу в DB
+    books = DB_library().list_books(book_lang)
+
+    if file_hash in books:
+        await message.answer(t(lang, 'exist_book'))
+        final_path.unlink()  # удаляем временный файл
+        return
+
+    # перенос в финальную папку (быстро и безопасно)
+    final_path2 = BOOK_PATHS[book_lang] / file_name
+    final_path.replace(final_path2)  # <-- ВАЖНО: атомарный перенос
+
+    library.add_book(final_path2, book_lang)
 
     await set_book(message, file_hash, reader, state)
     await state.set_state(None)
@@ -364,15 +367,15 @@ async def save_reading_speed(message: Message, state: FSMContext, reader):
 async def open_voice_menu(callback: CallbackQuery, reader: Reader):
     await callback.answer()
     voices_lang = detect_lang_simple(reader.description)
-    lang = reader.lang_interface
+    lang_interface = reader.lang_interface
     if voices_lang == 'ru':
         await callback.message.edit_text(
-            text= t(lang,'voice_select'),
+            text= t(lang_interface,'voice_select'),
             reply_markup=voice_menu_ru()
         )
     else:
         await callback.message.edit_text(
-            text= t(lang,'voice_select'),
+            text= t(lang_interface,'voice_select'),
             reply_markup=voice_menu_eng()
         )
 @router_book.callback_query(F.data.startswith("voice:"))

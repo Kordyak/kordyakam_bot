@@ -25,7 +25,7 @@ class Reader:
 
         self.db = DB_library()
         self.db.get_create_user(user_id, username)
-        self.db.save_last_contact(user_id)
+        # self.db.save_last_contact(user_id)
 
         state = self.db.get_user_state(user_id) # Загружаем состояние пользователя
 
@@ -44,23 +44,23 @@ class Reader:
             self.db.save_language(user_id, lang)
             self.lang_interface = lang
 
-        path_file = Path(BOOK_PATHS[self.lang_book] / self.book_name)
-        if path_file.exists():
-            metadata = BookMetadata.get_cache(path_file)
-            self.book_title = metadata.get("book_title", "")
-            self.book_creator = metadata.get("book_creator", "")
-            self.description = metadata.get("description", "")
-            self.cover_image = metadata.get("cover_image")
+        if self.lang_book:
+            path_file = Path(BOOK_PATHS[self.lang_book] / self.book_name)
+            if path_file.exists():
+                metadata = BookMetadata.get_cache(path_file)
+                self.book_title = metadata.get("book_title", "")
+                self.book_creator = metadata.get("book_creator", "")
+                self.description = metadata.get("description", "")
+                self.cover_image = metadata.get("cover_image")
 
-            if self.voice is None:
-                detect_lang = detect_lang_simple(self.description)
-                if detect_lang == 'ru':
-                    self.voice = "ru-RU-SvetlanaNeural"
-                else:
-                    self.voice = "en-US-BrianNeural"
+                if self.voice is None:
+                    detect_lang = detect_lang_simple(self.description)
+                    if detect_lang == 'ru':
+                        self.voice = "ru-RU-SvetlanaNeural"
+                    else:
+                        self.voice = "en-US-BrianNeural"
 
-        # Ленивое чтение epub
-        self.lazy_read = LazyEpubReader(path_file, self.paragraph_indx)
+            self.lazy_read = LazyEpubReader(path_file, self.paragraph_indx) # Ленивое чтение epub
 
     @property
     def progress(self):

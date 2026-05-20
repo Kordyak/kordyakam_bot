@@ -5,6 +5,7 @@ from aiogram import BaseMiddleware
 from aiogram.enums import ChatAction
 from aiogram.types import TelegramObject, CallbackQuery
 
+from SQL.DB_library import DB_library
 from Services.Reader import Reader
 from typing import Callable, Awaitable, Dict, Any
 
@@ -16,6 +17,9 @@ class MiddlewareUsers(BaseMiddleware):
         username = event.from_user.username
         username = f"@{username}" if username else None
         lang = event.from_user.language_code
+
+        db = DB_library()
+        db.save_last_contact(user_id)
 
         if isinstance(event, CallbackQuery):
             chat_id = event.message.chat.id

@@ -44,8 +44,10 @@ async def start_handler(message: Message, reader: Reader):
 
 
 # ================= 📚 Библиотека ========================
-@router_book.message(Command("library"))
+@router_book.message(Command("library_en"))
 async def show_library(message: Message, state: FSMContext, reader: Reader):
+    library = Library()
+    library.sync_library()
     lang = reader.lang_interface
     books_index = DB_library().list_books()  # {hash: {filename, total_paragraphs}}
 
@@ -167,14 +169,15 @@ async def description_current_book(callback: CallbackQuery, state: FSMContext, r
         'total_paragraphs': reader.total_paragraphs,
     }
     await state.update_data(book_info=book_info)
-    await book_description(callback.message, state)
+    await book_description(callback, state)
     await callback.message.delete()
 
 
 
 # Описание книги
 @router_book.callback_query(F.data == "book_description")
-async def book_description(message: Message, state: FSMContext):
+async def book_description(call: CallbackQuery, state: FSMContext):
+    message = call.message
     data = await state.get_data()
     book_info = data.get("book_info", {})
     description = book_info['description']
@@ -215,8 +218,8 @@ async def select_library_book(callback: CallbackQuery, state: FSMContext, reader
 
 # Загрузка собственной книги
 @router_book.message(Command("upload"))
-async def upload_my_book(message: Message, state: FSMContext, lang):
-    await message.answer(t(lang,'upload_book'))
+async def upload_my_book(message: Message, state: FSMContext, reader):
+    await message.answer(t(reader.lang_interface,'upload_book'))
     await state.set_state(UploadBook.waiting_epub)
 @router_book.message(UploadBook.waiting_epub)
 async def handler_waiting_epub(message: Message, bot: Bot, state: FSMContext, reader):
@@ -237,6 +240,7 @@ async def handler_waiting_epub(message: Message, bot: Bot, state: FSMContext, re
         await message.answer(f"Ошибка при сохранении файла: {e}")
         await state.set_state(None)
         return
+
     # Вычисляем hash загруженной книги
     library = Library()
     file_hash = library.calculate_hash(temp_path)
@@ -267,6 +271,7 @@ async def set_book(message, name_file, state, reader):
     user_id= reader.user_id
     book_path = Path(PATH_EN_BOOKS / name_file)
     file_hash = Library.calculate_hash(book_path)
+
     # Проверяем, есть ли книга в библиотеке
     book = db.get_book_by_hash(file_hash)
     if not book:
@@ -276,6 +281,7 @@ async def set_book(message, name_file, state, reader):
         book_id = db.add_book(str(name_file), file_hash, total_paragraphs)
     else:
         book_id = book["id"]
+
     # Назначаем книгу пользователю
     db.set_current_book(user_id, book_id)
     # Создаем Reader для пользователя
@@ -465,12 +471,12 @@ async def del_book(callback: CallbackQuery, reader):
 
 
 # Язык интерфейса
-@router_book.message(Command("lang_interface"))
+@router_book.message(Command("language"))
 async def select_language(message: Message, reader):
     reply_markup = InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="🇷🇺 Русский", callback_data="lang_interface:ru")],
-            [InlineKeyboardButton(text="🇺🇸 English", callback_data="lang_interface:en")],
+            [InlineKeyboardButton(text="🇷🇺 Русский", callback_data="language:ru")],
+            [InlineKeyboardButton(text="🇺🇸 English", callback_data="language:en")],
         ]
     )
     await message.answer(
@@ -478,7 +484,7 @@ async def select_language(message: Message, reader):
         parse_mode='HTML',
         reply_markup=reply_markup,
     )
-@router_book.callback_query(F.data.startswith("lang_interface:"))
+@router_book.callback_query(F.data.startswith("language:"))
 async def waiting_language(call: CallbackQuery, reader):
     db = reader.db
     user_id = reader.user_id

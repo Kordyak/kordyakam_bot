@@ -40,7 +40,7 @@ def voice_menu_eng():
             # [InlineKeyboardButton(text="🇺🇸 Tony ♂️", callback_data="voice:en-US-TonyNeural")], # Не работает
             [InlineKeyboardButton(text="🇺🇸 Aria ♀️", callback_data="voice:en-US-AriaNeural")],
             [InlineKeyboardButton(text="🇺🇸 Jenny ♀️", callback_data="voice:en-US-JennyNeural")],
-            [InlineKeyboardButton(text="🇺🇸 Emma ♀️", callback_data="voice:en-US-EmmaNeural")],
+            [InlineKeyboardButton(text="🇺🇸 Emma ♀️ ⭐", callback_data="voice:en-US-EmmaNeural")],
             [InlineKeyboardButton(text="🇺🇸 Michelle ♀️", callback_data="voice:en-US-MichelleNeural")],
 
             [InlineKeyboardButton(text="🇬🇧 Ryan ♂️ ⭐", callback_data="voice:en-GB-RyanNeural")],

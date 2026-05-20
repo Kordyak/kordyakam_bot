@@ -77,8 +77,8 @@ async def main():
     await set_bot()
     await set_scheduler()
 
-    library1 = Library()
-    library1.sync_library()
+    # library1 = Library()
+    # library1.sync_library()
 
     async with bot:
         await bot.delete_webhook()

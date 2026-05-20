@@ -159,7 +159,7 @@ class DB_library:
         with self._get_connection() as conn:
             conn.execute("""
                 UPDATE users
-                SET lang_interface=?
+                SET language=?
                 WHERE user_id=?
             """, (language, user_id))
 

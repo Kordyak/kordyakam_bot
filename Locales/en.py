@@ -19,7 +19,8 @@ TEXTS = {
     # ================= START =================
     "start_no_book": 'Hello, <b>{first_name}</b>!'
                      '\nLet’s choose a <b>book from the library</b>.'
-                     '\n/library'
+                     '\n/library_en'
+                     '\n/library_ru'
                      '\nOr you can upload your own <b>.epub</b> file.'
                      '\n/upload',
     "start_with_book": 'Reader menu:'

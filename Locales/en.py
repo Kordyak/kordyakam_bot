@@ -42,11 +42,13 @@ TEXTS = {
     # Загрузка собственной книги
     "upload_book": 'Submit your EPUB file 📚 for download',
     "upload_error": '😅 This is not an epub',
+    "upload_too_large": "😅 File is too large. Maximum 10 MB",
+    "exist_book": 'This book is already in my database 📚',
 
     # ================= BOOK SET =================
     "book_set": 'Book <b>"{book_title}"</b> has been set.'
-                "\nNow let's set the daily paragraph delivery time."
-                "\nEnter time in HH:MM format.",
+                "\nYou can set the time to receive the paragraph each day over reader menu /start."
+                "\nOr get the paragraph by requesting /next",
 
     # ================= TIME =================
     "change_time": '⏰ The paragraph is currently being sent at <b>{time}</b>.'
@@ -74,16 +76,13 @@ TEXTS = {
     "paragraph_range": "Enter a number between 1 and {total}",
     "paragraph_updated": "✅ Paragraph index updated!",
 
-    # ================= LOADING =================
-    "loading_paragraph": "Preparing paragraph ...",
-
     # ================= DELETE =================
     "delete_confirm": "Are you sure?",
 
     # Language
-    "select_language": '🌐 Select lang_interface.'
+    "select_language": '🌐 Select language.'
                        '\nNow installed <b>english</b>.',
-    "set_language": '🌐 English lang_interface is installed.',
+    "set_language": '🌐 English language is installed.',
 
     # DONATE
     'donate_me': "Congratulations, {username}!"

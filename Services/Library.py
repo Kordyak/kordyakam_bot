@@ -1,4 +1,5 @@
 import hashlib
+from io import BytesIO
 from pathlib import Path
 import zipfile
 
@@ -21,6 +22,13 @@ class Library:
         with open(path, "rb") as f:
             for chunk in iter(lambda: f.read(8192), b""):
                 sha256.update(chunk)
+        return sha256.hexdigest()
+
+    @staticmethod
+    def calculate_hash_buffer(buffer: BytesIO) -> str:
+        sha256 = hashlib.sha256()
+        while chunk := buffer.read(8192):
+            sha256.update(chunk)
         return sha256.hexdigest()
 
     # Добавляет книгу в библиотеку, если её там ещё нет.

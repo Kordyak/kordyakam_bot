@@ -1,5 +1,8 @@
 from contextlib import suppress
-from pathlib import Path
+from io import BytesIO
+import re
+
+
 from aiogram import Router, F, Bot
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
@@ -180,7 +183,7 @@ async def book_description(call: CallbackQuery, state: FSMContext):
     message = call.message
     data = await state.get_data()
     book_info = data.get("book_info", {})
-    description = book_info['description']
+    description = strip_html(book_info['description'])
 
     caption = (
         f"<b>Author</b>: {book_info['creator']}\n"
@@ -202,97 +205,74 @@ async def book_description(call: CallbackQuery, state: FSMContext):
         text=f"<tg-spoiler>{description_ru}</tg-spoiler>",
         parse_mode="HTML",
     )
+def strip_html(text: str) -> str:
+    text = re.sub(r'<[^>]+>', '', text)
+    return re.sub(r'\s+', ' ', text).strip()
 
 
 
-# Загрузка книги из библиотек
+# Выбрать книгу из библиотек
 @router_book.callback_query(F.data.startswith("upload_library_book:"))
 async def select_library_book(callback: CallbackQuery, state: FSMContext, reader):
     await callback.answer()
     i = callback.data.split(":")[1]
     data = await state.get_data()
     books_map = data.get("books_map", {})
-    file_name = books_map[i]['filename']
-    await set_book(callback.message, file_name, state, reader)
+    file_hash = books_map[i]['hash']
+    await set_book(callback.message, file_hash, reader, state)
 
 
-# Загрузка собственной книги
+# Загрузить собственную книгу
 @router_book.message(Command("upload"))
 async def upload_my_book(message: Message, state: FSMContext, reader):
     await message.answer(t(reader.lang_interface,'upload_book'))
     await state.set_state(UploadBook.waiting_epub)
 @router_book.message(UploadBook.waiting_epub)
 async def handler_waiting_epub(message: Message, bot: Bot, state: FSMContext, reader):
-    user_id = reader.user_id
     lang = reader.lang_interface
+    library = Library()
     if not message.document or not message.document.file_name.endswith(".epub"):
-        await message.answer(
-            t(lang,'upload_error'),
-            reply_markup=cancel_kb()
-        )
+        await message.answer(t(lang,'upload_error'),reply_markup=cancel_kb())
         return
-    original_name = message.document.file_name
-    temp_path = PATH_EN_BOOKS / f"temp_{user_id}.epub"
-    file = await bot.get_file(message.document.file_id)
-    try:
-        await bot.download_file(file.file_path, destination=temp_path)
-    except Exception as e:
-        await message.answer(f"Ошибка при сохранении файла: {e}")
-        await state.set_state(None)
+    if message.document.file_size > 10 * 1024 * 1024:
+        await message.answer(t(lang, 'upload_too_large'), reply_markup=cancel_kb())
         return
 
-    # Вычисляем hash загруженной книги
-    library = Library()
-    file_hash = library.calculate_hash(temp_path)
-    books_index = DB_library().list_books() # возвращает {hash: {filename, total_paragraphs}}
-    # 🔎 Если уже есть по хэшу
-    if file_hash in books_index:
-        final_name = Path(books_index[file_hash]["filename"])
-        temp_path.unlink()
-        await message.answer("Такая книга уже есть в моей базе 📚")
+    original_name = message.document.file_name
+    file = await bot.get_file(message.document.file_id)
+
+    buf = BytesIO()
+    await bot.download_file(file.file_path, destination=buf)
+    buf.seek(0)
+    file_hash = library.calculate_hash_buffer(buf)
+
+    # Проверяем, есть ли книга в библиотеке
+    books = DB_library().list_books() # возвращает {hash: {filename, total_paragraphs}}
+    if file_hash in books: # 🔎 Если уже есть по хэшу
+        await message.answer(t(lang,'exist_book'))
     else:  # 📥 Если новая книга
         final_name = PATH_EN_BOOKS / original_name
-        counter = 1
-        while final_name.exists():
-            final_name = PATH_EN_BOOKS / f"{Path(original_name).stem}_{counter}.epub"
-            counter += 1
-        temp_path.rename(final_name)
-        # сохраняем книгу в books_index
-        library.add_book(final_name)
+        buf.seek(0)
+        final_name.write_bytes(buf.read())  # пишем на диск только если нужно
+        library.add_book(final_name) # сохраняем книгу в DB
 
-    await set_book(message, final_name, state, reader)
+    await set_book(message, file_hash, reader, state)
     await state.set_state(None)
 
 
-# Загрузка книги ОКОНЧАТЕЛЬНАЯ функция
-async def set_book(message, name_file, state, reader):
+# УСТАНОВКА книги ОКОНЧАТЕЛЬНАЯ функция
+async def set_book(message, file_hash, reader, state: FSMContext):
     db = reader.db
     lang = reader.lang_interface
     user_id= reader.user_id
-    book_path = Path(PATH_EN_BOOKS / name_file)
-    file_hash = Library.calculate_hash(book_path)
-
-    # Проверяем, есть ли книга в библиотеке
-    book = db.get_book_by_hash(file_hash)
-    if not book:
-        # Получаем количество абзацев
-        total_paragraphs = sum(1 for _ in epub_paragraph_generator(book_path))
-        # Добавляем книгу в библиотеку
-        book_id = db.add_book(str(name_file), file_hash, total_paragraphs)
-    else:
-        book_id = book["id"]
-
-    # Назначаем книгу пользователю
+    book_id = db.get_book_by_hash(file_hash)["id"]
     db.set_current_book(user_id, book_id)
-    # Создаем Reader для пользователя
     reader = Reader(user_id)
     await message.answer(
         t(lang,'book_set',book_title=reader.book_title),
         parse_mode='HTML'
     )
-    await state.set_state(StateUser.waiting_time)
-
-
+    await state.set_state(None)
 
 
 

@@ -42,7 +42,7 @@ class DB_library:
                 reading_speed INTEGER DEFAULT 88,
                 last_access TIMESTAMP,
                 voice TEXT,
-                lang_interface TEXT,
+                language TEXT,
                 FOREIGN KEY (current_book_id) 
                     REFERENCES books(id) 
                     ON DELETE SET NULL
@@ -51,10 +51,10 @@ class DB_library:
             CREATE INDEX IF NOT EXISTS idx_books_hash ON books(hash);
             """)
 
-            # Миграция: добавляем lang если её ещё нет
-            columns = [row[1] for row in conn.execute("PRAGMA table_info(books)")]
-            if "book_lang" not in columns:
-                conn.execute("ALTER TABLE books ADD COLUMN book_lang TEXT")
+            # # Миграция: добавляем lang если её ещё нет
+            # columns = [row[1] for row in conn.execute("PRAGMA table_info(books)")]
+            # if "book_lang" not in columns:
+            #     conn.execute("ALTER TABLE books ADD COLUMN book_lang TEXT")
 
     # ============================ USER ============================================
     def get_create_user(self, telegram_id: int, username: str | None = None):
@@ -159,6 +159,14 @@ class DB_library:
                 WHERE user_id=?
             """, (language, user_id))
 
+    def save_book_lang(self, book_id:int, book_lang:str):
+        with self._get_connection() as conn:
+            conn.execute("""
+                UPDATE books
+                SET book_lang=?
+                WHERE user_id=?
+            """, (book_lang, book_id))
+
     def list_users_with_time(self) -> list[dict]:
         with self._get_connection() as conn:
             rows = conn.execute("""
@@ -216,7 +224,7 @@ class DB_library:
                     u.reading_speed,
                     u.username,
                     u.voice,
-                    u.language
+                    u.language,
                     b.book_lang
                 FROM users u
                 LEFT JOIN books b ON u.current_book_id = b.id
@@ -244,13 +252,13 @@ class DB_library:
             for r in rows
         }
 
-    def add_book(self, filename: str, file_hash: str, total_paragraphs: int, lang: str) -> int:
+    def add_book(self, filename: str, file_hash: str, total_paragraphs: int, book_lang: str) -> int:
         """Добавляет книгу в библиотеку, возвращает её id"""
         with self._get_connection() as conn:
             conn.execute("""
-                    INSERT OR IGNORE INTO books (filename, hash, total_paragraphs, lang)
+                    INSERT OR IGNORE INTO books (filename, hash, total_paragraphs, book_lang)
                     VALUES (?, ?, ?, ?)
-                """, (filename, file_hash, total_paragraphs, lang))
+                """, (filename, file_hash, total_paragraphs, book_lang))
 
             book_id = conn.execute(
                 "SELECT id FROM books WHERE hash=?", (file_hash,)

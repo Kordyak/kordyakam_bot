@@ -57,13 +57,13 @@ class Library:
         books = self.db.get_all_books()  # теперь возвращает (id, filename, lang)
 
         for book in books:
-
-            filename, lang = book[1], book[2]
-
-            if not exists(PATH_EN_BOOKS/filename) or not exists(PATH_RU_BOOKS/filename):
-                print(f"⚠ Файл {filename} не найден")
-                self.db.delete_book(book[0])
-                continue
+            book_id, filename, book_lang = book[0], book[1], book[2]
+            book_path = BOOK_PATHS.get(book_lang, PATH_EN_BOOKS) / filename
+            if not book_path.exists():
+                print(f"⚠ Файл {filename} отсутствует — удаляем из базы")
+                self.db.delete_book(book_id)
+            else:
+                self.db.save_book_lang(book_id, book_lang)
 
         # Добавляем новые книги
         for lang, BOOK_PATH in BOOK_PATHS.items():

@@ -1,11 +1,15 @@
+from functools import lru_cache
 from pathlib import Path
 from ebooklib import epub, ITEM_IMAGE
-
+from PIL import Image
+from aiogram.types import BufferedInputFile
+from io import BytesIO
 
 class BookMetadata:
     cache = {}
 
     @classmethod
+    @lru_cache(maxsize=50)
     def get_cache(cls, book_path):
         key = str(book_path)
         book_time = book_path.stat().st_mtime
@@ -15,12 +19,13 @@ class BookMetadata:
         if not cached or cached["book_time"] != book_time:
             print("🔥 Parsing epub (cache refresh)")
             metadata = get_epub_metadata(book_path)
+            cover = metadata[3]
             cls.cache[key] = {
                 "book_time": book_time,
                 "book_title": metadata[0],
                 "book_creator": metadata[1],
                 "description": metadata[2],
-                "cover_image": metadata[3],
+                "thumbnail": make_thumbnail(cover) if cover else None,  # один раз
             }
         return cls.cache[key]
 
@@ -69,3 +74,23 @@ def get_cover(book):
         return images[0].get_content()
 
     return None
+
+
+# Миниатюру из аудио файла для сообщения
+def make_thumbnail(image_bytes: bytes) -> BufferedInputFile:
+    with Image.open(BytesIO(image_bytes)) as img:
+        img = img.convert("RGB")
+        img.thumbnail((320, 320))
+
+        output = BytesIO()
+        quality = 85
+        while True:
+            output.seek(0)
+            output.truncate()
+            img.save(output, format="JPEG", quality=quality, optimize=True)
+            if output.tell() <= 200 * 1024 or quality <= 40:
+                break
+            quality -= 5
+
+        return BufferedInputFile(file=output.getvalue(), filename="thumb.jpg")
+

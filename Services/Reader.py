@@ -1,10 +1,4 @@
-from io import BytesIO
 from pathlib import Path
-
-from PIL import Image
-
-from aiogram.types import BufferedInputFile
-
 from Services.BookMetadata import BookMetadata
 from Services.Converters import detect_lang_simple
 from Services.Library import epub_paragraph_generator, BOOK_PATHS
@@ -19,7 +13,7 @@ class Reader:
     book_creator = ""
     description = ""
     cover_image = None
-    lazy_read = None
+    cached_epub = None
 
     def __init__(self,
                  user_id: int,
@@ -51,7 +45,7 @@ class Reader:
                 self.book_title = metadata.get("book_title", "")
                 self.book_creator = metadata.get("book_creator", "")
                 self.description = metadata.get("description", "")
-                self.cover_image = metadata.get("cover_image")
+                self.thumbnail = metadata.get("thumbnail")
 
                 if self.voice is None:
                     detect_lang = detect_lang_simple(self.description)
@@ -60,10 +54,7 @@ class Reader:
                     else:
                         self.voice = "en-US-BrianNeural"
 
-                if self.cover_image:
-                    self.thumbnail = make_thumbnail(self.cover_image)
-
-            self.lazy_read = LazyEpubReader(path_file, self.paragraph_indx) # Ленивое чтение epub
+            self.cached_epub = CachedEpub(path_file, self.paragraph_indx) # Ленивое чтение epub
 
 
     @property
@@ -80,7 +71,7 @@ class Reader:
         current_len = 0
 
         while self.paragraph_indx < self.total_paragraphs:
-            paragraph = self.lazy_read.get_next_paragraph()
+            paragraph = self.cached_epub.get_next_paragraph()
 
             if paragraph is None:
                 break
@@ -113,9 +104,9 @@ class Reader:
 
 
 
-class LazyEpubReader:
+class CachedEpub:
     @staticmethod
-    @lru_cache(maxsize=20)  # максимум 20 книг в памяти
+    @lru_cache(maxsize=50)  # максимум 200 книг в памяти
     def _load_paragraphs(path_str: str) -> tuple[str, ...]:
         # tuple вместо list — lru_cache требует hashable
         return tuple(epub_paragraph_generator(Path(path_str)))
@@ -132,23 +123,6 @@ class LazyEpubReader:
         return paragraph
 
 
-# Миниатюру из аудио файла для сообщения
-def make_thumbnail(image_bytes: bytes) -> BufferedInputFile:
-    with Image.open(BytesIO(image_bytes)) as img:
-        img = img.convert("RGB")
-        img.thumbnail((320, 320))
-
-        output = BytesIO()
-        quality = 85
-        while True:
-            output.seek(0)
-            output.truncate()
-            img.save(output, format="JPEG", quality=quality, optimize=True)
-            if output.tell() <= 200 * 1024 or quality <= 40:
-                break
-            quality -= 5
-
-        return BufferedInputFile(file=output.getvalue(), filename="thumb.jpg")
 
 
 

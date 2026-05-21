@@ -1,3 +1,4 @@
+import asyncio
 from contextlib import suppress
 from io import BytesIO
 import re
@@ -69,7 +70,7 @@ async def show_library(message: Message, state: FSMContext, reader: Reader, comm
     for file_hash, info in books_index.items():
         book_path = BOOK_PATHS[lang_book] / info["filename"]
 
-        metadata = BookMetadata.get_cache(book_path)
+        metadata =  await asyncio.to_thread(BookMetadata.get_cache, book_path)
 
         books.append({
             "hash": file_hash,
@@ -215,13 +216,13 @@ def strip_html(text: str) -> str:
 
 # Выбрать книгу из библиотек
 @router_book.callback_query(F.data.startswith("upload_library_book:"))
-async def select_library_book(callback: CallbackQuery, state: FSMContext, reader):
+async def select_library_book(callback: CallbackQuery, state: FSMContext, reader, db):
     await callback.answer()
     i = callback.data.split(":")[1]
     data = await state.get_data()
     books_map = data.get("books_map", {})
     file_hash = books_map[i]['hash']
-    await set_book(callback.message, file_hash, reader, state)
+    await set_book(callback.message, file_hash, reader, state, db)
 
 
 # Загрузить собственную книгу
@@ -230,7 +231,7 @@ async def upload_my_book(message: Message, state: FSMContext, reader):
     await message.answer(t(reader.lang_interface,'upload_book'))
     await state.set_state(UploadBook.waiting_epub)
 @router_book.message(UploadBook.waiting_epub)
-async def handler_waiting_epub(message: Message, bot: Bot, state: FSMContext, reader):
+async def handler_waiting_epub(message: Message, bot: Bot, state: FSMContext, reader,db):
     lang = reader.lang_interface
     library = Library()
     if not message.document or not message.document.file_name.endswith(".epub"):
@@ -255,13 +256,13 @@ async def handler_waiting_epub(message: Message, bot: Bot, state: FSMContext, re
 
     if file_hash in books: # если есть в библ
         await message.answer(t(lang, 'exist_book'))
-        await set_book(message, file_hash, reader, state)
+        await set_book(message, file_hash, reader, state, db)
         final_path.unlink()  # удаляем временный файл
     else: # если нет в библ
         final_path2 = BOOK_PATHS[book_lang] / file_name
         final_path.replace(final_path2)  # <-- ВАЖНО: атомарный перенос # перенос в финальную папку (быстро и безопасно)
         library.add_book(final_path2, book_lang)
-        await set_book(message, file_hash, reader, state)
+        await set_book(message, file_hash, reader, state, db)
 
 
 # УСТАНОВКА книги ОКОНЧАТЕЛЬНАЯ функция

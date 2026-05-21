@@ -14,9 +14,8 @@ router_universal = Router(name='universal')
 
 # Универсальный обработчик подтверждения ==========
 @router_universal.callback_query(F.data.startswith("confirm:"))
-async def handle_confirm(callback: CallbackQuery, reader):
+async def handle_confirm(callback: CallbackQuery, reader, db):
     await callback.answer()
-    db = reader.db
     user_id = reader.user_id
     action = callback.data.split(":")[1]
 

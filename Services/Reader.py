@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from Services.BookMetadata import BookMetadata
 from Services.Converters import detect_lang_simple
@@ -7,6 +8,12 @@ from functools import lru_cache
 
 # Чтец
 class Reader:
+    book_title = ""
+    book_creator = ""
+    description = ""
+    cover_image = None
+    lazy_read = None
+
     def __init__(self,
                  user_id: int,
                  db: DB_library,

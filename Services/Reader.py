@@ -1,10 +1,17 @@
-import os
+from io import BytesIO
 from pathlib import Path
+
+from PIL import Image
+
+from aiogram.types import BufferedInputFile
+
 from Services.BookMetadata import BookMetadata
 from Services.Converters import detect_lang_simple
 from Services.Library import epub_paragraph_generator, BOOK_PATHS
 from SQL.DB_library import DB_library
 from functools import lru_cache
+
+
 
 # Чтец
 class Reader:
@@ -53,7 +60,11 @@ class Reader:
                     else:
                         self.voice = "en-US-BrianNeural"
 
+                if self.cover_image:
+                    self.thumbnail = make_thumbnail(self.cover_image)
+
             self.lazy_read = LazyEpubReader(path_file, self.paragraph_indx) # Ленивое чтение epub
+
 
     @property
     def progress(self):
@@ -119,6 +130,25 @@ class LazyEpubReader:
         paragraph = self._paragraphs[self._index]
         self._index += 1
         return paragraph
+
+
+# Миниатюру из аудио файла для сообщения
+def make_thumbnail(image_bytes: bytes) -> BufferedInputFile:
+    with Image.open(BytesIO(image_bytes)) as img:
+        img = img.convert("RGB")
+        img.thumbnail((320, 320))
+
+        output = BytesIO()
+        quality = 85
+        while True:
+            output.seek(0)
+            output.truncate()
+            img.save(output, format="JPEG", quality=quality, optimize=True)
+            if output.tell() <= 200 * 1024 or quality <= 40:
+                break
+            quality -= 5
+
+        return BufferedInputFile(file=output.getvalue(), filename="thumb.jpg")
 
 
 

@@ -56,14 +56,15 @@ async def convert_text_audio(text: str, path_mp3: str, speed:int, voice: str) ->
     timestamps = []
     with open(path_mp3, "wb") as f:
         try:
-            async for chunk in communicate.stream():
-                if chunk["type"] == "audio":
-                    f.write(chunk["data"])
-                elif chunk["type"] == "SentenceBoundary":
-                    timestamps.append((
-                        chunk["offset"] / 10_000_000,
-                        chunk["text"].strip()
-                    ))
+            async with asyncio.timeout(30):
+                async for chunk in communicate.stream():
+                    if chunk["type"] == "audio":
+                        f.write(chunk["data"])
+                    elif chunk["type"] == "SentenceBoundary":
+                        timestamps.append((
+                            chunk["offset"] / 10_000_000,
+                            chunk["text"].strip()
+                        ))
         except edge_tts.exceptions.NoAudioReceived:
             return None
     caption = build_caption(timestamps)

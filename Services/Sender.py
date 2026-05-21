@@ -1,12 +1,10 @@
-import asyncio
+
 import math
 import os
-from io import BytesIO
 from aiogram import Bot
 from aiogram.types import FSInputFile, BufferedInputFile
 from mutagen.mp3 import MP3
 from mutagen.id3 import ID3, APIC, TIT2, TPE1, TALB
-from PIL import Image
 
 from Locales.translator import t
 from Services.Converters import convert_text_audio, translator
@@ -32,36 +30,32 @@ class Sender:
         else:
             paragraph = f'{reader.paragraph_indx - len(chunk.splitlines()) + 1}...{reader.paragraph_indx}'
 
-        caption, translate_chunk = await asyncio.gather(
-            convert_text_audio(chunk + " End of paragraph.", paragraph + ".mp3", reader.reading_speed, reader.voice),
-            translator(chunk)
-        )
+        # caption, translate_chunk = await asyncio.gather(
+        #     convert_text_audio(chunk + " End of paragraph.", paragraph + ".mp3", reader.reading_speed, reader.voice),
+        #     translator(chunk)
+        # )
+        caption = await convert_text_audio(chunk + " End of paragraph.", paragraph + ".mp3", reader.reading_speed, reader.voice)
 
-
-        caption = (
-            f'{reader.book_creator} / <b>"{reader.book_title}"</b>'
-            f"\n({reader.progress}%)"
-            f"\n{caption}"
-        )
-        long_caption = (
-            f'{reader.book_creator} / <b>"{reader.book_title}"</b>'
-            f"\n({reader.progress}%)"
-            f"\n{chunk}"
-        )
+        start_caption = f'{reader.book_creator} / <b>"{reader.book_title}"</b> / ({reader.progress}%)'
+        caption = f"{start_caption}\n{caption}"
 
         audio = FSInputFile(paragraph + ".mp3")
         duration = math.ceil(MP3(audio.filename).info.length)
+
         # МИНИНАТЮРУ картинку вставляем
-        thumbnail = None
-        if reader.cover_image:
-            rewrite_mp3_tags(audio.filename, reader) # К файлу привязываем ТЭГИ заголовок, создатель
-            thumbnail = make_thumbnail(reader.cover_image) # Миниатюра картинки для бота
+        # if reader.cover_image:
+            # rewrite_mp3_tags(audio.filename, reader) # К файлу привязываем ТЭГИ заголовок, создатель
+            # thumbnail = make_thumbnail(reader.cover_image) # Миниатюра картинки для бота
+            # await asyncio.gather(
+            #     asyncio.to_thread(rewrite_mp3_tags, audio.filename, reader),
+            #     asyncio.to_thread(make_thumbnail, reader.cover_image),
+            # )
 
         # ПАРАМЕТРЫ для аудио сообщения
         audio_kwargs = dict(
             chat_id=user_id,
             audio=audio,
-            thumbnail=thumbnail,
+            thumbnail=reader.thumbnail,
             performer=reader.book_title,
             title=paragraph,
             duration=duration,
@@ -76,13 +70,15 @@ class Sender:
 
         # ЕСЛИ длинный caption отдельным сообщением
         if len(caption) > 1024:
+            caption = f"{start_caption}\n{chunk}"
             await self.bot.send_message(
                 chat_id=user_id,
-                text=long_caption,
+                text=caption,
                 parse_mode="HTML",
             )
 
         # Отправляем скрытый перевод
+        translate_chunk = await translator(chunk)
         await self.bot.send_message(
             chat_id=user_id,
             text=f"<tg-spoiler>{translate_chunk}</tg-spoiler>",
@@ -111,20 +107,3 @@ def rewrite_mp3_tags(file_path: str, reader):
     tags.save(file_path, v2_version=3)
 
 
-# Миниатюру из аудио файла для сообщения
-def make_thumbnail(image_bytes: bytes) -> BufferedInputFile:
-    with Image.open(BytesIO(image_bytes)) as img:
-        img = img.convert("RGB")
-        img.thumbnail((320, 320))
-
-        output = BytesIO()
-        quality = 85
-        while True:
-            output.seek(0)
-            output.truncate()
-            img.save(output, format="JPEG", quality=quality, optimize=True)
-            if output.tell() <= 200 * 1024 or quality <= 40:
-                break
-            quality -= 5
-
-        return BufferedInputFile(file=output.getvalue(), filename="thumb.jpg")

@@ -51,8 +51,11 @@ class Sender:
 
         audio = FSInputFile(paragraph + ".mp3")
         duration = math.ceil(MP3(audio.filename).info.length)
-        rewrite_mp3_tags(audio.filename, reader) # К файлу привязываем ТЭГИ заголовок, создатель
-        thumbnail = make_thumbnail(reader.cover_image) # Миниатюра картинки для бота
+        # МИНИНАТЮРУ картинку вставляем
+        thumbnail = None
+        if reader.cover_image:
+            rewrite_mp3_tags(audio.filename, reader) # К файлу привязываем ТЭГИ заголовок, создатель
+            thumbnail = make_thumbnail(reader.cover_image) # Миниатюра картинки для бота
 
         # ПАРАМЕТРЫ для аудио сообщения
         audio_kwargs = dict(

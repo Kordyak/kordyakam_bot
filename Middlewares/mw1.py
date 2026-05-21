@@ -9,6 +9,8 @@ from SQL.DB_library import DB_library
 from Services.Reader import Reader
 from typing import Callable, Awaitable, Dict, Any
 
+from config import Config, load_config
+
 
 class MiddlewareUsers(BaseMiddleware):
     async def __call__(self, handler, event: TelegramObject, data: dict):
@@ -20,6 +22,7 @@ class MiddlewareUsers(BaseMiddleware):
 
         db = DB_library()
         db.save_last_contact(user_id)
+        db.get_create_user(user_id, username)
 
         if isinstance(event, CallbackQuery):
             chat_id = event.message.chat.id
@@ -30,8 +33,10 @@ class MiddlewareUsers(BaseMiddleware):
         if chat_id:
             typing_task = asyncio.create_task(self._typing_loop(bot, chat_id))
 
-        reader = Reader(user_id, username, lang)
+
+        reader = Reader(user_id, db, lang)
         data["reader"] = reader
+        data["db"] = db
 
         try:
             return await handler(event, data)
@@ -51,7 +56,7 @@ class MiddlewareUsers(BaseMiddleware):
 
 
 
-ADMIN_ID = 995657021
+ADMIN_ID = load_config().tg_bot.admin_ids
 class MiddlewareAdmin(BaseMiddleware):
     async def __call__(
             self,
@@ -60,10 +65,5 @@ class MiddlewareAdmin(BaseMiddleware):
             data: dict
     )->Any:
         user_id = event.from_user.id
-
-        # если не админ — просто не пускаем дальше
-        if user_id != ADMIN_ID:
-            return  # блокируем обработку
-
-        # если админ — прокидываем дальше
-        return await handler(event, data)
+        if user_id in ADMIN_ID:
+            return await handler(event, data)

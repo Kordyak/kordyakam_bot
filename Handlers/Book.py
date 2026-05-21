@@ -77,7 +77,8 @@ async def show_library(message: Message, state: FSMContext, reader: Reader, comm
             "creator": metadata.get("book_creator", "Неизвестен"),
             "description": metadata.get("description", ""),
             "cover_image": metadata.get("cover_image", b""),
-            "info": info
+            "filename": info['filename'],
+            "total_paragraphs": info['total_paragraphs'],
         })
 
     # Сортировка по автору
@@ -89,17 +90,17 @@ async def show_library(message: Message, state: FSMContext, reader: Reader, comm
 
     for i, book in enumerate(books, start=1):
         books_list.append(
-            f"{i}. {book['creator']} / <b>{book['title']}</b>"
+            f"{i}. {book['creator']} / <b>'{book['title']}'</b> / {t(lang_face,'paragraph')}{book['total_paragraphs']}"
         )
 
         books_map[str(i)] = {
+            "hash": book["hash"],
             "title": book["title"],
             "creator": book["creator"],
             "description": book["description"],
             "cover_image": book["cover_image"],
-            "filename": book["info"]["filename"],
-            "hash": book["hash"],
-            "total_paragraphs": book["info"].get("total_paragraphs", 0),
+            "filename": book["filename"],
+            "total_paragraphs": book["total_paragraphs"],
         }
 
     msg = "\n".join(books_list)
@@ -122,10 +123,6 @@ async def send_long_message(message, text: str):
 
     if current:
         await message.answer(current, parse_mode='HTML')
-
-
-
-
 # НОМЕР КНИГИ / Описание или загрузка книги
 @router_book.message(UploadBook.waiting_book_number)
 async def handler_waiting_book_number(message: Message, state: FSMContext, reader):
@@ -246,7 +243,7 @@ async def handler_waiting_epub(message: Message, bot: Bot, state: FSMContext, re
     file_name = message.document.file_name
     tg_file = await bot.get_file(message.document.file_id)
 
-    final_path = Path.cwd() / file_name
+    final_path = Path.cwd() / f"{reader.user_id}_{file_name}"
     await bot.download_file(tg_file.file_path, destination=final_path)
 
     file_hash = library.calculate_hash(final_path)
@@ -256,29 +253,24 @@ async def handler_waiting_epub(message: Message, bot: Bot, state: FSMContext, re
 
     books = DB_library().list_books(book_lang)
 
-    if file_hash in books:
+    if file_hash in books: # если есть в библ
         await message.answer(t(lang, 'exist_book'))
+        await set_book(message, file_hash, reader, state)
         final_path.unlink()  # удаляем временный файл
-        return
-
-    # перенос в финальную папку (быстро и безопасно)
-    final_path2 = BOOK_PATHS[book_lang] / file_name
-    final_path.replace(final_path2)  # <-- ВАЖНО: атомарный перенос
-
-    library.add_book(final_path2, book_lang)
-
-    await set_book(message, file_hash, reader, state)
-    await state.set_state(None)
+    else: # если нет в библ
+        final_path2 = BOOK_PATHS[book_lang] / file_name
+        final_path.replace(final_path2)  # <-- ВАЖНО: атомарный перенос # перенос в финальную папку (быстро и безопасно)
+        library.add_book(final_path2, book_lang)
+        await set_book(message, file_hash, reader, state)
 
 
 # УСТАНОВКА книги ОКОНЧАТЕЛЬНАЯ функция
-async def set_book(message, file_hash, reader, state: FSMContext):
-    db = reader.db
+async def set_book(message, file_hash, reader, state: FSMContext, db):
     lang = reader.lang_interface
     user_id= reader.user_id
     book_id = db.get_book_by_hash(file_hash)["id"]
     db.set_current_book(user_id, book_id)
-    reader = Reader(user_id)
+    reader = Reader(user_id, db)
     await message.answer(
         t(lang,'book_set',book_title=reader.book_title),
         parse_mode='HTML'
@@ -403,10 +395,9 @@ async def change_index(callback: CallbackQuery, state: FSMContext, reader: Reade
     await callback.message.answer(t(reader.lang_interface, 'paragraph_input', total=reader.total_paragraphs))
     await state.set_state(UploadBook.waiting_paragraph)
 @router_book.message(UploadBook.waiting_paragraph)
-async def save_index(message: Message, state: FSMContext, reader: Reader, sender: Sender):
+async def save_index(message: Message, state: FSMContext, reader: Reader, sender: Sender, db):
     lang = reader.lang_interface
     user_id = reader.user_id
-    db = reader.db
     if not reader:
         await message.answer(t(lang,'no_book'))
         await state.set_state(None)
@@ -431,7 +422,7 @@ async def save_index(message: Message, state: FSMContext, reader: Reader, sender
     db.save_i_chunk(user_id, index)
 
     await message.answer(t(lang,'paragraph_updated'))
-    await next_chunk(message, sender, Reader(user_id), state)
+    await next_chunk(message, sender, Reader(user_id,db), state)
     await state.set_state(None)
 
 

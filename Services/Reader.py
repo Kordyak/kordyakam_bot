@@ -1,34 +1,20 @@
 from pathlib import Path
-
 from Services.BookMetadata import BookMetadata
-
 from Services.Converters import detect_lang_simple
 from Services.Library import epub_paragraph_generator, BOOK_PATHS
 from SQL.DB_library import DB_library
-
+from functools import lru_cache
 
 # Чтец
 class Reader:
-    TELEGRAM_LIMIT = 1000
-    book_title = None
-    book_creator = None
-    description = None
-    cover_image = None
-
     def __init__(self,
                  user_id: int,
-                 username: str | None = None,
-                 lang: str | None = None
+                 db: DB_library,
+                 language_code: str | None = None
                  ):
-
         self.user_id = user_id
-
-        self.db = DB_library()
-        self.db.get_create_user(user_id, username)
-        # self.db.save_last_contact(user_id)
-
+        self.db = db
         state = self.db.get_user_state(user_id) # Загружаем состояние пользователя
-
         self.paragraph_indx = state[0] or 0
         self.daily_time = state[1]
         self.book_name = Path(str(state[2]))
@@ -41,8 +27,8 @@ class Reader:
 
 
         if self.lang_interface is None:
-            self.db.save_language(user_id, lang)
-            self.lang_interface = lang
+            self.db.save_language(user_id, language_code)
+            self.lang_interface = language_code
 
         if self.lang_book:
             path_file = Path(BOOK_PATHS[self.lang_book] / self.book_name)
@@ -100,27 +86,32 @@ class Reader:
         # Сохраняем прогресс
         self.db.save_i_chunk(self.user_id, self.paragraph_indx)
 
-        return "\n".join(buffer).strip()
+        if buffer:
+            return "\n".join(buffer).strip()
+        else:
+            return None
 
 
-# Ленивое чтение epub
+
+
+
 class LazyEpubReader:
+    @staticmethod
+    @lru_cache(maxsize=20)  # максимум 20 книг в памяти
+    def _load_paragraphs(path_str: str) -> tuple[str, ...]:
+        # tuple вместо list — lru_cache требует hashable
+        return tuple(epub_paragraph_generator(Path(path_str)))
+
     def __init__(self, path, saved_index):
-        self.path = path
-        self.generator = epub_paragraph_generator(path)
-        # Пропускаем уже прочитанные абзацы один раз
-        for _ in range(saved_index):
-            try:
-                next(self.generator)
-            except StopIteration:
-                break
+        self._paragraphs = self._load_paragraphs(str(path))
+        self._index = saved_index
 
     def get_next_paragraph(self):
-        try:
-            paragraph = next(self.generator)
-            return paragraph
-        except StopIteration:
+        if self._index >= len(self._paragraphs):
             return None
+        paragraph = self._paragraphs[self._index]
+        self._index += 1
+        return paragraph
 
 
 

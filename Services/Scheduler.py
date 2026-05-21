@@ -23,6 +23,12 @@ class Scheduler:
         db = DB_library()
         now = datetime.now()
         users = db.get_users_to_send(now)
+
         for user in users:
-            reader = Reader(user["user_id"])
-            await self.sender.send_chunk(reader)
+            user_id = user["user_id"]
+            reader = Reader(user_id, db)
+            if reader.book_title:
+                await self.sender.send_chunk(reader)
+
+            if reader.paragraph_indx == reader.total_paragraphs:
+                db.remove_current_book(user_id)

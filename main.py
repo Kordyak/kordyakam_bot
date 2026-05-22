@@ -4,6 +4,8 @@ import asyncio
 import edge_tts
 from aiogram import Dispatcher, Bot
 from aiogram.client.default import DefaultBotProperties
+from aiogram.client.session.aiohttp import AiohttpSession
+
 from Middlewares.mw1 import MiddlewareUsers, MiddlewareAdmin
 from Services.Library import Library
 from Services.Sender import Sender
@@ -12,8 +14,7 @@ from Handlers.Universal import router_universal
 from Handlers.Service import router_service
 from Handlers.Converters import router_converter
 from Handlers.Book import router_book
-from config import Config, load_config
-
+from config import Config, load_config, MYPROXY
 
 config: Config = load_config()
 
@@ -32,7 +33,7 @@ bot: Bot
 
 async def set_bot():
     global dispatcher, bot
-    # session = AiohttpSession(proxy='socks5://127.0.0.1:12334')
+    # session = AiohttpSession(proxy=f"socks5://{MYPROXY}")
     bot = Bot(
         token=config.tg_bot.token,
         default=DefaultBotProperties(parse_mode='Markdown'),

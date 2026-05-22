@@ -41,6 +41,8 @@ def load_config():
 
 chat_id_IA = -1002392215111
 
+MYPROXY = '127.0.0.1:12334'
+
 channels = [
     -1001036240821, #https://t.me/meduzalive
     -1002066112684, #https://t.me/channelOut2

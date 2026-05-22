@@ -4,7 +4,11 @@ import edge_tts
 from deep_translator import GoogleTranslator
 import asyncio
 
+from config import MYPROXY
+
 logger = logging.getLogger(__name__)
+
+
 
 async def translator(in_text: str) -> str:
     # если текст начинается с команды
@@ -19,6 +23,13 @@ async def translator(in_text: str) -> str:
         return ""
 
     lang = detect_lang_simple(text)
+
+    # Для SOCKS5-прокси используем протокол socks5h://
+    # Буква 'h' означает, что DNS-запросы тоже пойдут через прокси (защита от утечек)
+    # proxies_dict = {
+    #     "http": f"socks5://{MYPROXY}",
+    #     "https": f"socks5://{MYPROXY}"
+    # }
 
     if lang == "ru":
         gt1 = GoogleTranslator(source='ru', target='en')

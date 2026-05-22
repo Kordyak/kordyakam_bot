@@ -35,8 +35,8 @@ TEXTS = {
                      "\n{i}. {creator} / <b>{title}</b>"
                      "\nOr choose another book by entering a different number.",
     "invalid_book_number": "Invalid book number. Press cancel to exit.",
-    "library_headings": "LIBRARY:"
-                        "\nAuthor / Title / Paragraphs\n\n",
+    "library_headings": "<b>LIBRARY:"
+                        "\nAuthor / Title / Paragraphs</b>\n\n",
 
     # Description
     "invalid_book": "😈 It looks like you haven't downloaded the book",

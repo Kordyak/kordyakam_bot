@@ -1,5 +1,5 @@
 from pathlib import Path
-from Services.BookMetadata import BookMetadata
+from Services.Metadata import Metadata
 from Services.Converters import detect_lang_simple
 from Services.Library import epub_paragraph_generator, BOOK_PATHS
 from SQL.DB_library import DB_library
@@ -41,10 +41,11 @@ class Reader:
         if self.lang_book:
             path_file = Path(BOOK_PATHS[self.lang_book] / self.book_name)
             if path_file.exists():
-                metadata = BookMetadata.get_cache(path_file)
+                metadata = Metadata.get_cache(path_file)
                 self.book_title = metadata.get("book_title", "")
                 self.book_creator = metadata.get("book_creator", "")
                 self.description = metadata.get("description", "")
+                self.cover_image = metadata.get("cover_image")
                 self.thumbnail = metadata.get("thumbnail")
 
                 if self.voice is None:

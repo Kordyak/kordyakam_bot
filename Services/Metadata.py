@@ -5,7 +5,7 @@ from PIL import Image
 from aiogram.types import BufferedInputFile
 from io import BytesIO
 
-class BookMetadata:
+class Metadata:
     cache = {}
 
     @classmethod
@@ -25,6 +25,7 @@ class BookMetadata:
                 "book_title": metadata[0],
                 "book_creator": metadata[1],
                 "description": metadata[2],
+                "cover_image": cover,  # один раз
                 "thumbnail": make_thumbnail(cover) if cover else None,  # один раз
             }
         return cls.cache[key]

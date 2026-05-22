@@ -35,7 +35,8 @@ TEXTS = {
                      "\n{i}. {creator} / <b>{title}</b>"
                      "\nOr choose another book by entering a different number.",
     "invalid_book_number": "Invalid book number. Press cancel to exit.",
-    "paragraph": "paragraphs: ",
+    "library_headings": "LIBRARY:"
+                        "\nAuthor / Title / Paragraphs\n\n",
 
     # Description
     "invalid_book": "😈 It looks like you haven't downloaded the book",
@@ -76,6 +77,7 @@ TEXTS = {
     "paragraph_only_number": "Please enter a number only",
     "paragraph_range": "Enter a number between 1 and {total}",
     "paragraph_updated": "✅ Paragraph index updated!",
+    "end_par": " End of paragraph.",
 
     # ================= DELETE =================
     "delete_confirm": "Are you sure?",

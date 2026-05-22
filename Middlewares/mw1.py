@@ -29,9 +29,9 @@ class MiddlewareUsers(BaseMiddleware):
         else:
             chat_id = event.chat.id
 
-        typing_task = None
-        if chat_id:
-            typing_task = asyncio.create_task(self._typing_loop(bot, chat_id))
+        # typing_task = None
+        # if chat_id:
+        #     typing_task = asyncio.create_task(self._typing_loop(bot, chat_id))
 
 
         reader = Reader(user_id, db, lang)
@@ -41,18 +41,19 @@ class MiddlewareUsers(BaseMiddleware):
         try:
             return await handler(event, data)
         finally:
-            if typing_task:
-                typing_task.cancel()
-                with contextlib.suppress(asyncio.CancelledError):
-                    await typing_task
-
-    async def _typing_loop(self, bot, chat_id: int):
-        try:
-            while True:
-                await bot.send_chat_action(chat_id, ChatAction.TYPING)
-                await asyncio.sleep(4)
-        except asyncio.CancelledError:
             pass
+            # if typing_task:
+            #     typing_task.cancel()
+            #     with contextlib.suppress(asyncio.CancelledError):
+            #         await typing_task
+
+    # async def _typing_loop(self, bot, chat_id: int):
+    #     try:
+    #         while True:
+    #             await bot.send_chat_action(chat_id, ChatAction.TYPING)
+    #             await asyncio.sleep(4)
+    #     except asyncio.CancelledError:
+    #         pass
 
 
 

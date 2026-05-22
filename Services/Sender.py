@@ -1,6 +1,8 @@
-
+import asyncio
 import math
 import os
+from pathlib import Path
+
 from aiogram import Bot
 from aiogram.types import FSInputFile, BufferedInputFile
 from mutagen.mp3 import MP3
@@ -30,17 +32,21 @@ class Sender:
         else:
             paragraph = f'{reader.paragraph_indx - len(chunk.splitlines()) + 1}...{reader.paragraph_indx}'
 
-        # caption, translate_chunk = await asyncio.gather(
-        #     convert_text_audio(chunk + " End of paragraph.", paragraph + ".mp3", reader.reading_speed, reader.voice),
-        #     translator(chunk)
-        # )
-        caption = await convert_text_audio(chunk + " End of paragraph.", paragraph + ".mp3", reader.reading_speed, reader.voice)
+        path_mp3 = f'Cache/{reader.user_id}/{paragraph}.mp3'
+        cache_dir = Path(f'Cache/{reader.user_id}')
+        cache_dir.mkdir(parents=True, exist_ok=True)
+
+        caption, translate_chunk = await asyncio.gather(
+            convert_text_audio(chunk + t(reader.lang_interface, 'end_par'), path_mp3, reader.reading_speed, reader.voice),
+            translator(chunk)
+        )
+        # caption = await convert_text_audio(chunk + " End of paragraph.", paragraph + ".mp3", reader.reading_speed, reader.voice)
 
         start_caption = f'{reader.book_creator} / <b>"{reader.book_title}"</b> / ({reader.progress}%)'
         caption = f"{start_caption}\n{caption}"
 
-        audio = FSInputFile(paragraph + ".mp3")
-        duration = math.ceil(MP3(audio.filename).info.length)
+        audio = FSInputFile(path_mp3)
+        duration = math.ceil(MP3(path_mp3).info.length)
 
         # МИНИНАТЮРУ картинку вставляем
         # if reader.cover_image:
@@ -78,14 +84,14 @@ class Sender:
             )
 
         # Отправляем скрытый перевод
-        translate_chunk = await translator(chunk)
+        # translate_chunk = await translator(chunk)
         await self.bot.send_message(
             chat_id=user_id,
             text=f"<tg-spoiler>{translate_chunk}</tg-spoiler>",
             parse_mode="HTML",
         )
 
-        os.remove(audio.filename) # удаляем аудио
+        os.remove(path_mp3) # удаляем аудио
 
         if reader.paragraph_indx == reader.total_paragraphs:
             await self.bot.send_message(user_id, msg_end_book, parse_mode='HTML')

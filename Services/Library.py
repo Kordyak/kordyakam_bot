@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 from ebooklib import epub, ITEM_DOCUMENT
 
 from SQL.DB_library import DB_library
-from Services.BookMetadata import BookMetadata
+from Services.Metadata import Metadata
 from Services.Converters import detect_lang_simple
 
 PATH_EN_BOOKS = Path("Books_en")

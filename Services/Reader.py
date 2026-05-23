@@ -35,7 +35,6 @@ class Reader:
         self.lang_interface = state[7]
         self.lang_book = state[8]
 
-
         if self.lang_interface is None:
             self.db.save_language(user_id, language_code)
             self.lang_interface = language_code

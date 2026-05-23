@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 
 from aiogram import Bot
-from aiogram.types import FSInputFile, BufferedInputFile
+from aiogram.types import FSInputFile, Message
 from mutagen.mp3 import MP3
 from mutagen.id3 import ID3, APIC, TIT2, TPE1, TALB
 
@@ -20,7 +20,7 @@ class Sender:
     def __init__(self, bot: Bot):
         self.bot = bot
 
-    async def send_chunk(self, reader:Reader):
+    async def send_chunk(self, reader:Reader, msg: Message):
         msg_end_book = t(reader.lang_interface, 'donate_me', username=reader.username, book_title=reader.book_title)
         user_id = reader.user_id
 
@@ -46,6 +46,8 @@ class Sender:
                 convert_text_audio(chunk + t(reader.lang_interface, 'end_par'), mp3_path, reader.reading_speed, reader.voice),
                 translator(chunk)
             )
+        reader.db.save_i_chunk(user_id, new_index)  # ← сохраняем только здесь
+        reader.paragraph_indx = new_index
 
         start_caption = f'{reader.book_creator} / <b>"{reader.book_title}"</b> / ({reader.progress}%)'
         caption = f"{start_caption}\n{caption}"
@@ -73,6 +75,7 @@ class Sender:
         try:
             await self.bot.send_audio(**audio_kwargs)
         finally:
+            await msg.delete()
             Path(mp3_path).unlink(missing_ok=True)
 
         # ЕСЛИ длинный caption отдельным сообщением
@@ -91,14 +94,11 @@ class Sender:
             parse_mode="HTML",
         )
 
-        reader.db.save_i_chunk(user_id, new_index)  # ← сохраняем только здесь
-        reader.paragraph_indx = new_index
-
         if reader.paragraph_indx == reader.total_paragraphs:
             await self.bot.send_message(user_id, msg_end_book, parse_mode='HTML')
 
         # 2️⃣ Запускаем фоновую предзагрузку следующего
-        asyncio.create_task(self._prefetch_next(reader))
+        await self._prefetch_next(reader)
 
     @staticmethod
     def _write_paragraphs(chunk, last_index: int)-> str:

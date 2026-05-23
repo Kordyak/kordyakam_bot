@@ -11,6 +11,7 @@ from mutagen.id3 import ID3, APIC, TIT2, TPE1, TALB
 
 from Locales.translator import t
 from Services.Converters import convert_text_audio, translator
+from Services.PrefetchManager import PrefetchManager, PrefetchEntry
 from Services.Reader import Reader
 
 
@@ -20,43 +21,48 @@ class Sender:
         self.bot = bot
 
     async def send_chunk(self, reader:Reader):
-        chunk = reader.get_next_chunk()
+        msg_end_book = t(reader.lang_interface, 'donate_me', username=reader.username, book_title=reader.book_title)
         user_id = reader.user_id
 
-        msg_end_book = t(reader.lang_interface, 'donate_me', username=reader.username, book_title=reader.book_title)
-        if not chunk:
-            await self.bot.send_message(user_id, msg_end_book, parse_mode='HTML')
-            return
+        # 1️⃣ Есть готовый prefetch с теми же speed/voice?
+        prefetched = PrefetchManager.get(user_id, reader.reading_speed, reader.voice, reader.paragraph_indx)
 
-        if len(chunk.splitlines()) == 1:
-            paragraph = str(reader.paragraph_indx)
+        if prefetched:
+            chunk = prefetched.chunk
+            mp3_path = prefetched.mp3_path
+            PrefetchManager.pop(user_id)
+            caption = prefetched.caption
+            translate_chunk = prefetched.translate_chunk
+            new_index = prefetched.new_index
         else:
-            paragraph = f'{reader.paragraph_indx - len(chunk.splitlines()) + 1}...{reader.paragraph_indx}'
-
-        path_mp3 = f'Cache/{reader.user_id}/{paragraph}.mp3'
-        cache_dir = Path(f'Cache/{reader.user_id}')
-        cache_dir.mkdir(parents=True, exist_ok=True)
-
-        caption, translate_chunk = await asyncio.gather(
-            convert_text_audio(chunk + t(reader.lang_interface, 'end_par'), path_mp3, reader.reading_speed, reader.voice),
-            translator(chunk)
-        )
+            chunk, new_index = reader.get_next_chunk()
+            if not chunk:
+                await self.bot.send_message(user_id, msg_end_book, parse_mode='HTML')
+                return
+            file_name = self.write_paragraphs(chunk, reader.paragraph_indx)
+            mp3_path = f'Cache/{reader.user_id}/{file_name}.mp3'
+            cache_dir = Path(f'Cache/{reader.user_id}')
+            cache_dir.mkdir(parents=True, exist_ok=True)
+            caption, translate_chunk = await asyncio.gather(
+                convert_text_audio(chunk + t(reader.lang_interface, 'end_par'), mp3_path, reader.reading_speed, reader.voice),
+                translator(chunk)
+            )
 
         start_caption = f'{reader.book_creator} / <b>"{reader.book_title}"</b> / ({reader.progress}%)'
         caption = f"{start_caption}\n{caption}"
 
         if reader.cover_image:
-            rewrite_mp3_tags(path_mp3, reader) # К файлу привязываем ТЭГИ, чтобы картинка была привязана к файлу, важно при проигрывании аудио в пуш уведомлении
+            rewrite_mp3_tags(mp3_path, reader) # К файлу привязываем ТЭГИ, чтобы картинка была привязана к файлу, важно при проигрывании аудио в пуш уведомлении
 
-        audio = FSInputFile(path_mp3)
-        duration = math.ceil(MP3(path_mp3).info.length)
+        audio = FSInputFile(mp3_path)
+        duration = math.ceil(MP3(mp3_path).info.length)
         # ПАРАМЕТРЫ для аудио сообщения
         audio_kwargs = dict(
             chat_id=user_id,
             audio=audio,
             thumbnail=reader.thumbnail,
             performer=reader.book_title,
-            title=paragraph,
+            title=audio.filename,
             duration=duration,
             parse_mode="HTML"
         )
@@ -84,10 +90,57 @@ class Sender:
             parse_mode="HTML",
         )
 
-        os.remove(path_mp3) # удаляем аудио
+        reader.db.save_i_chunk(user_id, new_index)  # ← сохраняем только здесь
+        reader.paragraph_indx = new_index
+        # удаляем аудио
+        Path(mp3_path).unlink(missing_ok=True)
 
         if reader.paragraph_indx == reader.total_paragraphs:
             await self.bot.send_message(user_id, msg_end_book, parse_mode='HTML')
+
+        # 2️⃣ Запускаем фоновую предзагрузку следующего
+        asyncio.create_task(self._prefetch_next(reader))
+
+
+    def write_paragraphs(self, chunk, last_index: int)-> str:
+        if len(chunk.splitlines()) == 1:
+            return str(last_index)
+        else:
+            return f'{last_index - len(chunk.splitlines()) + 1}...{last_index}'
+
+
+    async def _prefetch_next(self, reader: Reader):
+        user_id = reader.user_id
+        last_index = reader.paragraph_indx
+        chunk, new_index = reader.get_next_chunk()
+        if not chunk:
+            return
+        file_name = self.write_paragraphs(chunk, new_index)
+        mp3_path = f'Cache/{reader.user_id}/{file_name}.mp3'
+        try:
+            caption, translate_chunk = await asyncio.gather(
+                convert_text_audio(chunk + t(reader.lang_interface, 'end_par'), mp3_path, reader.reading_speed, reader.voice),
+                translator(chunk)
+            )
+            PrefetchManager.set(user_id, PrefetchEntry(
+                last_index=last_index,
+                new_index=new_index,
+                chunk=chunk,
+                caption=caption,
+                translate_chunk=translate_chunk,
+                speed=reader.reading_speed,
+                voice=reader.voice,
+                mp3_path=mp3_path,
+            ))
+        except Exception as e:
+            print(f"⚠️ Prefetch failed user={user_id}: {e}")
+            os.unlink(mp3_path) if os.path.exists(mp3_path) else None
+
+
+
+
+
+
 
 
 # К файлу привязываем ТЭГИ заголовок, создатель
@@ -107,7 +160,7 @@ def rewrite_mp3_tags(file_path: str, reader: Reader):
         data=reader.cover_image
     ))
 
-    tags.add(TIT2(encoding=3, text=reader.paragraph_indx))
+    tags.add(TIT2(encoding=3, text=str(reader.paragraph_indx)))
     tags.add(TPE1(encoding=3, text=reader.book_creator))
     tags.add(TALB(encoding=3, text=reader.book_title))
     tags.save(file_path, v2_version=3)

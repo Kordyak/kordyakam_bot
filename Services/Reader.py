@@ -94,12 +94,12 @@ class Reader:
                 break
 
         # Сохраняем прогресс
-        self.db.save_i_chunk(self.user_id, self.paragraph_indx)
+        # self.db.save_i_chunk(self.user_id, self.paragraph_indx)
 
         if buffer:
-            return "\n".join(buffer).strip()
+            return "\n".join(buffer).strip(), self.paragraph_indx
         else:
-            return None
+            return None, self.paragraph_indx
 
 
 

@@ -422,7 +422,7 @@ async def save_index(message: Message, state: FSMContext, reader: Reader, sender
     db.save_i_chunk(user_id, index)
 
     await message.answer(t(lang,'paragraph_updated'))
-    await next_chunk(message, sender, Reader(user_id,db), state)
+    await next_chunk(message, sender, Reader(user_id, db), state)
     await state.set_state(None)
 
 

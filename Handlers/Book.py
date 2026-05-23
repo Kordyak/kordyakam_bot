@@ -17,6 +17,7 @@ from SQL.DB_library import DB_library
 from Services.Metadata import Metadata
 from Services.Converters import translator, detect_lang_simple
 from Services.Library import Library, BOOK_PATHS
+from Services.PrefetchManager import PrefetchManager
 from Services.Reader import Reader
 from Services.Sender import Sender
 
@@ -434,7 +435,8 @@ async def next_chunk(message: Message, sender: Sender, reader: Reader, state: FS
         return
     msg = await message.answer("⏳")
     try:
-        await sender.send_chunk(reader)
+        async with PrefetchManager.get_lock(reader.user_id):
+            await sender.send_chunk(reader)
     finally:
         with suppress(TelegramBadRequest):
             await msg.delete()

@@ -1,7 +1,7 @@
+import asyncio
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TextIO
 
 
 @dataclass
@@ -17,6 +17,13 @@ class PrefetchEntry:
 
 
 class PrefetchManager:
+    _locks: dict[int, asyncio.Lock] = {}
+
+    @classmethod
+    def get_lock(cls, user_id: int) -> asyncio.Lock:
+        if user_id not in cls._locks:
+            cls._locks[user_id] = asyncio.Lock()
+        return cls._locks[user_id]
 
     @classmethod
     def get(cls, user_id: int, speed: int, voice: str, last_index: int) -> PrefetchEntry | None:
@@ -26,7 +33,6 @@ class PrefetchManager:
         if entry.speed == speed and entry.voice == voice and entry.last_index == last_index:
             if Path(entry.mp3_path).exists():
                 return entry
-        cls._invalidate(user_id)
         Path(entry.mp3_path).unlink(missing_ok=True)
         return None
 
@@ -46,12 +52,6 @@ class PrefetchManager:
 
 
     @classmethod
-    def pop(cls, user_id: int) -> PrefetchEntry | None:
-        entry = cls._load(user_id)
-        cls._invalidate(user_id)
-        return entry
-
-    @classmethod
     def _load(cls, user_id: int) -> PrefetchEntry | None:
         path = cls._json_path(user_id)
         if not Path(path).exists():
@@ -62,10 +62,6 @@ class PrefetchManager:
         except Exception as e:
             print(f"⚠️ Prefetch: не удалось загрузить user={user_id}: {e}")
             return None
-
-    @classmethod
-    def _invalidate(cls, user_id: int):
-        Path(cls._json_path(user_id)).unlink(missing_ok=True)
 
     @staticmethod
     def _json_path(user_id: int) -> str:

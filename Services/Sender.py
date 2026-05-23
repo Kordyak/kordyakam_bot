@@ -30,16 +30,15 @@ class Sender:
         if prefetched:
             new_index = prefetched.new_index
             chunk = prefetched.chunk
-            mp3_path = prefetched.mp3_path
-            PrefetchManager.pop(user_id)
             caption = prefetched.caption
             translate_chunk = prefetched.translate_chunk
+            mp3_path = prefetched.mp3_path
         else:
             chunk, new_index = reader.get_next_chunk()
             if not chunk:
                 await self.bot.send_message(user_id, msg_end_book, parse_mode='HTML')
                 return
-            file_name = self.write_paragraphs(chunk, reader.paragraph_indx)
+            file_name = self._write_paragraphs(chunk, reader.paragraph_indx)
             mp3_path = f'Cache/{reader.user_id}/{file_name}.mp3'
             cache_dir = Path(f'Cache/{reader.user_id}')
             cache_dir.mkdir(parents=True, exist_ok=True)
@@ -71,7 +70,10 @@ class Sender:
         if len(caption) <= 1024:
             audio_kwargs["caption"] = caption
 
-        await self.bot.send_audio(**audio_kwargs)
+        try:
+            await self.bot.send_audio(**audio_kwargs)
+        finally:
+            Path(mp3_path).unlink(missing_ok=True)
 
         # ЕСЛИ длинный caption отдельным сообщением
         if len(caption) > 1024:
@@ -83,7 +85,6 @@ class Sender:
             )
 
         # Отправляем скрытый перевод
-        # translate_chunk = await translator(chunk)
         await self.bot.send_message(
             chat_id=user_id,
             text=f"<tg-spoiler>{translate_chunk}</tg-spoiler>",
@@ -92,8 +93,6 @@ class Sender:
 
         reader.db.save_i_chunk(user_id, new_index)  # ← сохраняем только здесь
         reader.paragraph_indx = new_index
-        # удаляем аудио
-        Path(mp3_path).unlink(missing_ok=True)
 
         if reader.paragraph_indx == reader.total_paragraphs:
             await self.bot.send_message(user_id, msg_end_book, parse_mode='HTML')
@@ -101,8 +100,8 @@ class Sender:
         # 2️⃣ Запускаем фоновую предзагрузку следующего
         asyncio.create_task(self._prefetch_next(reader))
 
-
-    def write_paragraphs(self, chunk, last_index: int)-> str:
+    @staticmethod
+    def _write_paragraphs(chunk, last_index: int)-> str:
         if len(chunk.splitlines()) == 1:
             return str(last_index)
         else:
@@ -115,7 +114,7 @@ class Sender:
         chunk, new_index = reader.get_next_chunk()
         if not chunk:
             return
-        file_name = self.write_paragraphs(chunk, new_index)
+        file_name = self._write_paragraphs(chunk, new_index)
         mp3_path = f'Cache/{reader.user_id}/{file_name}.mp3'
         try:
             caption, translate_chunk = await asyncio.gather(

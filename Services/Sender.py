@@ -1,4 +1,5 @@
 import asyncio
+import imghdr
 import math
 import os
 from pathlib import Path
@@ -40,23 +41,15 @@ class Sender:
             convert_text_audio(chunk + t(reader.lang_interface, 'end_par'), path_mp3, reader.reading_speed, reader.voice),
             translator(chunk)
         )
-        # caption = await convert_text_audio(chunk + " End of paragraph.", paragraph + ".mp3", reader.reading_speed, reader.voice)
 
         start_caption = f'{reader.book_creator} / <b>"{reader.book_title}"</b> / ({reader.progress}%)'
         caption = f"{start_caption}\n{caption}"
 
+        if reader.cover_image:
+            rewrite_mp3_tags(path_mp3, reader) # К файлу привязываем ТЭГИ, чтобы картинка была привязана к файлу, важно при проигрывании аудио в пуш уведомлении
+
         audio = FSInputFile(path_mp3)
         duration = math.ceil(MP3(path_mp3).info.length)
-
-        # МИНИНАТЮРУ картинку вставляем
-        # if reader.cover_image:
-            # rewrite_mp3_tags(audio.filename, reader) # К файлу привязываем ТЭГИ заголовок, создатель
-            # thumbnail = make_thumbnail(reader.cover_image) # Миниатюра картинки для бота
-            # await asyncio.gather(
-            #     asyncio.to_thread(rewrite_mp3_tags, audio.filename, reader),
-            #     asyncio.to_thread(make_thumbnail, reader.cover_image),
-            # )
-
         # ПАРАМЕТРЫ для аудио сообщения
         audio_kwargs = dict(
             chat_id=user_id,
@@ -98,16 +91,23 @@ class Sender:
 
 
 # К файлу привязываем ТЭГИ заголовок, создатель
-def rewrite_mp3_tags(file_path: str, reader):
+def rewrite_mp3_tags(file_path: str, reader: Reader):
     tags = ID3()
+
+    mime = "image/jpeg"
+    fmt = imghdr.what(None, h=reader.cover_image)
+    if fmt == "png":
+        mime = "image/png"
+
     tags.add(APIC(
         encoding=3,
-        mime="image/jpeg",
+        mime=mime,
         type=3,
         desc="Cover",
         data=reader.cover_image
     ))
-    tags.add(TIT2(encoding=3, text=reader.book_title))
+
+    tags.add(TIT2(encoding=3, text=reader.paragraph_indx))
     tags.add(TPE1(encoding=3, text=reader.book_creator))
     tags.add(TALB(encoding=3, text=reader.book_title))
     tags.save(file_path, v2_version=3)

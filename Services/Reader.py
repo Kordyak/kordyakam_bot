@@ -1,3 +1,4 @@
+import asyncio
 from pathlib import Path
 from Services.Metadata import Metadata
 from Services.Converters import detect_lang_simple
@@ -7,7 +8,8 @@ from functools import lru_cache
 
 
 
-# Чтец
+
+
 class Reader:
     book_title = ""
     book_creator = ""
@@ -56,6 +58,8 @@ class Reader:
                         self.voice = "en-US-BrianNeural"
 
             self.cached_epub = CachedEpub(path_file, self.paragraph_indx) # Ленивое чтение epub
+
+
 
 
     @property

@@ -28,12 +28,12 @@ class Sender:
         prefetched = PrefetchManager.get(user_id, reader.reading_speed, reader.voice, reader.paragraph_indx)
 
         if prefetched:
+            new_index = prefetched.new_index
             chunk = prefetched.chunk
             mp3_path = prefetched.mp3_path
             PrefetchManager.pop(user_id)
             caption = prefetched.caption
             translate_chunk = prefetched.translate_chunk
-            new_index = prefetched.new_index
         else:
             chunk, new_index = reader.get_next_chunk()
             if not chunk:

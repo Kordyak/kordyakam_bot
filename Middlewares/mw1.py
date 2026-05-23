@@ -14,7 +14,7 @@ from config import Config, load_config
 
 class MiddlewareUsers(BaseMiddleware):
     async def __call__(self, handler, event: TelegramObject, data: dict):
-        bot = data.get("bot")
+        # bot = data.get("bot")
         user_id = event.from_user.id
         username = event.from_user.username
         username = f"@{username}" if username else None
@@ -34,7 +34,8 @@ class MiddlewareUsers(BaseMiddleware):
         #     typing_task = asyncio.create_task(self._typing_loop(bot, chat_id))
 
 
-        reader = Reader(user_id, db, lang)
+        # reader = Reader(user_id, db, lang
+        reader = await asyncio.to_thread(Reader, user_id, db, lang)
         data["reader"] = reader
         data["db"] = db
 

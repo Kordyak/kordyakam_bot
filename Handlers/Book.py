@@ -433,9 +433,8 @@ async def next_chunk(message: Message, sender: Sender, reader: Reader, state: FS
     if not reader.book_title:
         await start_handler(message, reader, state)
         return
-    msg = await message.answer("⏳")
     async with PrefetchManager.get_lock(reader.user_id):
-        await sender.send_chunk(reader, msg)
+        await sender.send_chunk(reader)
 
 
 

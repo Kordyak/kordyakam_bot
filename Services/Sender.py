@@ -20,9 +20,11 @@ class Sender:
     def __init__(self, bot: Bot):
         self.bot = bot
 
-    async def send_chunk(self, reader:Reader, msg: Message):
-        msg_end_book = t(reader.lang_interface, 'donate_me', username=reader.username, book_title=reader.book_title)
+    async def send_chunk(self, reader:Reader):
         user_id = reader.user_id
+
+        clock_msg = await self.bot.send_message(user_id, "⏳")
+        msg_end_book = t(reader.lang_interface, 'donate_me', username=reader.username, book_title=reader.book_title)
 
         # 1️⃣ Есть готовый prefetch с теми же speed/voice?
         prefetched = PrefetchManager.get(user_id, reader.reading_speed, reader.voice, reader.paragraph_indx)
@@ -75,7 +77,7 @@ class Sender:
         try:
             await self.bot.send_audio(**audio_kwargs)
         finally:
-            await msg.delete()
+            await clock_msg.delete()
             Path(mp3_path).unlink(missing_ok=True)
 
         # ЕСЛИ длинный caption отдельным сообщением

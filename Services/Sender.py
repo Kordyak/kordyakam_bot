@@ -22,6 +22,8 @@ class Sender:
 
     async def send_chunk(self, reader:Reader):
         user_id = reader.user_id
+        cache_dir = Path(f'Cache/{reader.user_id}')
+        cache_dir.mkdir(parents=True, exist_ok=True)
 
         clock_msg = await self.bot.send_message(user_id, "⏳")
         msg_end_book = t(reader.lang_interface, 'donate_me', username=reader.username, book_title=reader.book_title)
@@ -42,8 +44,6 @@ class Sender:
                 return
             file_name = self._write_paragraphs(chunk, reader.paragraph_indx)
             mp3_path = f'Cache/{reader.user_id}/{file_name}.mp3'
-            cache_dir = Path(f'Cache/{reader.user_id}')
-            cache_dir.mkdir(parents=True, exist_ok=True)
             caption, translate_chunk = await asyncio.gather(
                 convert_text_audio(chunk + t(reader.lang_interface, 'end_par'), mp3_path, reader.reading_speed, reader.voice),
                 translator(chunk)

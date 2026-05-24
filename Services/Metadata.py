@@ -5,30 +5,44 @@ from PIL import Image
 from aiogram.types import BufferedInputFile
 from io import BytesIO
 
+# class Metadata:
+#     cache = {}
+#
+#     @staticmethod
+#     @lru_cache(maxsize=50)
+#     def get_cache(cls, book_path):
+#         key = str(book_path)
+#         book_time = book_path.stat().st_mtime
+#         cached = cls.cache.get(key)
+#
+#         # если нет cache или файл обновился
+#         if not cached or cached["book_time"] != book_time:
+#             print("🔥 Parsing epub (cache refresh)")
+#             metadata = get_epub_metadata(book_path)
+#             cover = metadata[3]
+#             cls.cache[key] = {
+#                 "book_time": book_time,
+#                 "book_title": metadata[0],
+#                 "book_creator": metadata[1],
+#                 "description": metadata[2],
+#                 "cover_image": cover,  # один раз
+#                 "thumbnail": make_thumbnail(cover) if cover else None,  # один раз
+#             }
+#         return cls.cache[key]
+
 class Metadata:
-    cache = {}
-
-    @classmethod
+    @staticmethod
     @lru_cache(maxsize=50)
-    def get_cache(cls, book_path):
-        key = str(book_path)
-        book_time = book_path.stat().st_mtime
-        cached = cls.cache.get(key)
-
-        # если нет cache или файл обновился
-        if not cached or cached["book_time"] != book_time:
-            print("🔥 Parsing epub (cache refresh)")
-            metadata = get_epub_metadata(book_path)
-            cover = metadata[3]
-            cls.cache[key] = {
-                "book_time": book_time,
-                "book_title": metadata[0],
-                "book_creator": metadata[1],
-                "description": metadata[2],
-                "cover_image": cover,  # один раз
-                "thumbnail": make_thumbnail(cover) if cover else None,  # один раз
-            }
-        return cls.cache[key]
+    def get_cache(book_path: Path) -> dict:
+        metadata = get_epub_metadata(book_path)
+        cover = metadata[3]
+        return {
+            "book_title": metadata[0],
+            "book_creator": metadata[1],
+            "description": metadata[2],
+            "cover_image": cover,
+            "thumbnail": make_thumbnail(cover) if cover else None,
+        }
 
 
 

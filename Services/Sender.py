@@ -103,11 +103,12 @@ class Sender:
         await self._prefetch_next(reader)
 
     @staticmethod
-    def _write_paragraphs(chunk, last_index: int)-> str:
-        if len(chunk.splitlines()) == 1:
-            return str(last_index)
+    def _write_paragraphs(chunk, last_paragraph: int)-> str:
+        count_paragraph = len(chunk.splitlines())
+        if count_paragraph == 1:
+            return str(last_paragraph)
         else:
-            return f'{last_index - len(chunk.splitlines()) + 1}...{last_index}'
+            return f'{last_paragraph - count_paragraph + 1}...{last_paragraph}'
 
 
     async def _prefetch_next(self, reader: Reader):

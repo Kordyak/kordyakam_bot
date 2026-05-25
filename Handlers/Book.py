@@ -288,11 +288,29 @@ async def change_time(callback: CallbackQuery, state: FSMContext, reader):
     db = reader.db
     await callback.answer()  # 🔴 обязательно
     time = db.get_time(user_id)
+
+    delete_kb = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="❌ delete", callback_data="remove_daily_time")]
+        ]
+    )
+
     await callback.message.edit_text(
         t(reader.lang_interface, 'change_time', time=time),
         parse_mode="HTML",
+        reply_markup=delete_kb
     )
     await state.set_state(StateUser.waiting_time)
+# Удалить книгу
+@router_book.callback_query(F.data == 'remove_daily_time')
+async def del_book(callback: CallbackQuery, reader, state):
+    await callback.answer()
+    await callback.message.delete()
+    await callback.message.answer(
+        t(reader.lang_interface, 'delete_confirm'),
+        reply_markup=confirm_kb('remove_daily_time')
+    )
+    await state.set_state(None)
 @router_book.message(StateUser.waiting_time)
 async def save_time(message: Message, state: FSMContext, reader):
     user_id = reader.user_id
@@ -319,6 +337,7 @@ async def save_time(message: Message, state: FSMContext, reader):
          parse_mode = "HTML",
          )
     await state.set_state(None)
+
 
 
 # Изменить скорость чтения

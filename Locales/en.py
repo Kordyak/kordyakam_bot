@@ -49,7 +49,8 @@ TEXTS = {
 
     # ================= BOOK SET =================
     "book_set": 'Book <b>"{book_title}"</b> has been set.'
-                "\nYou can set the time to receive the paragraph each day over reader menu /start."
+                "\nThe paragraph reading schedule is set to 8:00."
+                "\nOr set a different time using /start."
                 "\nOr get the paragraph by requesting /next",
 
     # ================= TIME =================

@@ -55,7 +55,6 @@ class DB_library:
 
     # ============================ USER ============================================
     def get_create_user(self, telegram_id: int, username: str | None = None):
-
         with self._get_connection() as conn:
             cursor = conn.execute(
                 "SELECT username FROM users WHERE user_id=?",
@@ -123,6 +122,15 @@ class DB_library:
                 SET daily_time=?
                 WHERE user_id=?
             """, (time, telegram_id))
+
+    def remove_daily_time(self, telegram_id: int):
+        """Удаляет текущую книгу у пользователя и сбрасывает прогресс"""
+        with self._get_connection() as conn:
+            conn.execute("""
+                UPDATE users
+                SET daily_time = NULL
+                WHERE user_id = ?
+            """, (telegram_id,))
 
     def get_reading_speed(self, telegram_id: int) -> str | None:
         with self._get_connection() as conn:

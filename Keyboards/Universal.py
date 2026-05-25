@@ -11,8 +11,8 @@ def confirm_kb(action: str) -> InlineKeyboardMarkup:
     """
     return InlineKeyboardMarkup(inline_keyboard=[
         [
-            InlineKeyboardButton(text="✅ Да", callback_data=f"confirm:{action}"),
-            InlineKeyboardButton(text="❌ Нет", callback_data="cancel")
+            InlineKeyboardButton(text="✅ yes", callback_data=f"confirm:{action}"),
+            InlineKeyboardButton(text="❌ no", callback_data="cancel")
         ]
     ])
 
@@ -20,6 +20,8 @@ def confirm_kb(action: str) -> InlineKeyboardMarkup:
 def cancel_kb() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="❌ Отмена", callback_data="cancel")]
+            [InlineKeyboardButton(text="❌ cancel", callback_data="cancel")]
         ]
     )
+
+

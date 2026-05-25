@@ -7,7 +7,7 @@ from aiogram.types import Message
 from aiogram.filters import Command
 from tokenizers.decoders import Replace
 
-from Keyboards.Universal import confirm_kb
+from Keyboards.Ask import confirm_kb
 from SQL.DB_library import DB_library
 
 router_service = Router(name='maintenance')

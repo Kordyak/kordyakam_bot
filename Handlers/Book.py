@@ -11,7 +11,7 @@ from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, C
 from aiogram.filters import Command, CommandObject
 from FSM.states import UploadBook, StateUser
 from Keyboards.Book import reader_menu, voice_menu_ru, voice_menu_eng, format_voice_name
-from Keyboards.Universal import confirm_kb, cancel_kb
+from Keyboards.Ask import confirm_kb, cancel_kb
 from Locales.translator import t
 from SQL.DB_library import DB_library
 from Services.Metadata import Metadata

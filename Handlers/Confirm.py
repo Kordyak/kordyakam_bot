@@ -40,11 +40,11 @@ async def handle_confirm(callback: CallbackQuery, reader, db: DB_library):
         os.system(f"shutdown /h")
 
     elif action == 'reboot':
-        await callback.message.answer("Бот выключается... 🏴‍☠")
+        await callback.message.answer("Перезагрузка ПК...🏴‍☠")
         os.system(f"shutdown -r -t 0")
 
     elif action == 'exit':
-        await callback.message.answer("Бот выключается... 🏴‍☠")
+        await callback.message.answer("Бот выключается...🏴‍☠")
         exit()
 
 

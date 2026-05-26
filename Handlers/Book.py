@@ -199,14 +199,14 @@ async def book_description(call: CallbackQuery, state: FSMContext):
     book_info = data.get("book_info", {})
     description = strip_html(book_info['description'])
 
+    # параллельно перевод
+    description_ru_task = asyncio.create_task(translator(description))
+
     caption = (
         f"<b>Author</b>: {book_info['creator']}\n"
         f"<b>Book</b>: {book_info['title']}\n"
         f"<b>Total paragraphs</b>: {book_info['total_paragraphs']}"
-        f"\n{description}"
     )
-    # параллельно перевод
-    description_ru = await translator(description)
     if book_info.get('cover_image'):  # если есть байты картинки
         photo = BufferedInputFile(book_info['cover_image'], filename="cover.jpg")
         await message.answer_photo(photo=photo, caption=caption, parse_mode="HTML")
@@ -214,7 +214,10 @@ async def book_description(call: CallbackQuery, state: FSMContext):
     else:
         await message.answer(caption, parse_mode='HTML')
 
+    await message.answer(description, parse_mode='HTML')
+
     # Описание на русском
+    description_ru = await description_ru_task
     await message.answer(
         text=f"<tg-spoiler>{description_ru}</tg-spoiler>",
         parse_mode="HTML",

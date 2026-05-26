@@ -16,6 +16,10 @@ TEXTS = {
     "btn_book_description": "ℹ️ Book description",
     "btn_upload_library_book": "⬇️ Uploading a book to read?",
 
+    'btn_yes': '✅ YES',
+    'btn_no': '❌ NO',
+    'btn_cancel': '❌ CANCEL',
+
     # ================= START =================
     "start_no_book": 'Hello, <b>{first_name}</b>!'
                      '\nLet’s choose a <b>book from the library</b>.'
@@ -52,6 +56,7 @@ TEXTS = {
                 "\nThe paragraph reading schedule is set to 8:00."
                 "\nOr set a different time using /start."
                 "\nOr get the paragraph by requesting /next",
+    "book_deleted": "📚 Book deleted.",
 
     # ================= TIME =================
     "change_time": '⏰ The paragraph is currently being sent at <b>{time}</b>.'
@@ -61,6 +66,8 @@ TEXTS = {
     "time_saved": "⏰ Paragraph delivery time set: {time}"
                   "\nScheduler enabled ✅"
                   "\nYou can request a paragraph now with the /next command.",
+    "btn_clear_time": "🗑 Disable auto-delivery",
+    "time_cleared": "⏰ Auto-delivery disabled.",
 
     # ================= SPEED =================
     "speed_current": "🏃‍➡️ Your current reading speed is {speed}%\nYou can adjust it between 50 and 150 (clarity range)",

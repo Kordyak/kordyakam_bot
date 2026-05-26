@@ -139,7 +139,7 @@ async def handler_waiting_book_number(message: Message, state: FSMContext, reade
     if i not in books_map:
         await message.answer(
             text=t(lang,'invalid_book_number'),
-            reply_markup=cancel_kb()
+            reply_markup=cancel_kb(lang)
         )
         return
 
@@ -235,10 +235,10 @@ async def handler_waiting_epub(message: Message, bot: Bot, state: FSMContext, re
     lang = reader.lang_interface
     library = Library()
     if not message.document or not message.document.file_name.endswith(".epub"):
-        await message.answer(t(lang,'upload_error'),reply_markup=cancel_kb())
+        await message.answer(t(lang,'upload_error'),reply_markup=cancel_kb(lang))
         return
     if message.document.file_size > 10 * 1024 * 1024:
-        await message.answer(t(lang, 'upload_too_large'), reply_markup=cancel_kb())
+        await message.answer(t(lang, 'upload_too_large'), reply_markup=cancel_kb(lang))
         return
 
     file_name = message.document.file_name
@@ -283,7 +283,8 @@ async def set_book(message, file_hash, reader, state: FSMContext, db):
 
 # Изменить Время
 @router_book.callback_query(F.data == "change_time")
-async def change_time(callback: CallbackQuery, state: FSMContext, reader):
+async def change_time(callback: CallbackQuery, state: FSMContext, reader: Reader):
+    lang = reader.lang_interface
     user_id = reader.user_id
     db = reader.db
     await callback.answer()  # 🔴 обязательно
@@ -291,7 +292,7 @@ async def change_time(callback: CallbackQuery, state: FSMContext, reader):
 
     delete_kb = InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="❌ delete", callback_data="remove_daily_time")]
+            [InlineKeyboardButton(text=t(lang, 'btn_clear_time'), callback_data="remove_daily_time")]
         ]
     )
 
@@ -301,14 +302,15 @@ async def change_time(callback: CallbackQuery, state: FSMContext, reader):
         reply_markup=delete_kb
     )
     await state.set_state(StateUser.waiting_time)
-# Удалить книгу
+# Удалить Время
 @router_book.callback_query(F.data == 'remove_daily_time')
 async def del_book(callback: CallbackQuery, reader, state):
+    lang = reader.lang_interface
     await callback.answer()
     await callback.message.delete()
     await callback.message.answer(
         t(reader.lang_interface, 'delete_confirm'),
-        reply_markup=confirm_kb('remove_daily_time')
+        reply_markup=confirm_kb('remove_daily_time', lang)
     )
     await state.set_state(None)
 @router_book.message(StateUser.waiting_time)
@@ -327,7 +329,7 @@ async def save_time(message: Message, state: FSMContext, reader):
         await message.answer(
             t(lang,'invalid_time'),
             parse_mode="HTML",
-            reply_markup=cancel_kb()
+            reply_markup=cancel_kb(lang)
         )
         return
     # сохраняем время
@@ -366,7 +368,7 @@ async def save_reading_speed(message: Message, state: FSMContext, reader):
     except ValueError:
         await message.answer(
             t(lang,'speed_invalid'),
-            reply_markup=cancel_kb()
+            reply_markup=cancel_kb(lang)
         )
         return
     db.save_reading_speed(user_id, speed)
@@ -426,7 +428,7 @@ async def save_index(message: Message, state: FSMContext, reader: Reader, sender
     if not message.text.isdigit():
         await message.answer(
             t(lang,'paragraph_only_number'),
-            reply_markup=cancel_kb()
+            reply_markup=cancel_kb(lang)
         )
         return
 
@@ -435,7 +437,7 @@ async def save_index(message: Message, state: FSMContext, reader: Reader, sender
     if index < 0 or index > reader.total_paragraphs:
         await message.answer(
             t(lang,'paragraph_range',total=reader.total_paragraphs),
-            reply_markup=cancel_kb()
+            reply_markup=cancel_kb(lang)
         )
         return
 
@@ -460,11 +462,12 @@ async def next_chunk(message: Message, sender: Sender, reader: Reader, state: FS
 # Удалить книгу
 @router_book.callback_query(F.data == 'del_book')
 async def del_book(callback: CallbackQuery, reader):
+    lang = reader.lang_interface
     await callback.answer()
     await callback.message.delete()
     await callback.message.answer(
-        t(reader.lang_interface, 'delete_confirm'),
-        reply_markup=confirm_kb('del_book')
+        t(lang, 'delete_confirm'),
+        reply_markup=confirm_kb('del_book', lang)
     )
 
 

@@ -4,9 +4,8 @@ from aiogram import Router, F
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery
 
-from FSM.states import UploadBook
+from Locales.translator import t
 from SQL.DB_library import DB_library
-from Services.Library import Library
 from Services.Scheduler import scheduler
 
 router_universal = Router(name='universal')
@@ -17,15 +16,12 @@ router_universal = Router(name='universal')
 async def handle_confirm(callback: CallbackQuery, reader, db: DB_library):
     await callback.answer()
     user_id = reader.user_id
+    lang = reader.lang_interface
     action = callback.data.split(":")[1]
 
     if action == "del_book":
         db.remove_current_book(user_id)
-        # Удаляем работу из планировщика
-        job_id = f"user_{user_id}"
-        if scheduler.get_job(job_id):
-            scheduler.remove_job(job_id)
-        await callback.message.edit_text("📚 Книга удалена")
+        await callback.message.edit_text(t(reader.lang_interface, "book_deleted"))
 
     elif action == 'remove_daily_time':
         db.remove_daily_time(user_id)
@@ -33,8 +29,10 @@ async def handle_confirm(callback: CallbackQuery, reader, db: DB_library):
         job_id = f"user_{user_id}"
         if scheduler.get_job(job_id):
             scheduler.remove_job(job_id)
-        await callback.message.edit_text("Время отправки абзаца удалено, получать абзац по времени не будете")
+        await callback.message.edit_text(text=t(lang, 'time_cleared'))
 
+
+    # SERVICE ========================================================
     elif action == 'hibernate':
         await callback.message.answer("ПК засыпает... 😴")
         os.system(f"shutdown /h")

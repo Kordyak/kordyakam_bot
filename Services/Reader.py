@@ -60,9 +60,6 @@ class Reader:
 
                 self.cached_epub = CachedEpub(path_file, self.paragraph_indx) # Ленивое чтение epub
 
-
-
-
     @property
     def progress(self):
         if self.total_paragraphs == 0:
@@ -72,6 +69,8 @@ class Reader:
     def get_next_chunk(self, min_len=300, max_len=900):
         if self.paragraph_indx >= self.total_paragraphs:
             return None, None
+        # ✅ всегда синхронизируем позицию чтения с актуальным индексом
+        self.cached_epub._index = self.paragraph_indx
 
         buffer = []
         current_len = 0

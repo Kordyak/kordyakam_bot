@@ -1,15 +1,10 @@
 import hashlib
 from io import BytesIO
-from os.path import exists
 from pathlib import Path
 import zipfile
-
 from bs4 import BeautifulSoup
 from ebooklib import epub, ITEM_DOCUMENT
-
 from SQL.DB_library import DB_library
-from Services.Metadata import Metadata
-from Services.Converters import detect_lang_simple
 
 PATH_EN_BOOKS = Path("Books_en")
 PATH_RU_BOOKS = Path("Books_ru")

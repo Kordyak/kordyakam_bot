@@ -32,24 +32,24 @@ class Sender:
         prefetched = PrefetchManager.get(user_id, reader.reading_speed, reader.voice, reader.paragraph_indx)
 
         if prefetched:
-            new_index = prefetched.new_index
+            new_last_paragraph = prefetched.new_index
             chunk = prefetched.chunk
             caption = prefetched.caption
             translate_chunk = prefetched.translate_chunk
             mp3_path = prefetched.mp3_path
         else:
-            chunk, new_index = reader.get_next_chunk()
+            chunk, new_last_paragraph = reader.get_next_chunk()
             if not chunk:
                 await self.bot.send_message(user_id, msg_end_book, parse_mode='HTML')
                 return
-            file_name = self._write_paragraphs(chunk, reader.paragraph_indx)
+            file_name = self._write_paragraphs(chunk, new_last_paragraph)
             mp3_path = f'Cache/{reader.user_id}/{file_name}.mp3'
             caption, translate_chunk = await asyncio.gather(
                 convert_text_audio(chunk + t(reader.lang_interface, 'end_par'), mp3_path, reader.reading_speed, reader.voice),
                 translator(chunk)
             )
-        reader.db.save_i_chunk(user_id, new_index)  # ← сохраняем только здесь
-        reader.paragraph_indx = new_index
+        reader.db.save_i_chunk(user_id, new_last_paragraph)  # ← сохраняем только здесь
+        reader.paragraph_indx = new_last_paragraph
 
         start_caption = f'{reader.book_creator} / <b>"{reader.book_title}"</b> / ({reader.progress}%)'
         caption = f"{start_caption}\n{caption}"
@@ -76,6 +76,9 @@ class Sender:
 
         try:
             await self.bot.send_audio(**audio_kwargs)
+        except Exception as e:
+            await self.bot.send_message(user_id, "⚠️ ERROR")
+            raise
         finally:
             await clock_msg.delete()
             Path(mp3_path).unlink(missing_ok=True)
@@ -103,21 +106,21 @@ class Sender:
         await self._prefetch_next(reader)
 
     @staticmethod
-    def _write_paragraphs(chunk, last_paragraph: int)-> str:
+    def _write_paragraphs(chunk, new_last_paragraph: int)-> str:
         count_paragraph = len(chunk.splitlines())
         if count_paragraph == 1:
-            return str(last_paragraph)
+            return str(new_last_paragraph)
         else:
-            return f'{last_paragraph - count_paragraph + 1}...{last_paragraph}'
+            return f'{new_last_paragraph - count_paragraph + 1}...{new_last_paragraph}'
 
 
     async def _prefetch_next(self, reader: Reader):
         user_id = reader.user_id
         last_index = reader.paragraph_indx
-        chunk, new_index = reader.get_next_chunk()
+        chunk, new_last_paragraph = reader.get_next_chunk()
         if not chunk:
             return
-        file_name = self._write_paragraphs(chunk, new_index)
+        file_name = self._write_paragraphs(chunk, new_last_paragraph)
         mp3_path = f'Cache/{reader.user_id}/{file_name}.mp3'
         try:
             caption, translate_chunk = await asyncio.gather(
@@ -126,7 +129,7 @@ class Sender:
             )
             PrefetchManager.set(user_id, PrefetchEntry(
                 last_index=last_index,
-                new_index=new_index,
+                new_index=new_last_paragraph,
                 chunk=chunk,
                 caption=caption,
                 translate_chunk=translate_chunk,

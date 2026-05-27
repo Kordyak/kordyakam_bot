@@ -11,23 +11,24 @@ from functools import lru_cache
 
 
 class Reader:
-    book_title = ""
-    book_creator = ""
-    description = ""
-    cover_image = None
-    cached_epub = None
-
     def __init__(self,
                  user_id: int,
                  db: DB_library,
                  language_code: str | None = None
                  ):
+        self.book_title = ""
+        self.book_creator = ""
+        self.description = ""
+        self.cover_image = None
+        self.cached_epub = None
+        self.thumbnail = None
+
         self.user_id = user_id
         self.db = db
         state = self.db.get_user_state(user_id) # Загружаем состояние пользователя
         self.paragraph_indx = state[0] or 0
         self.daily_time = state[1]
-        self.book_name = Path(str(state[2]))
+        self.book_name = str(state[2]) or None
         self.total_paragraphs = state[3] or 0
         self.reading_speed = state[4]
         self.username = state[5]
@@ -39,8 +40,9 @@ class Reader:
             self.db.save_language(user_id, language_code)
             self.lang_interface = language_code
 
-        if self.lang_book:
+        if self.lang_book and self.book_name:
             path_file = Path(BOOK_PATHS[self.lang_book] / self.book_name)
+
             if path_file.exists():
                 metadata = Metadata.get_cache(path_file)
                 self.book_title = metadata.get("book_title", "")
@@ -56,7 +58,7 @@ class Reader:
                     else:
                         self.voice = "en-US-BrianNeural"
 
-            self.cached_epub = CachedEpub(path_file, self.paragraph_indx) # Ленивое чтение epub
+                self.cached_epub = CachedEpub(path_file, self.paragraph_indx) # Ленивое чтение epub
 
 
 
@@ -69,7 +71,7 @@ class Reader:
 
     def get_next_chunk(self, min_len=300, max_len=900):
         if self.paragraph_indx >= self.total_paragraphs:
-            return None
+            return None, None
 
         buffer = []
         current_len = 0

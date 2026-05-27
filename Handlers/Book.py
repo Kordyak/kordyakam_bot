@@ -273,8 +273,10 @@ async def set_book(message, file_hash, reader, state: FSMContext, db):
     lang = reader.lang_interface
     user_id= reader.user_id
     book_id = db.get_book_by_hash(file_hash)["id"]
+
     db.set_current_book(user_id, book_id)
     reader = Reader(user_id, db)
+
     await message.answer(
         t(lang,'book_set',book_title=reader.book_title),
         parse_mode='HTML'

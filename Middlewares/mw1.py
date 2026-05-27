@@ -25,7 +25,7 @@ class MiddlewareUsers(BaseMiddleware):
         db.save_last_contact(user_id)
         db.get_create_user(user_id, username)
 
-        reader = await asyncio.to_thread(Reader, user_id, db, lang)
+        reader = Reader(user_id, db, lang)
         data["reader"] = reader
 
         data["db"] = db

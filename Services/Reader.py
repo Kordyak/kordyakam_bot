@@ -25,7 +25,7 @@ class Reader:
 
         self.user_id = user_id
         self.db = db
-        state = self.db.get_user_state(user_id) # Загружаем состояние пользователя
+        state = self.db.get_user_info(user_id) # Загружаем состояние пользователя
         self.paragraph_indx = state[0] or 0
         self.daily_time = state[1]
         self.book_name = str(state[2]) or None

@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from SQL.DB_library import DB_library
@@ -22,13 +23,25 @@ class Scheduler:
     async def send_all_users(self):
         db = DB_library()
         now = datetime.now()
-        users = db.get_users_to_send(now)
+        users = db.get_users_by_time(now)
 
+        tasks = []
         for user in users:
-            user_id = user["user_id"]
-            reader = Reader(user_id, db)
-            if reader.book_title:
-                await self.sender.send_chunk(reader)
+            if user['current_book_id']:
+                tasks.append(self._send_to_user(user["user_id"], db))
 
-            if reader.paragraph_indx == reader.total_paragraphs:
-                db.remove_current_book(user_id)
+        await asyncio.gather(*tasks)  # параллельно, не блокируем
+
+    async def _send_to_user(self, user_id: int, db):
+        reader = await asyncio.to_thread(Reader, user_id, db)  # ← в отдельный поток
+        await self.sender.send_chunk(reader)
+        if reader.paragraph_indx == reader.total_paragraphs:
+            db.remove_current_book(user_id)
+
+            # user_id = user["user_id"]
+            # reader = Reader(user_id, db)
+            # if reader.book_title:
+            #     await self.sender.send_chunk(reader)
+            #
+            # if reader.paragraph_indx == reader.total_paragraphs:
+            #     db.remove_current_book(user_id)

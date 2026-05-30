@@ -183,12 +183,12 @@ class DB_library:
             for r in rows
         ]
 
-    def get_users_to_send(self, now: datetime):
+    def get_users_by_time(self, now: datetime):
         now_str = now.strftime("%H:%M")
 
         with self._get_connection() as conn:
             rows = conn.execute("""
-                SELECT user_id, username, daily_time
+                SELECT user_id, username, daily_time, current_book_id
                 FROM users
                 WHERE daily_time = ? AND current_book_id IS NOT NULL
             """, (now_str,)).fetchall()
@@ -197,6 +197,7 @@ class DB_library:
                 "user_id": r[0],
                 "username": r[1],
                 "daily_time": r[2],
+                "current_book_id": r[3],
             }
             for r in rows
         ]
@@ -212,7 +213,7 @@ class DB_library:
             """, (telegram_id,))
 
     # GET user STATE
-    def get_user_state(self, telegram_id: int):
+    def get_user_info(self, telegram_id: int):
         with self._get_connection() as conn:
             cursor = conn.execute("""
                 SELECT 

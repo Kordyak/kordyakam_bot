@@ -37,11 +37,3 @@ class Scheduler:
         await self.sender.send_chunk(reader)
         if reader.paragraph_indx == reader.total_paragraphs:
             db.remove_current_book(user_id)
-
-            # user_id = user["user_id"]
-            # reader = Reader(user_id, db)
-            # if reader.book_title:
-            #     await self.sender.send_chunk(reader)
-            #
-            # if reader.paragraph_indx == reader.total_paragraphs:
-            #     db.remove_current_book(user_id)

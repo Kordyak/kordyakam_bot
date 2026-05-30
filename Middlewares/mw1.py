@@ -24,7 +24,7 @@ class MiddlewareUsers(BaseMiddleware):
     @staticmethod
     def _setup_user(user_id, username, lang):
         db = DB_library()
-        db.get_create_user(user_id, username)
+        db.save_user(user_id, username)
         reader = Reader(user_id, db, lang)
         return db, reader
 

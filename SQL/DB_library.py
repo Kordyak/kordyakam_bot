@@ -54,7 +54,7 @@ class DB_library:
 
 
     # ============================ USER ============================================
-    def get_create_user(self, telegram_id: int, username: str | None = None):
+    def save_user(self, telegram_id: int, username: str | None = None):
         with self._get_connection() as conn:
             cursor = conn.execute(
                 "SELECT username FROM users WHERE user_id=?",
@@ -157,24 +157,6 @@ class DB_library:
                 WHERE user_id=?
             """, (language, user_id))
 
-
-
-    def list_users_with_time(self) -> list[dict]:
-        with self._get_connection() as conn:
-            rows = conn.execute("""
-                SELECT user_id, username, daily_time
-                FROM users
-                WHERE daily_time IS NOT NULL
-            """).fetchall()
-
-        return [
-            {
-                "user_id": r[0],
-                "username": r[1],
-                "daily_time": r[2],
-            }
-            for r in rows
-        ]
 
     def get_users_by_time(self, now: datetime):
         now_str = now.strftime("%H:%M")

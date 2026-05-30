@@ -1,13 +1,10 @@
-import io
 import os
-
-from aiogram import Router, F
+from aiogram import Router
 from aiogram.filters import Command
 from aiogram.filters.command import CommandObject
 from aiogram.types import Message, FSInputFile
 
 from Services.Converters import *
-from Services.Reader import Reader
 
 router_converter = Router(name='converter')
 
@@ -22,24 +19,24 @@ def extract_text(message: Message, command: CommandObject) -> str | None:
 
 @router_converter.message(Command('trans'))
 async def handler_trans(message: Message, command: CommandObject):
-    msg = await message.answer('⏳')
     text = extract_text(message, command)
-    eng_text = await translator(text) if text else None
 
-    if eng_text:
-        await message.reply(eng_text)
+    if text:
+        msg = await message.answer('⏳')
+        trans_text = await translator(text) if text else None
+        await message.reply(trans_text)
+        await msg.delete()
     else:
         await message.answer('Текст не обнаружен, вставьте его после команды!')
 
-    await msg.delete()
 
 
 @router_converter.message(Command('convert'))
 async def handler_convert(message: Message, command: CommandObject):
-    msg = await message.answer('⏳')
     text = extract_text(message, command)
 
     if text:
+        msg = await message.answer('⏳')
         name_file = make_title(text)
         await convert_text_audio(text, name_file + ".mp3", 90, "")
         audio = FSInputFile(name_file + ".mp3")
@@ -49,10 +46,10 @@ async def handler_convert(message: Message, command: CommandObject):
             title=name_file,
         )
         os.remove(audio.filename)
+        await msg.delete()
     else:
         await message.answer('Текст не обнаружен, вставьте его после команды!')
 
-    await msg.delete()
 
 
 

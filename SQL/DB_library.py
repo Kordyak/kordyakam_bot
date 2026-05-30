@@ -61,22 +61,23 @@ class DB_library:
                 (telegram_id,)
             )
             row = cursor.fetchone()
-
+            date = datetime.now().strftime("%d.%m.%Y %H:%M")
             if row:
-                existing_username = row[0]
-                # обновляем username только если он реально изменился и пришёл новый
-                if username is not None and username != existing_username:
-                    conn.execute(
-                        "UPDATE users SET username = ? WHERE user_id = ?",
-                        (username, telegram_id)
-                    )
+                conn.execute(
+                    """
+                        UPDATE users
+                        SET last_access=?, username=?
+                        WHERE user_id=?
+                    """,(date, username, telegram_id)
+                )
             else:
                 conn.execute(
-                    "INSERT INTO users (user_id, username) VALUES (?, ?)",
-                    (telegram_id, username)
+                    """
+                    INSERT INTO users (last_access, username, user_id)
+                    VALUES (?, ?, ?)
+                    """,(date, username, telegram_id)
                 )
 
-        return telegram_id
 
     def save_i_chunk(self, telegram_id: int, idx: int):
         with self._get_connection() as conn:
@@ -98,14 +99,6 @@ class DB_library:
                 WHERE user_id=?
             """, (book_id, telegram_id))
 
-    def save_last_contact(self, telegram_id: int):
-        """Назначает пользователю книгу по id, сбрасывает прогресс"""
-        with self._get_connection() as conn:
-            conn.execute("""
-                UPDATE users
-                SET last_access=?
-                WHERE user_id=?
-            """, (datetime.now().strftime("%d.%m.%Y %H:%M"), telegram_id))
 
     def get_time(self, telegram_id: int) -> str | None:
         with self._get_connection() as connection:

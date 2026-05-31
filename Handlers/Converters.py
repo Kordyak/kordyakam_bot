@@ -5,6 +5,7 @@ from aiogram.filters.command import CommandObject
 from aiogram.types import Message, FSInputFile
 
 from Services.Converters import *
+from Services.Reader import Reader
 
 router_converter = Router(name='converter')
 
@@ -18,7 +19,8 @@ def extract_text(message: Message, command: CommandObject) -> str | None:
 
 
 @router_converter.message(Command('trans'))
-async def handler_trans(message: Message, command: CommandObject):
+async def handler_trans(message: Message, command: CommandObject, reader: Reader):
+    lang = reader.lang_interface
     text = extract_text(message, command)
 
     if text:
@@ -27,12 +29,13 @@ async def handler_trans(message: Message, command: CommandObject):
         await message.reply(trans_text)
         await msg.delete()
     else:
-        await message.answer('Текст не обнаружен, вставьте его после команды!')
+        await message.answer(t(lang,'text_error'))
 
 
 
 @router_converter.message(Command('convert'))
-async def handler_convert(message: Message, command: CommandObject):
+async def handler_convert(message: Message, command: CommandObject, reader: Reader):
+    lang = reader.lang_interface
     text = extract_text(message, command)
 
     if text:
@@ -48,7 +51,7 @@ async def handler_convert(message: Message, command: CommandObject):
         os.remove(audio.filename)
         await msg.delete()
     else:
-        await message.answer('Текст не обнаружен, вставьте его после команды!')
+        await message.answer(t(lang,'text_error'))
 
 
 

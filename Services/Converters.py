@@ -4,6 +4,7 @@ import edge_tts
 from deep_translator import GoogleTranslator
 import asyncio
 
+from Locales.translator import t
 from config import MYPROXY
 
 logger = logging.getLogger(__name__)
@@ -41,9 +42,10 @@ async def translator(in_text: str) -> str:
         result = await asyncio.to_thread(gt1.translate,text)
         return result
     except Exception as e:
-        msg = f"😢 Ошибка перевода: {e}"
+        msg = t(lang,'error', e=e)
         print(msg)
         return msg
+
 
 
 async def convert_text_audio(text: str, path_mp3: str, speed:int, voice: str) -> str | None:

@@ -20,6 +20,11 @@ TEXTS = {
     'btn_no': '❌ NO',
     'btn_cancel': '❌ CANCEL',
 
+    'error': '😢 ERROR: {e}',
+
+    #''============== Converters ======================
+    'text_error': '😢 This is an object that contains absolutely the entire original message to which the user replied.',
+
     # ================= START =================
     "start_no_book": 'Hello, <b>{first_name}</b>!'
                      '\nLet’s choose a <b>book from the library</b>.'

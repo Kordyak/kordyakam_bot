@@ -13,6 +13,7 @@ from Locales.translator import t
 from Services.Converters import convert_text_audio, translator
 from Services.PrefetchManager import PrefetchManager, PrefetchEntry
 from Services.Reader import Reader
+from config import load_config
 
 
 # Отправитель
@@ -26,7 +27,7 @@ class Sender:
         cache_dir.mkdir(parents=True, exist_ok=True)
 
         clock_msg = await self.bot.send_message(user_id, "⏳")
-        msg_end_book = t(reader.lang_interface, 'donate_me', username=reader.username, book_title=reader.book_title)
+        msg_end_book = t(reader.lang_interface, 'donate_me', username=reader.username, book_title=reader.book_title, phone=load_config().tg_bot.phone)
 
         # 1️⃣ Есть готовый prefetch с теми же speed/voice?
         prefetched = PrefetchManager.get(user_id, reader.reading_speed, reader.voice, reader.paragraph_indx)

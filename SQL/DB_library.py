@@ -54,7 +54,7 @@ class DB_library:
 
 
     # ============================ USER ============================================
-    def save_user(self, telegram_id: int, username: str | None = None):
+    def save_user(self, telegram_id: int, username: str | None = None) -> bool:
         with self._get_connection() as conn:
             cursor = conn.execute(
                 "SELECT username FROM users WHERE user_id=?",
@@ -70,6 +70,7 @@ class DB_library:
                         WHERE user_id=?
                     """,(date, username, telegram_id)
                 )
+                return False
             else:
                 conn.execute(
                     """
@@ -77,6 +78,7 @@ class DB_library:
                     VALUES (?, ?, ?)
                     """,(date, username, telegram_id)
                 )
+                return True
 
 
     def save_i_chunk(self, telegram_id: int, idx: int):

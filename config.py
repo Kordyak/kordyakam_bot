@@ -11,7 +11,7 @@ class Client:
 @dataclass
 class TgBot:
     token: str
-    admin_ids: [int]
+    admin_id: int
     phone: int
 
 
@@ -29,7 +29,8 @@ def load_config():
     return Config(
         tg_bot=TgBot(
             token=env('BOT_TOKEN'),
-            admin_ids=[int(x) for x in env('admin_ids').split(',')],
+            admin_id=env('ADMIN_ID'),
+            # admin_ids=[int(x) for x in env('admin_ids').split(',')],
             phone=env('PHONE'),
         ),
         client=Client(

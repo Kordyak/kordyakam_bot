@@ -1,4 +1,4 @@
-from config import load_config
+
 
 TEXTS = {
     # ================= Button =================
@@ -110,6 +110,6 @@ TEXTS = {
                     "\nПредлагаю выбрать новую книгу из моей <b>библиотеки...</b>"
                     "\n\n<b>Принимаю дары и донаты</b> на чашечку ⛾ :)"
                     "\n<tg-spoiler>СБП Яндекс"
-                    f"\n{load_config().tg_bot.phone}</tg-spoiler>"
+                    "\n{phone}</tg-spoiler>"
 
 }

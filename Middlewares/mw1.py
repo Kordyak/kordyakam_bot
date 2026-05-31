@@ -7,6 +7,7 @@ from Services.Reader import Reader
 from typing import Callable, Awaitable, Dict, Any
 from config import load_config
 
+ADMIN_ID = int(load_config().tg_bot.admin_id)
 
 class MiddlewareUsers(BaseMiddleware):
     async def __call__(self, handler, event: TelegramObject, data: dict):
@@ -15,7 +16,11 @@ class MiddlewareUsers(BaseMiddleware):
         username = f"@{username}" if username else None
         lang = event.from_user.language_code
 
-        db, reader = await asyncio.to_thread(self._setup_user, user_id, username, lang)
+        db, reader, is_new_user = await asyncio.to_thread(self._setup_user, user_id, username, lang)
+
+        if is_new_user:
+            bot = data.get("bot")
+            await bot.send_message(ADMIN_ID, f"🆕 Новый пользователь: {username}, id: {user_id}")
 
         data["reader"] = reader
         data["db"] = db
@@ -24,13 +29,13 @@ class MiddlewareUsers(BaseMiddleware):
     @staticmethod
     def _setup_user(user_id, username, lang):
         db = DB_library()
-        db.save_user(user_id, username)
+        is_new_user = db.save_user(user_id, username)
         reader = Reader(user_id, db, lang)
-        return db, reader
+        return db, reader, is_new_user
 
 
 
-ADMIN_ID = load_config().tg_bot.admin_ids
+
 class MiddlewareAdmin(BaseMiddleware):
     async def __call__(
             self,
@@ -39,5 +44,5 @@ class MiddlewareAdmin(BaseMiddleware):
             data: dict
     )->Any:
         user_id = event.from_user.id
-        if user_id in ADMIN_ID:
+        if user_id == ADMIN_ID:
             return await handler(event, data)
